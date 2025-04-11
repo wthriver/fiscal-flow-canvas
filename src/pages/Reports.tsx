@@ -3,8 +3,22 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, BarChart4, TrendingUp, Printer, Calendar, Share2 } from "lucide-react";
+import { DateRangeButton, ExportButton } from "@/components/common/ActionButtons";
+import { toast } from "sonner";
 
 const Reports: React.FC = () => {
+  const handleGenerateReport = (reportName: string) => {
+    toast.success(`Generating ${reportName} report`);
+  };
+
+  const handleViewReport = (reportName: string) => {
+    toast.info(`Viewing ${reportName} report`);
+  };
+
+  const handleShareReport = (reportName: string) => {
+    toast.info(`Share options for ${reportName}`);
+  };
+
   const reportCategories = [
     {
       title: "Financial Statements",
@@ -52,18 +66,12 @@ const Reports: React.FC = () => {
           <p className="text-muted-foreground">Generate and view financial reports for your business</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Calendar size={16} />
-            <span>Date Range</span>
-          </Button>
-          <Button variant="outline" className="flex items-center gap-2">
+          <DateRangeButton type="Reports" />
+          <Button variant="outline" className="flex items-center gap-2" onClick={() => toast.info("Print report options")}>
             <Printer size={16} />
             <span>Print</span>
           </Button>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Download size={16} />
-            <span>Export</span>
-          </Button>
+          <ExportButton type="Reports" />
         </div>
       </div>
 
@@ -79,22 +87,40 @@ const Reports: React.FC = () => {
                 {category.reports.map((report, reportIdx) => (
                   <div 
                     key={reportIdx}
-                    className="flex flex-col p-4 border rounded-lg hover:border-primary hover:bg-accent/50 transition-colors cursor-pointer"
+                    className="flex flex-col p-4 border rounded-lg hover:border-primary hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-2">
                         <report.icon className="h-5 w-5 text-primary" />
                         <h3 className="font-medium">{report.name}</h3>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={() => handleShareReport(report.name)}
+                      >
                         <Share2 className="h-4 w-4" />
                         <span className="sr-only">Share</span>
                       </Button>
                     </div>
                     <p className="text-sm text-muted-foreground">{report.description}</p>
                     <div className="mt-4 flex gap-2">
-                      <Button size="sm" variant="outline" className="w-full">View</Button>
-                      <Button size="sm" className="w-full">Generate</Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => handleViewReport(report.name)}
+                      >
+                        View
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => handleGenerateReport(report.name)}
+                      >
+                        Generate
+                      </Button>
                     </div>
                   </div>
                 ))}

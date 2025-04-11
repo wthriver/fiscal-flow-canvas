@@ -16,9 +16,41 @@ import {
 } from "@/components/ui/sheet";
 import Sidebar from "./Sidebar";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const TopBar: React.FC = () => {
   const currentCompany = "ABC Corporation";
+  const navigate = useNavigate();
+
+  const handleCompanyChange = (company: string) => {
+    toast.success(`Switched to ${company}`);
+  };
+
+  const handleCreateCompany = () => {
+    toast.info("Opening create company dialog");
+  };
+
+  const handleProfileClick = () => {
+    navigate("/settings");
+  };
+
+  const handleCompanySettingsClick = () => {
+    navigate("/settings");
+    toast.info("Navigating to company settings");
+  };
+
+  const handleHelpClick = () => {
+    toast.info("Opening help & support resources");
+  };
+
+  const handleLogoutClick = () => {
+    toast.success("Logged out successfully");
+  };
+
+  const handleNotificationsClick = () => {
+    toast.info("Opening notifications panel");
+  };
 
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 md:px-6">
@@ -46,18 +78,33 @@ const TopBar: React.FC = () => {
             <DropdownMenuContent align="start">
               <DropdownMenuLabel>Companies</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="font-medium">ABC Corporation</DropdownMenuItem>
-              <DropdownMenuItem>XYZ Limited</DropdownMenuItem>
-              <DropdownMenuItem>123 Industries</DropdownMenuItem>
+              <DropdownMenuItem 
+                className="font-medium"
+                onClick={() => handleCompanyChange("ABC Corporation")}
+              >
+                ABC Corporation
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleCompanyChange("XYZ Limited")}>
+                XYZ Limited
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleCompanyChange("123 Industries")}>
+                123 Industries
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Create New Company</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleCreateCompany}>
+                Create New Company
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
       
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon">
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={handleNotificationsClick}
+        >
           <Bell size={20} />
           <span className="sr-only">Notifications</span>
         </Button>
@@ -72,11 +119,11 @@ const TopBar: React.FC = () => {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Company Settings</DropdownMenuItem>
-            <DropdownMenuItem>Help & Support</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleProfileClick}>Profile</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleCompanySettingsClick}>Company Settings</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleHelpClick}>Help & Support</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogoutClick}>Logout</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -1,13 +1,47 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronRight, User, Building, CreditCard, Lock, Globe, Bell, Mail, FileText, Users, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const Settings: React.FC = () => {
+  // State for form values and switches
+  const [formValues, setFormValues] = useState({
+    name: "John Smith",
+    email: "john@example.com",
+    phone: "(555) 123-4567",
+    timezone: "Eastern Time (US & Canada)"
+  });
+
+  const [notifications, setNotifications] = useState(true);
+  const [twoFactor, setTwoFactor] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  const navigate = useNavigate();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormValues(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSaveChanges = () => {
+    toast.success("Profile settings saved successfully");
+  };
+
+  const handleCancel = () => {
+    toast.info("Changes canceled");
+  };
+
+  const handleSettingClick = (category: string, setting: string) => {
+    toast.info(`Navigating to ${category} - ${setting}`);
+    // In a real app, this would navigate to the specific setting page
+  };
+
   const settingsCategories = [
     {
       title: "Account",
@@ -57,19 +91,36 @@ const Settings: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" defaultValue="John Smith" />
+              <Input 
+                id="name" 
+                value={formValues.name}
+                onChange={handleInputChange}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" defaultValue="john@example.com" />
+              <Input 
+                id="email" 
+                type="email" 
+                value={formValues.email}
+                onChange={handleInputChange}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" defaultValue="(555) 123-4567" />
+              <Input 
+                id="phone" 
+                value={formValues.phone}
+                onChange={handleInputChange}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="timezone">Timezone</Label>
-              <Input id="timezone" defaultValue="Eastern Time (US & Canada)" />
+              <Input 
+                id="timezone" 
+                value={formValues.timezone}
+                onChange={handleInputChange}
+              />
             </div>
           </div>
 
@@ -81,28 +132,55 @@ const Settings: React.FC = () => {
                   <Label className="text-base">Email Notifications</Label>
                   <p className="text-sm text-muted-foreground">Receive email notifications for important events</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch 
+                  checked={notifications} 
+                  onCheckedChange={setNotifications} 
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-base">Two-Factor Authentication</Label>
                   <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
                 </div>
-                <Switch />
+                <Switch 
+                  checked={twoFactor} 
+                  onCheckedChange={(checked) => {
+                    setTwoFactor(checked);
+                    if (checked) {
+                      toast.success("Two-factor authentication enabled");
+                    } else {
+                      toast.info("Two-factor authentication disabled");
+                    }
+                  }}
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-base">Dark Mode</Label>
                   <p className="text-sm text-muted-foreground">Switch between light and dark mode</p>
                 </div>
-                <Switch />
+                <Switch 
+                  checked={darkMode} 
+                  onCheckedChange={(checked) => {
+                    setDarkMode(checked);
+                    toast.info(`${checked ? "Dark" : "Light"} mode activated`);
+                  }}
+                />
               </div>
             </div>
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline">Cancel</Button>
-            <Button className="flex items-center gap-1">
+            <Button 
+              variant="outline"
+              onClick={handleCancel}
+            >
+              Cancel
+            </Button>
+            <Button 
+              className="flex items-center gap-1"
+              onClick={handleSaveChanges}
+            >
               <Check size={16} />
               <span>Save Changes</span>
             </Button>
@@ -126,6 +204,7 @@ const Settings: React.FC = () => {
                     <Button 
                       variant="ghost" 
                       className="w-full justify-between h-auto py-3 px-4 hover:bg-accent hover:text-accent-foreground"
+                      onClick={() => handleSettingClick(category.title, item.name)}
                     >
                       <div className="flex items-start gap-2 text-left">
                         <item.icon className="h-5 w-5 text-muted-foreground mt-0.5" />

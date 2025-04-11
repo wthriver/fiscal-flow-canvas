@@ -2,9 +2,17 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Filter, Download, Search, FileText, Calendar } from "lucide-react";
+import { PlusCircle, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { 
+  ViewButton, 
+  FilterButton, 
+  ExportButton, 
+  DateRangeButton, 
+  ActionDropdown 
+} from "@/components/common/ActionButtons";
+import { handleCreateItem } from "@/utils/navigationUtils";
 
 const Journal: React.FC = () => {
   // Sample journal entries
@@ -63,7 +71,10 @@ const Journal: React.FC = () => {
           <h1 className="text-3xl font-bold">Journal Entries</h1>
           <p className="text-muted-foreground">Record and manage your manual journal entries</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => handleCreateItem("Journal Entry")}
+        >
           <PlusCircle size={16} />
           <span>New Journal Entry</span>
         </Button>
@@ -79,18 +90,9 @@ const Journal: React.FC = () => {
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <Calendar size={16} />
-            <span>Date Range</span>
-          </Button>
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <Filter size={16} />
-            <span>Filter</span>
-          </Button>
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <Download size={16} />
-            <span>Export</span>
-          </Button>
+          <DateRangeButton type="Journal Entries" />
+          <FilterButton type="Journal Entries" />
+          <ExportButton type="Journal Entries" />
         </div>
       </div>
 
@@ -132,10 +134,10 @@ const Journal: React.FC = () => {
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
-                      <FileText size={16} />
-                      <span className="sr-only">View</span>
-                    </Button>
+                    <div className="flex justify-end items-center gap-1">
+                      <ViewButton id={entry.id} type="Journal Entry" />
+                      <ActionDropdown id={entry.id} type="Journal Entry" />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

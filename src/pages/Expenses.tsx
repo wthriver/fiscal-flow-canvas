@@ -2,9 +2,17 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Receipt, Filter, Download, Search, CalendarIcon } from "lucide-react";
+import { PlusCircle, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { 
+  ViewButton, 
+  FilterButton, 
+  ExportButton, 
+  DateRangeButton, 
+  ActionDropdown 
+} from "@/components/common/ActionButtons";
+import { handleCreateItem } from "@/utils/navigationUtils";
 
 const Expenses: React.FC = () => {
   // Sample expense data
@@ -23,7 +31,10 @@ const Expenses: React.FC = () => {
           <h1 className="text-3xl font-bold">Expenses</h1>
           <p className="text-muted-foreground">Track and manage your business expenses</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => handleCreateItem("Expense")}
+        >
           <PlusCircle size={16} />
           <span>Add Expense</span>
         </Button>
@@ -39,18 +50,9 @@ const Expenses: React.FC = () => {
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <CalendarIcon size={16} />
-            <span>Date Range</span>
-          </Button>
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <Filter size={16} />
-            <span>Filter</span>
-          </Button>
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <Download size={16} />
-            <span>Export</span>
-          </Button>
+          <DateRangeButton type="Expenses" />
+          <FilterButton type="Expenses" />
+          <ExportButton type="Expenses" />
         </div>
       </div>
 
@@ -92,10 +94,10 @@ const Expenses: React.FC = () => {
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
-                      <Receipt size={16} />
-                      <span className="sr-only">View Receipt</span>
-                    </Button>
+                    <div className="flex justify-end items-center gap-1">
+                      <ViewButton id={expense.id} type="Expense" />
+                      <ActionDropdown id={expense.id} type="Expense" />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
