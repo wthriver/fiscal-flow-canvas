@@ -104,6 +104,7 @@ export const ExportButton: React.FC<{type: string}> = ({ type }) => (
     size="sm" 
     className="flex items-center gap-1"
     onClick={() => handleExport(type)}
+    data-export="true"
   >
     <Download size={16} />
     <span>Export</span>
