@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,8 @@ import {
   ActionDropdown 
 } from "@/components/common/ActionButtons";
 import { handleCreateItem, handleDateRange } from "@/utils/navigationUtils";
+import { toast } from "sonner";
+import { Clock as ClockIcon, Activity as ActivityIcon, FileText as FileTextIcon } from "lucide-react";
 
 const Projects: React.FC = () => {
   // Sample projects data
@@ -406,15 +407,15 @@ const Projects: React.FC = () => {
         
         <div class="flex flex-wrap justify-end gap-2 mt-6">
           <button class="px-4 py-2 border bg-white hover:bg-gray-50 rounded-md flex items-center gap-2" id="track-time">
-            <Clock size={16} />
+            <ClockIcon size={16} />
             <span>Track Time</span>
           </button>
           <button class="px-4 py-2 border bg-white hover:bg-gray-50 rounded-md flex items-center gap-2" id="view-activity">
-            <Activity size={16} />
+            <ActivityIcon size={16} />
             <span>Activity</span>
           </button>
           <button class="px-4 py-2 border bg-white hover:bg-gray-50 rounded-md flex items-center gap-2" id="create-invoice">
-            <FileText size={16} />
+            <FileTextIcon size={16} />
             <span>Invoice</span>
           </button>
           <button class="px-4 py-2 border bg-white hover:bg-gray-50 rounded-md flex items-center gap-2" id="edit-project">
@@ -719,7 +720,7 @@ const Projects: React.FC = () => {
             className="flex items-center gap-2"
             onClick={() => handleTrackTime()}
           >
-            <Clock size={16} />
+            <ClockIcon size={16} />
             <span>Track Time</span>
           </Button>
           <Button 
@@ -830,7 +831,7 @@ const Projects: React.FC = () => {
                         className="h-8 w-8"
                         onClick={() => handleTrackTime(project.id)}
                       >
-                        <Clock size={16} />
+                        <ClockIcon size={16} />
                         <span className="sr-only">Track Time</span>
                       </Button>
                       <Button 
@@ -839,7 +840,7 @@ const Projects: React.FC = () => {
                         className="h-8 w-8"
                         onClick={() => handleViewProject(project.id)}
                       >
-                        <Activity size={16} />
+                        <ActivityIcon size={16} />
                         <span className="sr-only">Activity</span>
                       </Button>
                       <Button 
@@ -848,7 +849,7 @@ const Projects: React.FC = () => {
                         className="h-8 w-8"
                         onClick={() => handleViewInvoice(project.id)}
                       >
-                        <FileText size={16} />
+                        <FileTextIcon size={16} />
                         <span className="sr-only">Invoice</span>
                       </Button>
                     </div>
