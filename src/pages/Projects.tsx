@@ -2,11 +2,17 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Clock, Calendar, FileText, Activity, Search } from "lucide-react";
+import { PlusCircle, Search, CalendarIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FilterButton, ExportButton } from "@/components/common/ActionButtons";
-import { toast } from "sonner";
+import { 
+  ViewButton, 
+  FilterButton, 
+  ExportButton, 
+  DateRangeButton, 
+  ActionDropdown 
+} from "@/components/common/ActionButtons";
+import { handleCreateItem, handleDateRange } from "@/utils/navigationUtils";
 
 const Projects: React.FC = () => {
   // Sample projects data
@@ -767,9 +773,9 @@ const Projects: React.FC = () => {
             variant="outline" 
             size="sm" 
             className="flex items-center gap-1"
-            onClick={() => FilterButton({ type: "Projects" }).props.onClick()}
+            onClick={() => handleDateRange("Projects")}
           >
-            <Calendar size={16} />
+            <CalendarIcon size={16} />
             <span>Date Range</span>
           </Button>
           <FilterButton type="Projects" />

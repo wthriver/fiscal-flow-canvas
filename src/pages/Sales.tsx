@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FilterButton, ExportButton } from "@/components/common/ActionButtons";
 import { toast } from "sonner";
+import { handleDateRange } from "@/utils/navigationUtils";
 
 const Sales: React.FC = () => {
   // Sample sales data
@@ -720,7 +721,7 @@ const Sales: React.FC = () => {
             variant="outline" 
             size="sm" 
             className="flex items-center gap-1"
-            onClick={() => FilterButton({ type: "Sales" }).props.onClick()}
+            onClick={() => handleDateRange("Sales")}
           >
             <CalendarIcon size={16} />
             <span>Date Range</span>
