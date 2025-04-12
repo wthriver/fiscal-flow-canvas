@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Building, CreditCard } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -18,6 +18,21 @@ import { BillingSettings } from "@/components/settings/BillingSettings";
 const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState("account");
   const [activeSection, setActiveSection] = useState("profile");
+
+  // Listen for custom event to switch tabs from other components
+  useEffect(() => {
+    const handleSwitchTab = (event: Event) => {
+      const { tab, section } = (event as CustomEvent).detail;
+      if (tab) setActiveTab(tab);
+      if (section) setActiveSection(section);
+    };
+
+    window.addEventListener('switchSettingsTab', handleSwitchTab as EventListener);
+    
+    return () => {
+      window.removeEventListener('switchSettingsTab', handleSwitchTab as EventListener);
+    };
+  }, []);
 
   const handleSectionClick = (section: string) => {
     setActiveSection(section);

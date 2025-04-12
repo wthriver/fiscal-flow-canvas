@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, User, Mail, Phone, FileText, Search } from "lucide-react";
@@ -7,61 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FilterButton, ExportButton } from "@/components/common/ActionButtons";
 import { toast } from "sonner";
+import { useCompany } from "@/contexts/CompanyContext";
 
 const Customers: React.FC = () => {
-  // Sample customer data
-  const customers = [
-    { 
-      id: "CUST-001", 
-      name: "ABC Corporation", 
-      contactName: "John Smith",
-      email: "john@abccorp.com", 
-      phone: "(555) 123-4567", 
-      openInvoices: 2,
-      balance: "$3,450.00",
-      status: "Active" 
-    },
-    { 
-      id: "CUST-002", 
-      name: "XYZ Limited", 
-      contactName: "Jane Doe",
-      email: "jane@xyzlimited.com", 
-      phone: "(555) 987-6543", 
-      openInvoices: 1,
-      balance: "$1,200.00",
-      status: "Active" 
-    },
-    { 
-      id: "CUST-003", 
-      name: "123 Industries", 
-      contactName: "Robert Johnson",
-      email: "robert@123industries.com", 
-      phone: "(555) 456-7890", 
-      openInvoices: 0,
-      balance: "$0.00",
-      status: "Active" 
-    },
-    { 
-      id: "CUST-004", 
-      name: "Global Tech", 
-      contactName: "Sarah Williams",
-      email: "sarah@globaltech.com", 
-      phone: "(555) 789-0123", 
-      openInvoices: 3,
-      balance: "$5,875.25",
-      status: "Active" 
-    },
-    { 
-      id: "CUST-005", 
-      name: "Acme Inc", 
-      contactName: "Michael Brown",
-      email: "michael@acmeinc.com", 
-      phone: "(555) 234-5678", 
-      openInvoices: 0,
-      balance: "$0.00",
-      status: "Inactive" 
-    },
-  ];
+  const { currentCompany, updateCompany } = useCompany();
+  const [searchText, setSearchText] = useState("");
+  
+  // Filter customers based on search text
+  const filteredCustomers = currentCompany.customers.filter(customer => 
+    customer.name.toLowerCase().includes(searchText.toLowerCase()) ||
+    customer.contactName.toLowerCase().includes(searchText.toLowerCase()) ||
+    customer.email.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   const handleAddCustomer = () => {
     // Display a create customer modal
@@ -74,21 +31,21 @@ const Customers: React.FC = () => {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium mb-1">Company Name</label>
-              <input type="text" class="w-full p-2 border rounded-md" placeholder="Company name" />
+              <input type="text" id="customer-name" class="w-full p-2 border rounded-md" placeholder="Company name" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-1">Contact Name</label>
-              <input type="text" class="w-full p-2 border rounded-md" placeholder="Full name" />
+              <input type="text" id="contact-name" class="w-full p-2 border rounded-md" placeholder="Full name" />
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium mb-1">Email</label>
-              <input type="email" class="w-full p-2 border rounded-md" placeholder="Email address" />
+              <input type="email" id="customer-email" class="w-full p-2 border rounded-md" placeholder="Email address" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-1">Phone</label>
-              <input type="tel" class="w-full p-2 border rounded-md" placeholder="Phone number" />
+              <input type="tel" id="customer-phone" class="w-full p-2 border rounded-md" placeholder="Phone number" />
             </div>
           </div>
           <div>
@@ -131,6 +88,28 @@ const Customers: React.FC = () => {
     });
     
     document.getElementById('save-create')?.addEventListener('click', () => {
+      const newCustomerName = (document.getElementById('customer-name') as HTMLInputElement)?.value || "New Customer";
+      const newContactName = (document.getElementById('contact-name') as HTMLInputElement)?.value || "Contact";
+      const newEmail = (document.getElementById('customer-email') as HTMLInputElement)?.value || "email@example.com";
+      const newPhone = (document.getElementById('customer-phone') as HTMLInputElement)?.value || "(555) 123-4567";
+      
+      // Create new customer
+      const newCustomer = {
+        id: `CUST-${Date.now().toString().substring(8)}`, 
+        name: newCustomerName,
+        contactName: newContactName,
+        email: newEmail,
+        phone: newPhone,
+        openInvoices: 0,
+        balance: "$0.00",
+        status: "Active"
+      };
+      
+      // Update company with new customer
+      updateCompany(currentCompany.id, {
+        customers: [...currentCompany.customers, newCustomer]
+      });
+      
       toast.success("New customer created successfully");
       document.body.removeChild(createModal);
     });
@@ -138,7 +117,7 @@ const Customers: React.FC = () => {
 
   const handleViewCustomer = (id: string) => {
     // Find the customer
-    const customer = customers.find(customer => customer.id === id);
+    const customer = currentCompany.customers.find(customer => customer.id === id);
     
     if (!customer) return;
     
@@ -240,7 +219,7 @@ const Customers: React.FC = () => {
         
         <div class="border-t pt-4">
           <h4 class="font-semibold mb-3">Notes</h4>
-          <p class="text-gray-600 text-sm">Large enterprise client with multiple departments. Primary contact is John Smith, but can also reach out to Sarah in Accounting for invoice questions.</p>
+          <p class="text-gray-600 text-sm">Large enterprise client with multiple departments. Primary contact is ${customer.contactName}.</p>
         </div>
         
         <div class="flex flex-wrap justify-end gap-2 mt-6">
@@ -286,7 +265,7 @@ const Customers: React.FC = () => {
 
   const handleEditCustomer = (id: string) => {
     // Find the customer
-    const customer = customers.find(customer => customer.id === id);
+    const customer = currentCompany.customers.find(customer => customer.id === id);
     
     if (!customer) return;
     
@@ -300,21 +279,21 @@ const Customers: React.FC = () => {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium mb-1">Company Name</label>
-              <input type="text" class="w-full p-2 border rounded-md" value="${customer.name}" />
+              <input type="text" id="edit-name" class="w-full p-2 border rounded-md" value="${customer.name}" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-1">Contact Name</label>
-              <input type="text" class="w-full p-2 border rounded-md" value="${customer.contactName}" />
+              <input type="text" id="edit-contact" class="w-full p-2 border rounded-md" value="${customer.contactName}" />
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium mb-1">Email</label>
-              <input type="email" class="w-full p-2 border rounded-md" value="${customer.email}" />
+              <input type="email" id="edit-email" class="w-full p-2 border rounded-md" value="${customer.email}" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-1">Phone</label>
-              <input type="tel" class="w-full p-2 border rounded-md" value="${customer.phone}" />
+              <input type="tel" id="edit-phone" class="w-full p-2 border rounded-md" value="${customer.phone}" />
             </div>
           </div>
           <div>
@@ -340,14 +319,14 @@ const Customers: React.FC = () => {
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Status</label>
-            <select class="w-full p-2 border rounded-md">
-              <option value="active" ${customer.status === 'Active' ? 'selected' : ''}>Active</option>
-              <option value="inactive" ${customer.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+            <select id="edit-status" class="w-full p-2 border rounded-md">
+              <option value="Active" ${customer.status === 'Active' ? 'selected' : ''}>Active</option>
+              <option value="Inactive" ${customer.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
             </select>
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Notes</label>
-            <textarea class="w-full p-2 border rounded-md" rows="2">Large enterprise client with multiple departments. Primary contact is John Smith, but can also reach out to Sarah in Accounting for invoice questions.</textarea>
+            <textarea class="w-full p-2 border rounded-md" rows="2">Large enterprise client with multiple departments. Primary contact is ${customer.contactName}, but can also reach out to Sarah in Accounting for invoice questions.</textarea>
           </div>
         </div>
         <div class="flex justify-end space-x-2">
@@ -364,7 +343,29 @@ const Customers: React.FC = () => {
     });
     
     document.getElementById('save-edit')?.addEventListener('click', () => {
-      toast.success(`Customer ${customer.name} updated successfully`);
+      const updatedName = (document.getElementById('edit-name') as HTMLInputElement)?.value;
+      const updatedContact = (document.getElementById('edit-contact') as HTMLInputElement)?.value;
+      const updatedEmail = (document.getElementById('edit-email') as HTMLInputElement)?.value;
+      const updatedPhone = (document.getElementById('edit-phone') as HTMLInputElement)?.value;
+      const updatedStatus = (document.getElementById('edit-status') as HTMLSelectElement)?.value;
+      
+      // Update the customer in the company
+      const updatedCustomers = currentCompany.customers.map(c => 
+        c.id === id ? {
+          ...c,
+          name: updatedName || c.name,
+          contactName: updatedContact || c.contactName,
+          email: updatedEmail || c.email,
+          phone: updatedPhone || c.phone,
+          status: updatedStatus || c.status
+        } : c
+      );
+      
+      updateCompany(currentCompany.id, {
+        customers: updatedCustomers
+      });
+      
+      toast.success(`Customer ${updatedName} updated successfully`);
       document.body.removeChild(editModal);
     });
   };
@@ -415,7 +416,7 @@ const Customers: React.FC = () => {
 
   const handleStatement = (id: string) => {
     // Find the customer
-    const customer = customers.find(customer => customer.id === id);
+    const customer = currentCompany.customers.find(customer => customer.id === id);
     
     if (!customer) return;
     
@@ -427,12 +428,21 @@ const Customers: React.FC = () => {
     }, 1500);
   };
 
+  // Calculate stats for the current company
+  const activeCustomers = currentCompany.customers.filter(c => c.status === "Active").length;
+  const inactiveCustomers = currentCompany.customers.filter(c => c.status === "Inactive").length;
+  const customersWithInvoices = currentCompany.customers.filter(c => c.openInvoices > 0).length;
+  const totalReceivables = currentCompany.customers.reduce((sum, customer) => {
+    const balance = parseFloat(customer.balance.replace('$', '').replace(',', ''));
+    return sum + balance;
+  }, 0);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Customers</h1>
-          <p className="text-muted-foreground">Manage your customer relationships</p>
+          <p className="text-muted-foreground">Manage {currentCompany.name}'s customer relationships</p>
         </div>
         <Button 
           className="flex items-center gap-2"
@@ -446,25 +456,25 @@ const Customers: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl">42</CardTitle>
+            <CardTitle className="text-2xl">{currentCompany.customers.length}</CardTitle>
             <CardDescription>Total Customers</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-primary">28</CardTitle>
+            <CardTitle className="text-2xl text-primary">{activeCustomers}</CardTitle>
             <CardDescription>Active Customers</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-amber-500">12</CardTitle>
+            <CardTitle className="text-2xl text-amber-500">{customersWithInvoices}</CardTitle>
             <CardDescription>With Open Invoices</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-green-500">$42,890</CardTitle>
+            <CardTitle className="text-2xl text-green-500">${totalReceivables.toLocaleString()}</CardTitle>
             <CardDescription>Total Receivables</CardDescription>
           </CardHeader>
         </Card>
@@ -477,6 +487,8 @@ const Customers: React.FC = () => {
             type="search"
             placeholder="Search customers..."
             className="w-full sm:w-[300px] pl-8"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -488,7 +500,7 @@ const Customers: React.FC = () => {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Customer List</CardTitle>
-          <CardDescription>Manage your customers and their information</CardDescription>
+          <CardDescription>Manage {currentCompany.name}'s customers</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -505,56 +517,64 @@ const Customers: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {customers.map((customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell>{customer.contactName}</TableCell>
-                  <TableCell>{customer.email}</TableCell>
-                  <TableCell>{customer.phone}</TableCell>
-                  <TableCell>{customer.openInvoices}</TableCell>
-                  <TableCell>{customer.balance}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      customer.status === "Active" 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-gray-100 text-gray-800"
-                    }`}>
-                      {customer.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => handleViewCustomer(customer.id)}
-                      >
-                        <User size={16} />
-                        <span className="sr-only">View</span>
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => handleSendEmail(customer.email)}
-                      >
-                        <Mail size={16} />
-                        <span className="sr-only">Email</span>
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => handleStatement(customer.id)}
-                      >
-                        <FileText size={16} />
-                        <span className="sr-only">Statement</span>
-                      </Button>
-                    </div>
+              {filteredCustomers.length > 0 ? (
+                filteredCustomers.map((customer) => (
+                  <TableRow key={customer.id}>
+                    <TableCell className="font-medium">{customer.name}</TableCell>
+                    <TableCell>{customer.contactName}</TableCell>
+                    <TableCell>{customer.email}</TableCell>
+                    <TableCell>{customer.phone}</TableCell>
+                    <TableCell>{customer.openInvoices}</TableCell>
+                    <TableCell>{customer.balance}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        customer.status === "Active" 
+                          ? "bg-green-100 text-green-800" 
+                          : "bg-gray-100 text-gray-800"
+                      }`}>
+                        {customer.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleViewCustomer(customer.id)}
+                        >
+                          <User size={16} />
+                          <span className="sr-only">View</span>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleSendEmail(customer.email)}
+                        >
+                          <Mail size={16} />
+                          <span className="sr-only">Email</span>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleStatement(customer.id)}
+                        >
+                          <FileText size={16} />
+                          <span className="sr-only">Statement</span>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                    {searchText ? "No customers found matching your search" : "No customers found. Add a customer to get started."}
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

@@ -1,21 +1,37 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Check, Building, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export function CompanySettings() {
+  const { currentCompany, updateCompany } = useCompany();
   const [formValues, setFormValues] = useState({
-    companyName: "Acme Inc.",
-    address: "123 Main St, New York, NY 10001",
-    phone: "(555) 987-6543",
-    email: "info@acmeinc.com",
-    website: "https://acmeinc.com",
-    taxId: "12-3456789"
+    companyName: "",
+    address: "",
+    phone: "",
+    email: "",
+    website: "",
+    taxId: "",
+    industry: ""
   });
+
+  // Update form values when currentCompany changes
+  useEffect(() => {
+    setFormValues({
+      companyName: currentCompany.name,
+      address: currentCompany.address,
+      phone: currentCompany.phone,
+      email: currentCompany.email,
+      website: currentCompany.website,
+      taxId: currentCompany.taxId,
+      industry: currentCompany.industry || ""
+    });
+  }, [currentCompany]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -23,6 +39,17 @@ export function CompanySettings() {
   };
 
   const handleSaveChanges = () => {
+    // Update company data
+    updateCompany(currentCompany.id, {
+      name: formValues.companyName,
+      address: formValues.address,
+      phone: formValues.phone,
+      email: formValues.email,
+      website: formValues.website,
+      taxId: formValues.taxId,
+      industry: formValues.industry
+    });
+    
     toast.success("Company information saved successfully");
   };
 
@@ -68,6 +95,14 @@ export function CompanySettings() {
               <Input 
                 id="phone" 
                 value={formValues.phone}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="industry">Industry</Label>
+              <Input 
+                id="industry" 
+                value={formValues.industry}
                 onChange={handleInputChange}
               />
             </div>

@@ -18,33 +18,36 @@ import Projects from "./pages/Projects";
 import Taxes from "./pages/Taxes";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import { CompanyProvider } from "./contexts/CompanyContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/invoices" element={<Invoices />} />
-            <Route path="/expenses" element={<Expenses />} />
-            <Route path="/banking" element={<Banking />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/journal" element={<Journal />} />
-            <Route path="/inventory" element={<Inventory />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/sales" element={<Sales />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/taxes" element={<Taxes />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <CompanyProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/invoices" element={<Invoices />} />
+              <Route path="/expenses" element={<Expenses />} />
+              <Route path="/banking" element={<Banking />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/journal" element={<Journal />} />
+              <Route path="/inventory" element={<Inventory />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/sales" element={<Sales />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/taxes" element={<Taxes />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </CompanyProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
