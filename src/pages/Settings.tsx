@@ -1,13 +1,32 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronRight, User, Building, CreditCard, Lock, Globe, Bell, Mail, FileText, Users, Calendar } from "lucide-react";
+import { Check, ChevronRight, User, Building, CreditCard, Lock, Globe, Bell, Mail, FileText, Users, Calendar, Moon, Sun, Smartphone, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { useMediaQuery } from "@/hooks/use-mobile";
 
 const Settings: React.FC = () => {
   // State for form values and switches
@@ -21,8 +40,21 @@ const Settings: React.FC = () => {
   const [notifications, setNotifications] = useState(true);
   const [twoFactor, setTwoFactor] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-
+  const [twoFactorSetupOpen, setTwoFactorSetupOpen] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [qrCodeUrl] = useState("https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/Lovable:john@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Lovable");
+  
   const navigate = useNavigate();
+  const isMobile = useMediaQuery("(max-width: 640px)");
+
+  // Check if dark mode is already enabled in localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -37,10 +69,138 @@ const Settings: React.FC = () => {
     toast.info("Changes canceled");
   };
 
-  const handleSettingClick = (category: string, setting: string) => {
-    toast.info(`Navigating to ${category} - ${setting}`);
-    // In a real app, this would navigate to the specific setting page
+  const handleDarkModeToggle = (checked: boolean) => {
+    setDarkMode(checked);
+    if (checked) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+      toast.success("Dark mode activated");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+      toast.success("Light mode activated");
+    }
   };
+
+  const handleTwoFactorToggle = (checked: boolean) => {
+    if (checked) {
+      // Open 2FA setup flow when enabling
+      setTwoFactorSetupOpen(true);
+    } else {
+      // Directly disable 2FA
+      setTwoFactor(false);
+      toast.info("Two-factor authentication disabled");
+    }
+  };
+
+  const completeTwoFactorSetup = () => {
+    // In a real app, we would validate the verification code here
+    if (verificationCode.length === 6) {
+      setTwoFactor(true);
+      setTwoFactorSetupOpen(false);
+      toast.success("Two-factor authentication enabled");
+    } else {
+      toast.error("Please enter a valid 6-digit verification code");
+    }
+  };
+
+  const cancelTwoFactorSetup = () => {
+    setTwoFactorSetupOpen(false);
+    setVerificationCode("");
+    // Don't enable 2FA if setup was canceled
+    setTwoFactor(false);
+  };
+
+  const handleSettingClick = (category: string, setting: string) => {
+    // Simulate navigation to specific setting sections
+    let message = `Navigating to ${category} - ${setting}`;
+    
+    // Custom handling for specific settings
+    switch (setting) {
+      case "Security":
+        toast.info("Opening security settings");
+        // In a real app, we would navigate to security page or open security modal
+        break;
+      case "Notifications":
+        toast.info("Opening notification preferences");
+        // In a real app, we would navigate to notifications page or open notifications modal
+        break;
+      case "Connected Apps":
+        toast.info("Viewing connected applications");
+        // In a real app, we would show connected apps
+        break;
+      default:
+        toast.info(message);
+    }
+  };
+
+  const TwoFactorSetupDialog = () => (
+    <Dialog open={twoFactorSetupOpen && !isMobile} onOpenChange={setTwoFactorSetupOpen}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Set up Two-Factor Authentication</DialogTitle>
+          <DialogDescription>
+            Scan the QR code with your authenticator app, then enter the verification code below.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col items-center justify-center py-4">
+          <img 
+            src={qrCodeUrl} 
+            alt="QR Code for 2FA" 
+            className="w-48 h-48 mb-4 border rounded"
+          />
+          <p className="text-sm mb-4">Or enter this code manually: <code className="bg-muted p-1 rounded">JBSWY3DPEHPK3PXP</code></p>
+          <Input
+            id="verificationCode"
+            placeholder="Enter 6-digit code"
+            className="w-full"
+            value={verificationCode}
+            onChange={(e) => setVerificationCode(e.target.value)}
+            maxLength={6}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={cancelTwoFactorSetup}>Cancel</Button>
+          <Button onClick={completeTwoFactorSetup}>Verify</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const TwoFactorSetupDrawer = () => (
+    <Drawer open={twoFactorSetupOpen && isMobile} onOpenChange={setTwoFactorSetupOpen}>
+      <DrawerContent>
+        <DrawerHeader className="text-left">
+          <DrawerTitle>Set up Two-Factor Authentication</DrawerTitle>
+          <DrawerDescription>
+            Scan the QR code with your authenticator app, then enter the verification code below.
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="px-4 flex flex-col items-center justify-center py-4">
+          <img 
+            src={qrCodeUrl} 
+            alt="QR Code for 2FA" 
+            className="w-48 h-48 mb-4 border rounded"
+          />
+          <p className="text-sm mb-4">Or enter this code manually: <code className="bg-muted p-1 rounded">JBSWY3DPEHPK3PXP</code></p>
+          <Input
+            id="verificationCode"
+            placeholder="Enter 6-digit code"
+            className="w-full"
+            value={verificationCode}
+            onChange={(e) => setVerificationCode(e.target.value)}
+            maxLength={6}
+          />
+        </div>
+        <DrawerFooter className="pt-2">
+          <Button onClick={completeTwoFactorSetup}>Verify</Button>
+          <DrawerClose asChild>
+            <Button variant="outline" onClick={cancelTwoFactorSetup}>Cancel</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
 
   const settingsCategories = [
     {
@@ -142,30 +302,26 @@ const Settings: React.FC = () => {
                   <Label className="text-base">Two-Factor Authentication</Label>
                   <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
                 </div>
-                <Switch 
-                  checked={twoFactor} 
-                  onCheckedChange={(checked) => {
-                    setTwoFactor(checked);
-                    if (checked) {
-                      toast.success("Two-factor authentication enabled");
-                    } else {
-                      toast.info("Two-factor authentication disabled");
-                    }
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  {twoFactor && <Shield className="h-5 w-5 text-green-500" />}
+                  <Switch 
+                    checked={twoFactor} 
+                    onCheckedChange={handleTwoFactorToggle}
+                  />
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-base">Dark Mode</Label>
                   <p className="text-sm text-muted-foreground">Switch between light and dark mode</p>
                 </div>
-                <Switch 
-                  checked={darkMode} 
-                  onCheckedChange={(checked) => {
-                    setDarkMode(checked);
-                    toast.info(`${checked ? "Dark" : "Light"} mode activated`);
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  {darkMode ? <Moon className="h-5 w-5 text-blue-500" /> : <Sun className="h-5 w-5 text-amber-500" />}
+                  <Switch 
+                    checked={darkMode} 
+                    onCheckedChange={handleDarkModeToggle}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -222,6 +378,10 @@ const Settings: React.FC = () => {
           </Card>
         ))}
       </div>
+
+      {/* Two-factor authentication setup UI */}
+      {TwoFactorSetupDialog()}
+      {TwoFactorSetupDrawer()}
     </div>
   );
 };
