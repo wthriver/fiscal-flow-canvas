@@ -107,7 +107,7 @@ export function UsersPermissionsSettings() {
     };
     
     setUsers([...users, newUser]);
-    setInviteDialogOpen(false);
+    setIsInviteDialogOpen(false);
     setInviteEmail("");
     setInviteRole("Viewer");
     
