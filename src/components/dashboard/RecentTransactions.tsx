@@ -15,6 +15,7 @@ import {
   Clock 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCompany } from "@/contexts/CompanyContext";
 
 type TransactionType = "income" | "expense";
 type TransactionStatus = "completed" | "pending" | "failed";
@@ -28,49 +29,6 @@ interface Transaction {
   status: TransactionStatus;
 }
 
-const transactions: Transaction[] = [
-  {
-    id: "tr1",
-    type: "income",
-    name: "Client Payment - ABC Corp",
-    date: "Apr 10, 2025",
-    amount: 1200,
-    status: "completed",
-  },
-  {
-    id: "tr2",
-    type: "expense",
-    name: "Software Subscription",
-    date: "Apr 8, 2025",
-    amount: 49.99,
-    status: "completed",
-  },
-  {
-    id: "tr3",
-    type: "income",
-    name: "Client Payment - XYZ Ltd",
-    date: "Apr 7, 2025",
-    amount: 850,
-    status: "pending",
-  },
-  {
-    id: "tr4",
-    type: "expense",
-    name: "Office Supplies",
-    date: "Apr 5, 2025",
-    amount: 125.50,
-    status: "completed",
-  },
-  {
-    id: "tr5",
-    type: "expense",
-    name: "Electricity Bill",
-    date: "Apr 3, 2025",
-    amount: 85.75,
-    status: "failed",
-  },
-];
-
 const getStatusIcon = (status: TransactionStatus) => {
   switch (status) {
     case "completed":
@@ -83,54 +41,106 @@ const getStatusIcon = (status: TransactionStatus) => {
 };
 
 const RecentTransactions: React.FC = () => {
+  const { currentCompany } = useCompany();
+  
+  // Generate transactions based on company invoices and expenses
+  const generateTransactions = (): Transaction[] => {
+    const transactions: Transaction[] = [];
+    
+    // Add transactions from invoices
+    currentCompany.invoices.forEach(invoice => {
+      transactions.push({
+        id: `tr-${invoice.id}`,
+        type: "income",
+        name: `Client Payment - ${invoice.customer}`,
+        date: new Date(invoice.date).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        }),
+        amount: parseFloat(invoice.amount.replace(/[$,]/g, '')),
+        status: invoice.status === "Paid" ? "completed" : 
+                invoice.status === "Pending" || invoice.status === "Outstanding" ? "pending" : "failed"
+      });
+    });
+    
+    // Add transactions from expenses
+    currentCompany.expenses.forEach(expense => {
+      transactions.push({
+        id: `te-${expense.id}`,
+        type: "expense",
+        name: `${expense.category} - ${expense.vendor}`,
+        date: new Date(expense.date).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        }),
+        amount: parseFloat(expense.amount.replace(/[$,]/g, '')),
+        status: expense.status === "Paid" ? "completed" : 
+                expense.status === "Pending" ? "pending" : "failed"
+      });
+    });
+    
+    // Sort by date (most recent first) and limit to 5
+    return transactions
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  };
+
+  const transactions = generateTransactions();
+
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle>Recent Transactions</CardTitle>
-        <CardDescription>Your latest financial activity</CardDescription>
+        <CardDescription>{currentCompany.name}'s latest financial activity</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {transactions.map((transaction) => (
-            <div
-              key={transaction.id}
-              className="flex items-center justify-between py-2"
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center",
-                    transaction.type === "income"
-                      ? "bg-finance-green-100 text-finance-green-600"
-                      : "bg-finance-red-100 text-finance-red-600"
-                  )}
-                >
-                  {transaction.type === "income" ? (
-                    <ArrowDownLeft size={16} />
-                  ) : (
-                    <ArrowUpRight size={16} />
-                  )}
+          {transactions.length > 0 ? (
+            transactions.map((transaction) => (
+              <div
+                key={transaction.id}
+                className="flex items-center justify-between py-2"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center",
+                      transaction.type === "income"
+                        ? "bg-finance-green-100 text-finance-green-600"
+                        : "bg-finance-red-100 text-finance-red-600"
+                    )}
+                  >
+                    {transaction.type === "income" ? (
+                      <ArrowDownLeft size={16} />
+                    ) : (
+                      <ArrowUpRight size={16} />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{transaction.name}</p>
+                    <p className="text-xs text-muted-foreground">{transaction.date}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-sm">{transaction.name}</p>
-                  <p className="text-xs text-muted-foreground">{transaction.date}</p>
+                <div className="flex items-center gap-3">
+                  <span
+                    className={cn(
+                      "font-semibold",
+                      transaction.type === "income"
+                        ? "text-finance-green-600"
+                        : "text-finance-red-600"
+                    )}
+                  >
+                    {transaction.type === "income" ? "+" : "-"}${transaction.amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  </span>
+                  {getStatusIcon(transaction.status)}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span
-                  className={cn(
-                    "font-semibold",
-                    transaction.type === "income"
-                      ? "text-finance-green-600"
-                      : "text-finance-red-600"
-                  )}
-                >
-                  {transaction.type === "income" ? "+" : "-"}${transaction.amount.toLocaleString()}
-                </span>
-                {getStatusIcon(transaction.status)}
-              </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <div className="py-4 text-center text-muted-foreground">No recent transactions</div>
+          )}
         </div>
       </CardContent>
     </Card>

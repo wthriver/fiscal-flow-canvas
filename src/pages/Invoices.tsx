@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Search } from "lucide-react";
@@ -13,23 +13,24 @@ import {
   ActionDropdown 
 } from "@/components/common/ActionButtons";
 import { handleCreateItem } from "@/utils/navigationUtils";
+import { useCompany } from "@/contexts/CompanyContext";
 
 const Invoices: React.FC = () => {
-  // Sample invoice data
-  const invoices = [
-    { id: "INV-001", customer: "ABC Corporation", date: "2025-04-10", amount: "$1,250.00", status: "Paid" },
-    { id: "INV-002", customer: "XYZ Limited", date: "2025-04-08", amount: "$3,450.00", status: "Pending" },
-    { id: "INV-003", customer: "123 Industries", date: "2025-04-05", amount: "$780.00", status: "Overdue" },
-    { id: "INV-004", customer: "Global Tech", date: "2025-04-01", amount: "$2,100.00", status: "Paid" },
-    { id: "INV-005", customer: "Acme Inc", date: "2025-03-28", amount: "$1,870.00", status: "Pending" },
-  ];
+  const { currentCompany } = useCompany();
+  const [searchText, setSearchText] = useState("");
+  
+  // Filter invoices based on search text
+  const filteredInvoices = currentCompany.invoices.filter(invoice => 
+    invoice.id.toLowerCase().includes(searchText.toLowerCase()) ||
+    invoice.customer.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Invoices</h1>
-          <p className="text-muted-foreground">Manage your customer invoices and payments</p>
+          <p className="text-muted-foreground">Manage {currentCompany.name}'s customer invoices and payments</p>
         </div>
         <Button 
           className="flex items-center gap-2"
@@ -47,6 +48,8 @@ const Invoices: React.FC = () => {
             type="search"
             placeholder="Search invoices..."
             className="w-full sm:w-[300px] pl-8"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -59,7 +62,9 @@ const Invoices: React.FC = () => {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Recent Invoices</CardTitle>
-          <CardDescription>You have {invoices.length} total invoices</CardDescription>
+          <CardDescription>
+            {currentCompany.name} has {currentCompany.invoices.length} total invoices
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -68,37 +73,47 @@ const Invoices: React.FC = () => {
                 <TableHead>Invoice #</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Date</TableHead>
+                <TableHead>Due Date</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.id}</TableCell>
-                  <TableCell>{invoice.customer}</TableCell>
-                  <TableCell>{invoice.date}</TableCell>
-                  <TableCell>{invoice.amount}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      invoice.status === "Paid" 
-                        ? "bg-green-100 text-green-800" 
-                        : invoice.status === "Pending" 
-                          ? "bg-yellow-100 text-yellow-800" 
-                          : "bg-red-100 text-red-800"
-                    }`}>
-                      {invoice.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end items-center gap-1">
-                      <ViewButton id={invoice.id} type="Invoice" />
-                      <ActionDropdown id={invoice.id} type="Invoice" />
-                    </div>
+              {filteredInvoices.length > 0 ? (
+                filteredInvoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell className="font-medium">{invoice.id}</TableCell>
+                    <TableCell>{invoice.customer}</TableCell>
+                    <TableCell>{invoice.date}</TableCell>
+                    <TableCell>{invoice.dueDate}</TableCell>
+                    <TableCell>{invoice.amount}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        invoice.status === "Paid" 
+                          ? "bg-green-100 text-green-800" 
+                          : invoice.status === "Pending" || invoice.status === "Outstanding"
+                            ? "bg-yellow-100 text-yellow-800" 
+                            : "bg-red-100 text-red-800"
+                      }`}>
+                        {invoice.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end items-center gap-1">
+                        <ViewButton id={invoice.id} type="Invoice" />
+                        <ActionDropdown id={invoice.id} type="Invoice" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                    {searchText ? "No invoices found matching your search" : "No invoices found for this company."}
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

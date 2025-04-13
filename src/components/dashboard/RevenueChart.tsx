@@ -2,26 +2,8 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, TooltipProps } from "recharts";
-import { format, subMonths } from "date-fns";
-
-// Generate some sample data for the last 6 months
-const generateData = () => {
-  const result = [];
-  const currentDate = new Date();
-  
-  for (let i = 5; i >= 0; i--) {
-    const date = subMonths(currentDate, i);
-    result.push({
-      month: format(date, "MMM"),
-      income: Math.floor(Math.random() * 8000) + 15000,
-      expenses: Math.floor(Math.random() * 5000) + 8000,
-    });
-  }
-  
-  return result;
-};
-
-const data = generateData();
+import { format, subMonths, parseISO } from "date-fns";
+import { useCompany } from "@/contexts/CompanyContext";
 
 const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
   if (active && payload && payload.length) {
@@ -42,11 +24,37 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>)
 };
 
 const RevenueChart: React.FC = () => {
+  const { currentCompany } = useCompany();
+  
+  // Generate chart data based on company revenue
+  const generateData = () => {
+    const result = [];
+    const currentDate = new Date();
+    const baseIncome = currentCompany.revenue.current / 6; // Distribute over 6 months
+    const baseExpense = baseIncome * (1 - (currentCompany.profitMargin.value / 100)); // Calculate expenses based on profit margin
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = subMonths(currentDate, i);
+      // Create some variability in the data
+      const variabilityFactor = 0.8 + Math.random() * 0.4; // Between 0.8 and 1.2
+      
+      result.push({
+        month: format(date, "MMM"),
+        income: Math.round(baseIncome * variabilityFactor),
+        expenses: Math.round(baseExpense * variabilityFactor),
+      });
+    }
+    
+    return result;
+  };
+
+  const data = generateData();
+
   return (
     <Card className="col-span-2">
       <CardHeader className="pb-2">
         <CardTitle>Revenue & Expenses</CardTitle>
-        <CardDescription>Financial performance over the last 6 months</CardDescription>
+        <CardDescription>{currentCompany.name}'s financial performance over the last 6 months</CardDescription>
       </CardHeader>
       <CardContent className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
