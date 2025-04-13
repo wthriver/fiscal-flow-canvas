@@ -3,14 +3,14 @@ import React, { createContext, useContext, useState } from "react";
 import { toast } from "sonner";
 
 // Define types for company data
-type Status = "Active" | "Inactive";
-type InvoiceStatus = "Paid" | "Pending" | "Overdue" | "Outstanding";
-type ExpenseStatus = "Approved" | "Pending" | "Rejected" | "Paid";
-type TransactionStatus = "completed" | "pending" | "failed";
-type TransactionType = "income" | "expense";
-type InventoryStatus = "In Stock" | "Low Stock" | "Out of Stock" | "Service Item";
+export type Status = "Active" | "Inactive";
+export type InvoiceStatus = "Paid" | "Pending" | "Overdue" | "Outstanding";
+export type ExpenseStatus = "Approved" | "Pending" | "Rejected" | "Paid";
+export type TransactionStatus = "completed" | "pending" | "failed";
+export type TransactionType = "income" | "expense";
+export type InventoryStatus = "In Stock" | "Low Stock" | "Out of Stock" | "Service Item";
 
-interface Customer {
+export interface Customer {
   id: string;
   name: string;
   contactName: string;
@@ -21,7 +21,7 @@ interface Customer {
   status: Status;
 }
 
-interface Invoice {
+export interface Invoice {
   id: string;
   customer: string;
   date: string;
@@ -30,7 +30,7 @@ interface Invoice {
   status: InvoiceStatus;
 }
 
-interface Expense {
+export interface Expense {
   id: string;
   category: string;
   vendor: string;
@@ -39,7 +39,7 @@ interface Expense {
   status: ExpenseStatus;
 }
 
-interface Account {
+export interface Account {
   id: string;
   name: string;
   institution: string;
@@ -47,7 +47,7 @@ interface Account {
   lastSync: string;
 }
 
-interface Transaction {
+export interface Transaction {
   id: string;
   account: string;
   date: string;
@@ -57,7 +57,7 @@ interface Transaction {
   reconciled: boolean;
 }
 
-interface InventoryItem {
+export interface InventoryItem {
   id: string;
   name: string;
   sku: string;
@@ -69,7 +69,7 @@ interface InventoryItem {
   status: InventoryStatus;
 }
 
-interface Project {
+export interface Project {
   id: string;
   name: string;
   client: string;
@@ -81,20 +81,24 @@ interface Project {
   endDate: string;
 }
 
-interface Company {
+export interface Company {
   id: string;
   name: string;
   industry: string;
   address: string;
   email: string;
   phone: string;
+  website: string;
+  taxId: string;
   logo: string;
   revenue: {
     current: number;
+    lastMonth: number;
     percentChange: number;
   };
   outstandingInvoices: {
     amount: number;
+    count: number;
     percentChange: number;
   };
   profitMargin: {
@@ -112,13 +116,14 @@ interface Company {
   transactions: Transaction[];
   inventory: InventoryItem[];
   projects: Project[];
+  fiscalYearStart: string;
 }
 
 // Create a context for company data
-interface CompanyContextType {
+export interface CompanyContextType {
   companies: Company[];
   currentCompany: Company;
-  setCurrentCompany: (company: Company) => void;
+  switchCompany: (id: string) => void;
   addCompany: (company: Partial<Company>) => void;
   updateCompany: (id: string, updates: Partial<Company>) => void;
   deleteCompany: (id: string) => void;
@@ -128,8 +133,34 @@ const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 // Sample data
 const generateCompanyData = (): Company[] => {
-  // ABC Corporation
-  const abcCustomers = [
+  // Common data generator functions
+  const generateRandomAmount = (min: number, max: number) => {
+    return (Math.random() * (max - min) + min).toFixed(2);
+  };
+
+  const generateRandomDate = (start: Date, end: Date) => {
+    const date = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+    return date.toISOString().split('T')[0];
+  };
+
+  const generateCustomerId = (prefix: string, index: number) => {
+    return `${prefix}CUST-${(index + 1).toString().padStart(3, '0')}`;
+  };
+
+  const generateInvoiceId = (prefix: string, index: number) => {
+    return `${prefix}INV-${(index + 1).toString().padStart(3, '0')}`;
+  };
+
+  const generateExpenseId = (prefix: string, index: number) => {
+    return `${prefix}EXP-${(index + 1).toString().padStart(3, '0')}`;
+  };
+
+  const generateProjectId = (prefix: string, index: number) => {
+    return `${prefix}PRJ-${(index + 1).toString().padStart(3, '0')}`;
+  };
+
+  // Generate ABC Corporation data
+  const abcCustomers: Customer[] = [
     {
       id: "CUST-001",
       name: "Acme Industries",
@@ -138,7 +169,7 @@ const generateCompanyData = (): Company[] => {
       phone: "(555) 123-4567",
       openInvoices: 2,
       balance: "$3,500.00",
-      status: "Active" as Status,
+      status: "Active",
     },
     {
       id: "CUST-002",
@@ -148,7 +179,7 @@ const generateCompanyData = (): Company[] => {
       phone: "(555) 987-6543",
       openInvoices: 1,
       balance: "$1,250.00",
-      status: "Active" as Status,
+      status: "Active",
     },
     {
       id: "CUST-003",
@@ -158,18 +189,59 @@ const generateCompanyData = (): Company[] => {
       phone: "(555) 456-7890",
       openInvoices: 0,
       balance: "$0.00",
-      status: "Inactive" as Status,
+      status: "Inactive",
+    },
+    // Additional customers
+    {
+      id: "CUST-004",
+      name: "Digital Dynamics",
+      contactName: "Emma Wilson",
+      email: "emma@digitaldynamics.com",
+      phone: "(555) 111-2222",
+      openInvoices: 3,
+      balance: "$5,725.00",
+      status: "Active",
+    },
+    {
+      id: "CUST-005",
+      name: "Quantum Computing",
+      contactName: "Alex Chen",
+      email: "alex@quantum.com",
+      phone: "(555) 333-4444",
+      openInvoices: 1,
+      balance: "$2,150.00",
+      status: "Active",
+    },
+    {
+      id: "CUST-006",
+      name: "Sunrise Media Group",
+      contactName: "Sarah Jackson",
+      email: "sarah@sunrisemedia.com",
+      phone: "(555) 555-6666",
+      openInvoices: 0,
+      balance: "$0.00",
+      status: "Inactive",
+    },
+    {
+      id: "CUST-007",
+      name: "Everest Consulting",
+      contactName: "Michael Rodriguez",
+      email: "michael@everestconsult.com",
+      phone: "(555) 777-8888",
+      openInvoices: 2,
+      balance: "$4,300.00",
+      status: "Active",
     },
   ];
 
-  const abcInvoices = [
+  const abcInvoices: Invoice[] = [
     {
       id: "INV-001",
       customer: "Acme Industries",
       date: "2025-03-15",
       dueDate: "2025-04-15",
       amount: "$2,500.00",
-      status: "Outstanding" as InvoiceStatus,
+      status: "Outstanding",
     },
     {
       id: "INV-002",
@@ -177,7 +249,7 @@ const generateCompanyData = (): Company[] => {
       date: "2025-02-20",
       dueDate: "2025-03-20",
       amount: "$1,000.00",
-      status: "Overdue" as InvoiceStatus,
+      status: "Overdue",
     },
     {
       id: "INV-003",
@@ -185,7 +257,7 @@ const generateCompanyData = (): Company[] => {
       date: "2025-03-25",
       dueDate: "2025-04-25",
       amount: "$1,250.00",
-      status: "Pending" as InvoiceStatus,
+      status: "Pending",
     },
     {
       id: "INV-004",
@@ -193,18 +265,67 @@ const generateCompanyData = (): Company[] => {
       date: "2025-02-10",
       dueDate: "2025-03-10",
       amount: "$3,200.00",
-      status: "Paid" as InvoiceStatus,
+      status: "Paid",
+    },
+    // Additional invoices
+    {
+      id: "INV-005",
+      customer: "Digital Dynamics",
+      date: "2025-03-28",
+      dueDate: "2025-04-28",
+      amount: "$2,100.00",
+      status: "Outstanding",
+    },
+    {
+      id: "INV-006",
+      customer: "Digital Dynamics",
+      date: "2025-03-15",
+      dueDate: "2025-04-15",
+      amount: "$1,850.00",
+      status: "Pending",
+    },
+    {
+      id: "INV-007",
+      customer: "Digital Dynamics",
+      date: "2025-02-25",
+      dueDate: "2025-03-25",
+      amount: "$1,775.00",
+      status: "Overdue",
+    },
+    {
+      id: "INV-008",
+      customer: "Quantum Computing",
+      date: "2025-03-20",
+      dueDate: "2025-04-20",
+      amount: "$2,150.00",
+      status: "Pending",
+    },
+    {
+      id: "INV-009",
+      customer: "Everest Consulting",
+      date: "2025-03-10",
+      dueDate: "2025-04-10",
+      amount: "$2,300.00",
+      status: "Outstanding",
+    },
+    {
+      id: "INV-010",
+      customer: "Everest Consulting",
+      date: "2025-02-15",
+      dueDate: "2025-03-15",
+      amount: "$2,000.00",
+      status: "Overdue",
     },
   ];
 
-  const abcExpenses = [
+  const abcExpenses: Expense[] = [
     {
       id: "EXP-001",
       category: "Office Supplies",
       vendor: "Office Depot",
       date: "2025-03-10",
       amount: "$156.78",
-      status: "Paid" as ExpenseStatus,
+      status: "Paid",
     },
     {
       id: "EXP-002",
@@ -212,7 +333,7 @@ const generateCompanyData = (): Company[] => {
       vendor: "Electric Company",
       date: "2025-03-15",
       amount: "$235.67",
-      status: "Approved" as ExpenseStatus,
+      status: "Approved",
     },
     {
       id: "EXP-003",
@@ -220,7 +341,48 @@ const generateCompanyData = (): Company[] => {
       vendor: "Adobe",
       date: "2025-03-20",
       amount: "$49.99",
-      status: "Pending" as ExpenseStatus,
+      status: "Pending",
+    },
+    // Additional expenses
+    {
+      id: "EXP-004",
+      category: "Rent",
+      vendor: "Parkview Properties",
+      date: "2025-04-01",
+      amount: "$3,500.00",
+      status: "Paid",
+    },
+    {
+      id: "EXP-005",
+      category: "Internet",
+      vendor: "Spectrum Business",
+      date: "2025-03-25",
+      amount: "$189.99",
+      status: "Approved",
+    },
+    {
+      id: "EXP-006",
+      category: "Marketing",
+      vendor: "Digital Ads Inc",
+      date: "2025-03-18",
+      amount: "$750.00",
+      status: "Paid",
+    },
+    {
+      id: "EXP-007",
+      category: "Travel",
+      vendor: "Delta Airlines",
+      date: "2025-04-05",
+      amount: "$875.45",
+      status: "Pending",
+    },
+    {
+      id: "EXP-008",
+      category: "Meals",
+      vendor: "Client Dinner",
+      date: "2025-03-30",
+      amount: "$245.87",
+      status: "Approved",
     },
   ];
 
@@ -245,58 +407,25 @@ const generateCompanyData = (): Company[] => {
       institution: "Capital Finance",
       balance: "-$4,325.18",
       lastSync: "Yesterday at 11:45 PM",
-    }
-  ];
-
-  const abcTransactions = [
+    },
+    // Additional accounts
     {
-      id: "TRN-001",
-      account: "Business Checking",
-      date: "2025-04-11",
-      description: "Client Payment - XYZ Corp",
-      amount: "+$5,000.00",
-      category: "Income",
-      reconciled: true,
+      id: "acc-4",
+      name: "Payroll Account",
+      institution: "First National Bank",
+      balance: "$18,750.00",
+      lastSync: "Today at 9:30 AM",
     },
     {
-      id: "TRN-002",
-      account: "Business Checking",
-      date: "2025-04-10",
-      description: "Office Supplies",
-      amount: "-$156.78",
-      category: "Office Expenses",
-      reconciled: true,
-    },
-    {
-      id: "TRN-003",
-      account: "Credit Card",
-      date: "2025-04-10",
-      description: "Software Subscription",
-      amount: "-$49.99",
-      category: "Software",
-      reconciled: false,
-    },
-    {
-      id: "TRN-004",
-      account: "Business Checking",
-      date: "2025-04-09",
-      description: "Utilities - Electricity",
-      amount: "-$235.67",
-      category: "Utilities",
-      reconciled: true,
-    },
-    {
-      id: "TRN-005",
-      account: "Business Savings",
-      date: "2025-04-08",
-      description: "Transfer from Checking",
-      amount: "+$2,000.00",
-      category: "Transfer",
-      reconciled: true,
+      id: "acc-5",
+      name: "Tax Savings",
+      institution: "Citizens Trust",
+      balance: "$12,500.00",
+      lastSync: "2 days ago",
     },
   ];
 
-  const abcInventory = [
+  const abcInventory: InventoryItem[] = [
     {
       id: "INV-001",
       name: "Widget Pro",
@@ -306,7 +435,7 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$15.00",
       sellPrice: "$29.99",
       category: "Hardware",
-      status: "In Stock" as InventoryStatus,
+      status: "In Stock",
     },
     {
       id: "INV-002",
@@ -317,7 +446,7 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$25.00",
       sellPrice: "$49.99",
       category: "Electronics",
-      status: "In Stock" as InventoryStatus,
+      status: "In Stock",
     },
     {
       id: "INV-003",
@@ -328,7 +457,7 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$35.00",
       sellPrice: "$75.00",
       category: "Tools",
-      status: "Low Stock" as InventoryStatus,
+      status: "Low Stock",
     },
     {
       id: "INV-004",
@@ -339,7 +468,7 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$12.50",
       sellPrice: "$24.99",
       category: "Hardware",
-      status: "In Stock" as InventoryStatus,
+      status: "In Stock",
     },
     {
       id: "INV-005",
@@ -350,7 +479,41 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$0.00",
       sellPrice: "$199.99",
       category: "Services",
-      status: "Service Item" as InventoryStatus,
+      status: "Service Item",
+    },
+    // Additional inventory items
+    {
+      id: "INV-006",
+      name: "Advanced Sensor",
+      sku: "ADV-SNS-006",
+      quantity: 45,
+      reorderPoint: 15,
+      costPrice: "$35.00",
+      sellPrice: "$79.99",
+      category: "Electronics",
+      status: "In Stock",
+    },
+    {
+      id: "INV-007",
+      name: "Connector Cable",
+      sku: "CON-CBL-007",
+      quantity: 350,
+      reorderPoint: 100,
+      costPrice: "$3.75",
+      sellPrice: "$12.99",
+      category: "Accessories",
+      status: "In Stock",
+    },
+    {
+      id: "INV-008",
+      name: "Professional Kit",
+      sku: "PRO-KIT-008",
+      quantity: 0,
+      reorderPoint: 10,
+      costPrice: "$150.00",
+      sellPrice: "$299.99",
+      category: "Tools",
+      status: "Out of Stock",
     },
   ];
 
@@ -387,11 +550,34 @@ const generateCompanyData = (): Company[] => {
       spent: "$8,200.00",
       startDate: "2025-01-10",
       endDate: "2025-03-10",
-    }
+    },
+    // Additional projects
+    {
+      id: "PRJ-004",
+      name: "Mobile App Redesign",
+      client: "Digital Dynamics",
+      status: "In Progress",
+      progress: 40,
+      budget: "$22,500.00",
+      spent: "$9,000.00",
+      startDate: "2025-03-01",
+      endDate: "2025-06-30",
+    },
+    {
+      id: "PRJ-005",
+      name: "E-commerce Platform",
+      client: "Sunrise Media Group",
+      status: "On Hold",
+      progress: 25,
+      budget: "$35,000.00",
+      spent: "$8,750.00",
+      startDate: "2025-02-01",
+      endDate: "2025-08-15",
+    },
   ];
 
-  // XYZ Limited
-  const xyzCustomers = [
+  // Generate XYZ Limited data
+  const xyzCustomers: Customer[] = [
     {
       id: "CUST-101",
       name: "Metro Corp",
@@ -400,7 +586,7 @@ const generateCompanyData = (): Company[] => {
       phone: "(555) 234-5678",
       openInvoices: 3,
       balance: "$7,850.00",
-      status: "Active" as Status,
+      status: "Active",
     },
     {
       id: "CUST-102",
@@ -410,7 +596,7 @@ const generateCompanyData = (): Company[] => {
       phone: "(555) 876-5432",
       openInvoices: 1,
       balance: "$2,300.00",
-      status: "Active" as Status,
+      status: "Active",
     },
     {
       id: "CUST-103",
@@ -420,18 +606,59 @@ const generateCompanyData = (): Company[] => {
       phone: "(555) 765-4321",
       openInvoices: 0,
       balance: "$0.00",
-      status: "Active" as Status,
+      status: "Active",
+    },
+    // Additional customers
+    {
+      id: "CUST-104",
+      name: "Apex Solutions",
+      contactName: "Thomas Wright",
+      email: "thomas@apex.com",
+      phone: "(555) 444-3333",
+      openInvoices: 2,
+      balance: "$5,250.00",
+      status: "Active",
+    },
+    {
+      id: "CUST-105",
+      name: "Future Technologies",
+      contactName: "Jessica Lee",
+      email: "jessica@futuretech.com",
+      phone: "(555) 222-1111",
+      openInvoices: 3,
+      balance: "$8,750.00",
+      status: "Active",
+    },
+    {
+      id: "CUST-106",
+      name: "Horizon Analytics",
+      contactName: "Daniel Patel",
+      email: "daniel@horizonanalytics.com",
+      phone: "(555) 888-9999",
+      openInvoices: 1,
+      balance: "$3,200.00",
+      status: "Active",
+    },
+    {
+      id: "CUST-107",
+      name: "Innovate Design Studio",
+      contactName: "Olivia Rodriguez",
+      email: "olivia@innovatedesign.com",
+      phone: "(555) 777-6666",
+      openInvoices: 0,
+      balance: "$0.00",
+      status: "Inactive",
     },
   ];
 
-  const xyzInvoices = [
+  const xyzInvoices: Invoice[] = [
     {
       id: "INV-101",
       customer: "Metro Corp",
       date: "2025-03-20",
       dueDate: "2025-04-20",
       amount: "$3,250.00",
-      status: "Outstanding" as InvoiceStatus,
+      status: "Outstanding",
     },
     {
       id: "INV-102",
@@ -439,7 +666,7 @@ const generateCompanyData = (): Company[] => {
       date: "2025-03-05",
       dueDate: "2025-04-05",
       amount: "$2,100.00",
-      status: "Overdue" as InvoiceStatus,
+      status: "Overdue",
     },
     {
       id: "INV-103",
@@ -447,7 +674,7 @@ const generateCompanyData = (): Company[] => {
       date: "2025-04-01",
       dueDate: "2025-05-01",
       amount: "$2,500.00",
-      status: "Pending" as InvoiceStatus,
+      status: "Pending",
     },
     {
       id: "INV-104",
@@ -455,7 +682,7 @@ const generateCompanyData = (): Company[] => {
       date: "2025-03-25",
       dueDate: "2025-04-25",
       amount: "$2,300.00",
-      status: "Pending" as InvoiceStatus,
+      status: "Pending",
     },
     {
       id: "INV-105",
@@ -463,18 +690,67 @@ const generateCompanyData = (): Company[] => {
       date: "2025-02-15",
       dueDate: "2025-03-15",
       amount: "$4,700.00",
-      status: "Paid" as InvoiceStatus,
+      status: "Paid",
+    },
+    // Additional invoices
+    {
+      id: "INV-106",
+      customer: "Apex Solutions",
+      date: "2025-03-28",
+      dueDate: "2025-04-28",
+      amount: "$3,150.00",
+      status: "Outstanding",
+    },
+    {
+      id: "INV-107",
+      customer: "Apex Solutions",
+      date: "2025-03-10",
+      dueDate: "2025-04-10",
+      amount: "$2,100.00",
+      status: "Overdue",
+    },
+    {
+      id: "INV-108",
+      customer: "Future Technologies",
+      date: "2025-04-05",
+      dueDate: "2025-05-05",
+      amount: "$3,200.00",
+      status: "Pending",
+    },
+    {
+      id: "INV-109",
+      customer: "Future Technologies",
+      date: "2025-03-20",
+      dueDate: "2025-04-20",
+      amount: "$2,800.00",
+      status: "Outstanding",
+    },
+    {
+      id: "INV-110",
+      customer: "Future Technologies",
+      date: "2025-03-01",
+      dueDate: "2025-04-01",
+      amount: "$2,750.00",
+      status: "Overdue",
+    },
+    {
+      id: "INV-111",
+      customer: "Horizon Analytics",
+      date: "2025-03-15",
+      dueDate: "2025-04-15",
+      amount: "$3,200.00",
+      status: "Pending",
     },
   ];
 
-  const xyzExpenses = [
+  const xyzExpenses: Expense[] = [
     {
       id: "EXP-101",
       category: "Rent",
       vendor: "Downtown Properties",
       date: "2025-04-01",
       amount: "$3,500.00",
-      status: "Paid" as ExpenseStatus,
+      status: "Paid",
     },
     {
       id: "EXP-102",
@@ -482,7 +758,7 @@ const generateCompanyData = (): Company[] => {
       vendor: "Social Media Pros",
       date: "2025-03-25",
       amount: "$1,250.00",
-      status: "Approved" as ExpenseStatus,
+      status: "Approved",
     },
     {
       id: "EXP-103",
@@ -490,7 +766,7 @@ const generateCompanyData = (): Company[] => {
       vendor: "Tech Warehouse",
       date: "2025-03-15",
       amount: "$3,789.50",
-      status: "Paid" as ExpenseStatus,
+      status: "Paid",
     },
     {
       id: "EXP-104",
@@ -498,7 +774,48 @@ const generateCompanyData = (): Company[] => {
       vendor: "Cloud Services Inc",
       date: "2025-04-05",
       amount: "$299.99",
-      status: "Pending" as ExpenseStatus,
+      status: "Pending",
+    },
+    // Additional expenses
+    {
+      id: "EXP-105",
+      category: "Utilities",
+      vendor: "City Power & Water",
+      date: "2025-04-02",
+      amount: "$475.25",
+      status: "Approved",
+    },
+    {
+      id: "EXP-106",
+      category: "Insurance",
+      vendor: "Business Insurance Co",
+      date: "2025-04-10",
+      amount: "$850.00",
+      status: "Pending",
+    },
+    {
+      id: "EXP-107",
+      category: "Office Supplies",
+      vendor: "Office Essentials",
+      date: "2025-03-28",
+      amount: "$235.67",
+      status: "Paid",
+    },
+    {
+      id: "EXP-108",
+      category: "Consulting",
+      vendor: "Business Advisors LLC",
+      date: "2025-03-20",
+      amount: "$2,500.00",
+      status: "Paid",
+    },
+    {
+      id: "EXP-109",
+      category: "Training",
+      vendor: "Professional Development Inc",
+      date: "2025-04-15",
+      amount: "$1,200.00",
+      status: "Pending",
     },
   ];
 
@@ -531,57 +848,24 @@ const generateCompanyData = (): Company[] => {
       balance: "$125,000.00",
       lastSync: "3 days ago",
     },
-  ];
-
-  const xyzTransactions = [
+    // Additional accounts
     {
-      id: "TRN-101",
-      account: "Operations Account",
-      date: "2025-04-12",
-      description: "Client Payment - Brightstar Media",
-      amount: "+$2,300.00",
-      category: "Income",
-      reconciled: false,
+      id: "acc-105",
+      name: "Tax Reserve",
+      institution: "Capital Bank",
+      balance: "$32,500.00",
+      lastSync: "Today at 10:15 AM",
     },
     {
-      id: "TRN-102",
-      account: "Operations Account",
-      date: "2025-04-10",
-      description: "Office Rent Payment",
-      amount: "-$3,500.00",
-      category: "Rent",
-      reconciled: true,
-    },
-    {
-      id: "TRN-103",
-      account: "Business Credit Card",
-      date: "2025-04-09",
-      description: "Client Dinner",
-      amount: "-$187.65",
-      category: "Meals & Entertainment",
-      reconciled: false,
-    },
-    {
-      id: "TRN-104",
-      account: "Payroll Account",
-      date: "2025-04-05",
-      description: "Payroll Transfer",
-      amount: "-$18,450.00",
-      category: "Payroll",
-      reconciled: true,
-    },
-    {
-      id: "TRN-105",
-      account: "Operations Account",
-      date: "2025-04-03",
-      description: "Client Payment - NorthStar Consulting",
-      amount: "+$4,700.00",
-      category: "Income",
-      reconciled: true,
+      id: "acc-106",
+      name: "R&D Fund",
+      institution: "Investment Partners",
+      balance: "$75,000.00",
+      lastSync: "3 days ago",
     },
   ];
 
-  const xyzInventory = [
+  const xyzInventory: InventoryItem[] = [
     {
       id: "INV-101",
       name: "Smart Device X1",
@@ -591,7 +875,7 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$85.00",
       sellPrice: "$149.99",
       category: "Electronics",
-      status: "In Stock" as InventoryStatus,
+      status: "In Stock",
     },
     {
       id: "INV-102",
@@ -602,7 +886,7 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$175.00",
       sellPrice: "$349.99",
       category: "Electronics",
-      status: "In Stock" as InventoryStatus,
+      status: "In Stock",
     },
     {
       id: "INV-103",
@@ -613,7 +897,7 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$650.00",
       sellPrice: "$1,199.99",
       category: "Computers",
-      status: "Low Stock" as InventoryStatus,
+      status: "Low Stock",
     },
     {
       id: "INV-104",
@@ -624,7 +908,7 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$950.00",
       sellPrice: "$1,699.99",
       category: "Computers",
-      status: "Out of Stock" as InventoryStatus,
+      status: "Out of Stock",
     },
     {
       id: "INV-105",
@@ -635,7 +919,41 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$0.00",
       sellPrice: "$399.99",
       category: "Services",
-      status: "Service Item" as InventoryStatus,
+      status: "Service Item",
+    },
+    // Additional inventory items
+    {
+      id: "INV-106",
+      name: "Network Router Pro",
+      sku: "NRP-006",
+      quantity: 15,
+      reorderPoint: 5,
+      costPrice: "$120.00",
+      sellPrice: "$249.99",
+      category: "Networking",
+      status: "In Stock",
+    },
+    {
+      id: "INV-107",
+      name: "Wireless Headphones",
+      sku: "WH-007",
+      quantity: 42,
+      reorderPoint: 10,
+      costPrice: "$65.00",
+      sellPrice: "$129.99",
+      category: "Accessories",
+      status: "In Stock",
+    },
+    {
+      id: "INV-108",
+      name: "External SSD 1TB",
+      sku: "SSD-008",
+      quantity: 3,
+      reorderPoint: 5,
+      costPrice: "$95.00",
+      sellPrice: "$179.99",
+      category: "Storage",
+      status: "Low Stock",
     },
   ];
 
@@ -684,10 +1002,44 @@ const generateCompanyData = (): Company[] => {
       startDate: "2025-03-10",
       endDate: "2025-04-30",
     },
+    // Additional projects
+    {
+      id: "PRJ-105",
+      name: "Mobile App Development",
+      client: "Apex Solutions",
+      status: "In Progress",
+      progress: 35,
+      budget: "$65,000.00",
+      spent: "$22,750.00",
+      startDate: "2025-03-01",
+      endDate: "2025-08-31",
+    },
+    {
+      id: "PRJ-106",
+      name: "Data Analytics Platform",
+      client: "Future Technologies",
+      status: "Planning",
+      progress: 15,
+      budget: "$95,000.00",
+      spent: "$14,250.00",
+      startDate: "2025-04-20",
+      endDate: "2025-10-15",
+    },
+    {
+      id: "PRJ-107",
+      name: "Website Optimization",
+      client: "Horizon Analytics",
+      status: "In Progress",
+      progress: 60,
+      budget: "$18,500.00",
+      spent: "$11,100.00",
+      startDate: "2025-03-15",
+      endDate: "2025-05-15",
+    },
   ];
 
   // 123 Industries
-  const industryCustomers = [
+  const industryCustomers: Customer[] = [
     {
       id: "CUST-201",
       name: "Horizon Manufacturing",
@@ -696,7 +1048,7 @@ const generateCompanyData = (): Company[] => {
       phone: "(555) 345-6789",
       openInvoices: 2,
       balance: "$24,750.00",
-      status: "Active" as Status,
+      status: "Active",
     },
     {
       id: "CUST-202",
@@ -706,7 +1058,7 @@ const generateCompanyData = (): Company[] => {
       phone: "(555) 567-8901",
       openInvoices: 3,
       balance: "$18,950.00",
-      status: "Active" as Status,
+      status: "Active",
     },
     {
       id: "CUST-203",
@@ -716,7 +1068,7 @@ const generateCompanyData = (): Company[] => {
       phone: "(555) 678-9012",
       openInvoices: 1,
       balance: "$9,875.00",
-      status: "Active" as Status,
+      status: "Active",
     },
     {
       id: "CUST-204",
@@ -726,18 +1078,59 @@ const generateCompanyData = (): Company[] => {
       phone: "(555) 789-0123",
       openInvoices: 0,
       balance: "$0.00",
-      status: "Inactive" as Status,
+      status: "Inactive",
+    },
+    // Additional customers
+    {
+      id: "CUST-205",
+      name: "Precision Tools Inc",
+      contactName: "Robert Garcia",
+      email: "robert@precisiontools.com",
+      phone: "(555) 234-5678",
+      openInvoices: 2,
+      balance: "$15,250.00",
+      status: "Active",
+    },
+    {
+      id: "CUST-206",
+      name: "Mountain Valley Mining",
+      contactName: "Elizabeth Thompson",
+      email: "elizabeth@mvmining.com",
+      phone: "(555) 345-6789",
+      openInvoices: 1,
+      balance: "$42,500.00",
+      status: "Active",
+    },
+    {
+      id: "CUST-207",
+      name: "Coastal Fisheries",
+      contactName: "James Wilson",
+      email: "james@coastalfisheries.com",
+      phone: "(555) 456-7890",
+      openInvoices: 3,
+      balance: "$28,750.00",
+      status: "Active",
+    },
+    {
+      id: "CUST-208",
+      name: "Urban Development Corp",
+      contactName: "Sophia Martinez",
+      email: "sophia@urbandevelopment.com",
+      phone: "(555) 567-8901",
+      openInvoices: 0,
+      balance: "$0.00",
+      status: "Inactive",
     },
   ];
 
-  const industryInvoices = [
+  const industryInvoices: Invoice[] = [
     {
       id: "INV-201",
       customer: "Horizon Manufacturing",
       date: "2025-04-01",
       dueDate: "2025-05-01",
       amount: "$15,750.00",
-      status: "Outstanding" as InvoiceStatus,
+      status: "Outstanding",
     },
     {
       id: "INV-202",
@@ -745,7 +1138,7 @@ const generateCompanyData = (): Company[] => {
       date: "2025-03-25",
       dueDate: "2025-04-25",
       amount: "$9,000.00",
-      status: "Pending" as InvoiceStatus,
+      status: "Pending",
     },
     {
       id: "INV-203",
@@ -753,7 +1146,7 @@ const generateCompanyData = (): Company[] => {
       date: "2025-03-15",
       dueDate: "2025-04-15",
       amount: "$7,500.00",
-      status: "Overdue" as InvoiceStatus,
+      status: "Overdue",
     },
     {
       id: "INV-204",
@@ -761,7 +1154,7 @@ const generateCompanyData = (): Company[] => {
       date: "2025-03-10",
       dueDate: "2025-04-10",
       amount: "$6,250.00",
-      status: "Overdue" as InvoiceStatus,
+      status: "Overdue",
     },
     {
       id: "INV-205",
@@ -769,7 +1162,7 @@ const generateCompanyData = (): Company[] => {
       date: "2025-04-05",
       dueDate: "2025-05-05",
       amount: "$5,200.00",
-      status: "Pending" as InvoiceStatus,
+      status: "Pending",
     },
     {
       id: "INV-206",
@@ -777,7 +1170,7 @@ const generateCompanyData = (): Company[] => {
       date: "2025-04-02",
       dueDate: "2025-05-02",
       amount: "$9,875.00",
-      status: "Outstanding" as InvoiceStatus,
+      status: "Outstanding",
     },
     {
       id: "INV-207",
@@ -785,18 +1178,67 @@ const generateCompanyData = (): Company[] => {
       date: "2025-02-20",
       dueDate: "2025-03-20",
       amount: "$12,350.00",
-      status: "Paid" as InvoiceStatus,
+      status: "Paid",
+    },
+    // Additional invoices
+    {
+      id: "INV-208",
+      customer: "Precision Tools Inc",
+      date: "2025-04-10",
+      dueDate: "2025-05-10",
+      amount: "$8,250.00",
+      status: "Outstanding",
+    },
+    {
+      id: "INV-209",
+      customer: "Precision Tools Inc",
+      date: "2025-03-20",
+      dueDate: "2025-04-20",
+      amount: "$7,000.00",
+      status: "Overdue",
+    },
+    {
+      id: "INV-210",
+      customer: "Mountain Valley Mining",
+      date: "2025-04-05",
+      dueDate: "2025-05-05",
+      amount: "$42,500.00",
+      status: "Outstanding",
+    },
+    {
+      id: "INV-211",
+      customer: "Coastal Fisheries",
+      date: "2025-04-08",
+      dueDate: "2025-05-08",
+      amount: "$10,500.00",
+      status: "Outstanding",
+    },
+    {
+      id: "INV-212",
+      customer: "Coastal Fisheries",
+      date: "2025-03-25",
+      dueDate: "2025-04-25",
+      amount: "$9,750.00",
+      status: "Overdue",
+    },
+    {
+      id: "INV-213",
+      customer: "Coastal Fisheries",
+      date: "2025-03-10",
+      dueDate: "2025-04-10",
+      amount: "$8,500.00",
+      status: "Overdue",
     },
   ];
 
-  const industryExpenses = [
+  const industryExpenses: Expense[] = [
     {
       id: "EXP-201",
       category: "Raw Materials",
       vendor: "Steel Supply Co",
       date: "2025-04-05",
       amount: "$28,750.00",
-      status: "Approved" as ExpenseStatus,
+      status: "Approved",
     },
     {
       id: "EXP-202",
@@ -804,7 +1246,7 @@ const generateCompanyData = (): Company[] => {
       vendor: "Industrial Machines Inc",
       date: "2025-03-28",
       amount: "$45,875.00",
-      status: "Paid" as ExpenseStatus,
+      status: "Paid",
     },
     {
       id: "EXP-203",
@@ -812,7 +1254,7 @@ const generateCompanyData = (): Company[] => {
       vendor: "FastFreight Logistics",
       date: "2025-04-10",
       amount: "$3,850.00",
-      status: "Pending" as ExpenseStatus,
+      status: "Pending",
     },
     {
       id: "EXP-204",
@@ -820,7 +1262,7 @@ const generateCompanyData = (): Company[] => {
       vendor: "Power & Water Corp",
       date: "2025-04-02",
       amount: "$7,250.00",
-      status: "Paid" as ExpenseStatus,
+      status: "Paid",
     },
     {
       id: "EXP-205",
@@ -828,7 +1270,7 @@ const generateCompanyData = (): Company[] => {
       vendor: "Industrial Properties LLC",
       date: "2025-04-01",
       amount: "$12,500.00",
-      status: "Paid" as ExpenseStatus,
+      status: "Paid",
     },
     {
       id: "EXP-206",
@@ -836,7 +1278,48 @@ const generateCompanyData = (): Company[] => {
       vendor: "Factory Maintenance Services",
       date: "2025-04-08",
       amount: "$1,875.00",
-      status: "Approved" as ExpenseStatus,
+      status: "Approved",
+    },
+    // Additional expenses
+    {
+      id: "EXP-207",
+      category: "Safety Equipment",
+      vendor: "Industrial Safety Supplies",
+      date: "2025-04-12",
+      amount: "$3,250.00",
+      status: "Pending",
+    },
+    {
+      id: "EXP-208",
+      category: "Insurance",
+      vendor: "Manufacturing Insurance Co",
+      date: "2025-04-15",
+      amount: "$4,750.00",
+      status: "Approved",
+    },
+    {
+      id: "EXP-209",
+      category: "Employee Training",
+      vendor: "Industrial Skills Institute",
+      date: "2025-03-30",
+      amount: "$5,875.00",
+      status: "Paid",
+    },
+    {
+      id: "EXP-210",
+      category: "Fuel",
+      vendor: "Industrial Fuels Inc",
+      date: "2025-04-05",
+      amount: "$4,250.00",
+      status: "Paid",
+    },
+    {
+      id: "EXP-211",
+      category: "Quality Testing",
+      vendor: "Quality Assurance Labs",
+      date: "2025-04-18",
+      amount: "$2,850.00",
+      status: "Pending",
     },
   ];
 
@@ -876,66 +1359,24 @@ const generateCompanyData = (): Company[] => {
       balance: "$275,000.00",
       lastSync: "2 days ago",
     },
-  ];
-
-  const industryTransactions = [
+    // Additional accounts
     {
-      id: "TRN-201",
-      account: "Main Operating Account",
-      date: "2025-04-12",
-      description: "Payment from Blue Ocean Shipping",
-      amount: "+$12,350.00",
-      category: "Income",
-      reconciled: true,
+      id: "acc-206",
+      name: "Factory Expansion Fund",
+      institution: "Capital Growth Bank",
+      balance: "$450,000.00",
+      lastSync: "2 days ago",
     },
     {
-      id: "TRN-202",
-      account: "Materials Procurement",
-      date: "2025-04-10",
-      description: "Steel Supply Co",
-      amount: "-$28,750.00",
-      category: "Raw Materials",
-      reconciled: false,
-    },
-    {
-      id: "TRN-203",
-      account: "Main Operating Account",
-      date: "2025-04-08",
-      description: "Factory Maintenance",
-      amount: "-$1,875.00",
-      category: "Maintenance",
-      reconciled: false,
-    },
-    {
-      id: "TRN-204",
-      account: "Payroll Account",
-      date: "2025-04-05",
-      description: "Bi-weekly Payroll",
-      amount: "-$45,875.00",
-      category: "Payroll",
-      reconciled: true,
-    },
-    {
-      id: "TRN-205",
-      account: "Main Operating Account",
-      date: "2025-04-02",
-      description: "Power & Water Corp",
-      amount: "-$7,250.00",
-      category: "Utilities",
-      reconciled: true,
-    },
-    {
-      id: "TRN-206",
-      account: "Main Operating Account",
-      date: "2025-04-01",
-      description: "Industrial Properties LLC",
-      amount: "-$12,500.00",
-      category: "Factory Lease",
-      reconciled: true,
+      id: "acc-207",
+      name: "International Operations",
+      institution: "Global Finance Bank",
+      balance: "$185,250.45",
+      lastSync: "Yesterday at 4:30 PM",
     },
   ];
 
-  const industryInventory = [
+  const industryInventory: InventoryItem[] = [
     {
       id: "INV-201",
       name: "Industrial Generator",
@@ -945,7 +1386,7 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$4,250.00",
       sellPrice: "$6,799.99",
       category: "Equipment",
-      status: "In Stock" as InventoryStatus,
+      status: "In Stock",
     },
     {
       id: "INV-202",
@@ -956,7 +1397,7 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$175.00",
       sellPrice: "$289.99",
       category: "Materials",
-      status: "In Stock" as InventoryStatus,
+      status: "In Stock",
     },
     {
       id: "INV-203",
@@ -967,7 +1408,7 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$95.00",
       sellPrice: "$149.99",
       category: "Materials",
-      status: "In Stock" as InventoryStatus,
+      status: "In Stock",
     },
     {
       id: "INV-204",
@@ -978,7 +1419,7 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$28,750.00",
       sellPrice: "$37,500.00",
       category: "Equipment",
-      status: "In Stock" as InventoryStatus,
+      status: "In Stock",
     },
     {
       id: "INV-205",
@@ -989,7 +1430,7 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$45.00",
       sellPrice: "$75.00",
       category: "Safety",
-      status: "Low Stock" as InventoryStatus,
+      status: "Low Stock",
     },
     {
       id: "INV-206",
@@ -1000,7 +1441,7 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$5,250.00",
       sellPrice: "$7,895.00",
       category: "Equipment",
-      status: "Out of Stock" as InventoryStatus,
+      status: "Out of Stock",
     },
     {
       id: "INV-207",
@@ -1011,7 +1452,52 @@ const generateCompanyData = (): Company[] => {
       costPrice: "$0.00",
       sellPrice: "$1,250.00",
       category: "Services",
-      status: "Service Item" as InventoryStatus,
+      status: "Service Item",
+    },
+    // Additional inventory items
+    {
+      id: "INV-208",
+      name: "Industrial Shelving",
+      sku: "IND-SLV-208",
+      quantity: 45,
+      reorderPoint: 15,
+      costPrice: "$175.00",
+      sellPrice: "$289.99",
+      category: "Equipment",
+      status: "In Stock",
+    },
+    {
+      id: "INV-209",
+      name: "Welding Machine",
+      sku: "WLD-MCH-209",
+      quantity: 12,
+      reorderPoint: 5,
+      costPrice: "$1,250.00",
+      sellPrice: "$2,499.99",
+      category: "Equipment",
+      status: "In Stock",
+    },
+    {
+      id: "INV-210",
+      name: "Hydraulic Press",
+      sku: "HYD-PRS-210",
+      quantity: 3,
+      reorderPoint: 2,
+      costPrice: "$8,500.00",
+      sellPrice: "$12,750.00",
+      category: "Equipment",
+      status: "In Stock",
+    },
+    {
+      id: "INV-211",
+      name: "Safety Gloves (Pair)",
+      sku: "SFT-GLV-211",
+      quantity: 120,
+      reorderPoint: 50,
+      costPrice: "$12.50",
+      sellPrice: "$24.99",
+      category: "Safety",
+      status: "In Stock",
     },
   ];
 
@@ -1071,6 +1557,411 @@ const generateCompanyData = (): Company[] => {
       startDate: "2024-10-15",
       endDate: "2025-02-28",
     },
+    // Additional projects
+    {
+      id: "PRJ-206",
+      name: "Equipment Modernization",
+      client: "Precision Tools Inc",
+      status: "In Progress",
+      progress: 45,
+      budget: "$450,000.00",
+      spent: "$202,500.00",
+      startDate: "2025-03-15",
+      endDate: "2025-09-30",
+    },
+    {
+      id: "PRJ-207",
+      name: "Safety Compliance Upgrade",
+      client: "Internal",
+      status: "Planning",
+      progress: 20,
+      budget: "$175,000.00",
+      spent: "$35,000.00",
+      startDate: "2025-05-01",
+      endDate: "2025-08-31",
+    },
+    {
+      id: "PRJ-208",
+      name: "Mining Equipment Supply",
+      client: "Mountain Valley Mining",
+      status: "In Progress",
+      progress: 30,
+      budget: "$650,000.00",
+      spent: "$195,000.00",
+      startDate: "2025-03-01",
+      endDate: "2025-07-31",
+    },
+  ];
+
+  // Create a fourth company: Global Digital Services
+  const gdsCustomers: Customer[] = [
+    {
+      id: "CUST-301",
+      name: "Infinite Solutions",
+      contactName: "Ryan Taylor",
+      email: "ryan@infinitesolutions.com",
+      phone: "(555) 123-7890",
+      openInvoices: 2,
+      balance: "$12,500.00",
+      status: "Active",
+    },
+    {
+      id: "CUST-302",
+      name: "Velocity Partners",
+      contactName: "Christina Nguyen",
+      email: "christina@velocitypartners.com",
+      phone: "(555) 234-5678",
+      openInvoices: 3,
+      balance: "$18,750.00",
+      status: "Active",
+    },
+    {
+      id: "CUST-303",
+      name: "Zenith Enterprises",
+      contactName: "Jonathan Black",
+      email: "jonathan@zenithent.com",
+      phone: "(555) 345-6789",
+      openInvoices: 1,
+      balance: "$7,250.00",
+      status: "Active",
+    },
+    {
+      id: "CUST-304",
+      name: "Pinnacle Group",
+      contactName: "Melissa Wong",
+      email: "melissa@pinnaclegroup.com",
+      phone: "(555) 456-7890",
+      openInvoices: 0,
+      balance: "$0.00",
+      status: "Inactive",
+    },
+    {
+      id: "CUST-305",
+      name: "Nexus Technologies",
+      contactName: "Andrew Davis",
+      email: "andrew@nexustech.com",
+      phone: "(555) 567-8901",
+      openInvoices: 2,
+      balance: "$9,850.00",
+      status: "Active",
+    },
+    {
+      id: "CUST-306",
+      name: "Spectrum Innovations",
+      contactName: "Laura Chen",
+      email: "laura@spectruminnovations.com",
+      phone: "(555) 678-9012",
+      openInvoices: 1,
+      balance: "$5,200.00",
+      status: "Active",
+    },
+  ];
+
+  const gdsInvoices: Invoice[] = [
+    {
+      id: "INV-301",
+      customer: "Infinite Solutions",
+      date: "2025-04-05",
+      dueDate: "2025-05-05",
+      amount: "$7,500.00",
+      status: "Outstanding",
+    },
+    {
+      id: "INV-302",
+      customer: "Infinite Solutions",
+      date: "2025-03-20",
+      dueDate: "2025-04-20",
+      amount: "$5,000.00",
+      status: "Overdue",
+    },
+    {
+      id: "INV-303",
+      customer: "Velocity Partners",
+      date: "2025-04-10",
+      dueDate: "2025-05-10",
+      amount: "$8,250.00",
+      status: "Outstanding",
+    },
+    {
+      id: "INV-304",
+      customer: "Velocity Partners",
+      date: "2025-03-25",
+      dueDate: "2025-04-25",
+      amount: "$5,500.00",
+      status: "Overdue",
+    },
+    {
+      id: "INV-305",
+      customer: "Velocity Partners",
+      date: "2025-03-15",
+      dueDate: "2025-04-15",
+      amount: "$5,000.00",
+      status: "Overdue",
+    },
+    {
+      id: "INV-306",
+      customer: "Zenith Enterprises",
+      date: "2025-04-01",
+      dueDate: "2025-05-01",
+      amount: "$7,250.00",
+      status: "Outstanding",
+    },
+    {
+      id: "INV-307",
+      customer: "Nexus Technologies",
+      date: "2025-04-08",
+      dueDate: "2025-05-08",
+      amount: "$5,850.00",
+      status: "Outstanding",
+    },
+    {
+      id: "INV-308",
+      customer: "Nexus Technologies",
+      date: "2025-03-20",
+      dueDate: "2025-04-20",
+      amount: "$4,000.00",
+      status: "Overdue",
+    },
+    {
+      id: "INV-309",
+      customer: "Spectrum Innovations",
+      date: "2025-04-05",
+      dueDate: "2025-05-05",
+      amount: "$5,200.00",
+      status: "Outstanding",
+    },
+  ];
+
+  const gdsExpenses: Expense[] = [
+    {
+      id: "EXP-301",
+      category: "Software Licenses",
+      vendor: "Adobe Systems",
+      date: "2025-04-01",
+      amount: "$2,400.00",
+      status: "Paid",
+    },
+    {
+      id: "EXP-302",
+      category: "Cloud Services",
+      vendor: "AWS",
+      date: "2025-04-05",
+      amount: "$5,850.00",
+      status: "Paid",
+    },
+    {
+      id: "EXP-303",
+      category: "Office Rent",
+      vendor: "Tech Plaza Properties",
+      date: "2025-04-01",
+      amount: "$8,500.00",
+      status: "Paid",
+    },
+    {
+      id: "EXP-304",
+      category: "Equipment",
+      vendor: "Dell Computers",
+      date: "2025-03-25",
+      amount: "$12,750.00",
+      status: "Approved",
+    },
+    {
+      id: "EXP-305",
+      category: "Marketing",
+      vendor: "Digital Marketing Pro",
+      date: "2025-04-10",
+      amount: "$4,500.00",
+      status: "Pending",
+    },
+    {
+      id: "EXP-306",
+      category: "Utilities",
+      vendor: "City Power & Internet",
+      date: "2025-04-02",
+      amount: "$1,850.00",
+      status: "Paid",
+    },
+    {
+      id: "EXP-307",
+      category: "Professional Development",
+      vendor: "Tech Conference Inc",
+      date: "2025-04-15",
+      amount: "$3,500.00",
+      status: "Pending",
+    },
+    {
+      id: "EXP-308",
+      category: "Travel",
+      vendor: "Business Travel Agency",
+      date: "2025-03-28",
+      amount: "$4,250.00",
+      status: "Approved",
+    },
+  ];
+
+  const gdsAccounts = [
+    {
+      id: "acc-301",
+      name: "Operations Account",
+      institution: "First Digital Bank",
+      balance: "$125,750.45",
+      lastSync: "Today at 9:15 AM",
+    },
+    {
+      id: "acc-302",
+      name: "Payroll Account",
+      institution: "First Digital Bank",
+      balance: "$75,250.00",
+      lastSync: "Today at 9:15 AM",
+    },
+    {
+      id: "acc-303",
+      name: "Project Funding",
+      institution: "First Digital Bank",
+      balance: "$250,000.00",
+      lastSync: "Today at 9:15 AM",
+    },
+    {
+      id: "acc-304",
+      name: "Corporate Credit Card",
+      institution: "Tech Financial",
+      balance: "-$15,782.45",
+      lastSync: "Yesterday at 10:30 PM",
+    },
+    {
+      id: "acc-305",
+      name: "R&D Investment",
+      institution: "Innovation Capital",
+      balance: "$175,000.00",
+      lastSync: "2 days ago",
+    },
+  ];
+
+  const gdsInventory: InventoryItem[] = [
+    {
+      id: "INV-301",
+      name: "Developer Workstation",
+      sku: "DEV-WS-301",
+      quantity: 25,
+      reorderPoint: 5,
+      costPrice: "$1,250.00",
+      sellPrice: "$0.00",
+      category: "Equipment",
+      status: "In Stock",
+    },
+    {
+      id: "INV-302",
+      name: "Servers",
+      sku: "SVR-302",
+      quantity: 10,
+      reorderPoint: 2,
+      costPrice: "$3,500.00",
+      sellPrice: "$0.00",
+      category: "Hardware",
+      status: "In Stock",
+    },
+    {
+      id: "INV-303",
+      name: "Software Development Kit",
+      sku: "SDK-303",
+      quantity: 0,
+      reorderPoint: 0,
+      costPrice: "$0.00",
+      sellPrice: "$599.99",
+      category: "Services",
+      status: "Service Item",
+    },
+    {
+      id: "INV-304",
+      name: "Cloud Hosting Package",
+      sku: "CHP-304",
+      quantity: 0,
+      reorderPoint: 0,
+      costPrice: "$0.00",
+      sellPrice: "$250.00",
+      category: "Services",
+      status: "Service Item",
+    },
+    {
+      id: "INV-305",
+      name: "Network Equipment",
+      sku: "NET-305",
+      quantity: 15,
+      reorderPoint: 5,
+      costPrice: "$850.00",
+      sellPrice: "$0.00",
+      category: "Hardware",
+      status: "In Stock",
+    },
+    {
+      id: "INV-306",
+      name: "Custom Software Solution",
+      sku: "CSS-306",
+      quantity: 0,
+      reorderPoint: 0,
+      costPrice: "$0.00",
+      sellPrice: "$10,000.00",
+      category: "Services",
+      status: "Service Item",
+    },
+  ];
+
+  const gdsProjects = [
+    {
+      id: "PRJ-301",
+      name: "E-commerce Platform Development",
+      client: "Infinite Solutions",
+      status: "In Progress",
+      progress: 65,
+      budget: "$150,000.00",
+      spent: "$97,500.00",
+      startDate: "2025-02-01",
+      endDate: "2025-06-30",
+    },
+    {
+      id: "PRJ-302",
+      name: "Mobile App Development",
+      client: "Velocity Partners",
+      status: "In Progress",
+      progress: 40,
+      budget: "$125,000.00",
+      spent: "$50,000.00",
+      startDate: "2025-03-15",
+      endDate: "2025-08-15",
+    },
+    {
+      id: "PRJ-303",
+      name: "AI Integration",
+      client: "Zenith Enterprises",
+      status: "Planning",
+      progress: 10,
+      budget: "$200,000.00",
+      spent: "$20,000.00",
+      startDate: "2025-04-15",
+      endDate: "2025-10-31",
+    },
+    {
+      id: "PRJ-304",
+      name: "Data Analytics Dashboard",
+      client: "Nexus Technologies",
+      status: "In Progress",
+      progress: 25,
+      budget: "$85,000.00",
+      spent: "$21,250.00",
+      startDate: "2025-03-20",
+      endDate: "2025-07-15",
+    },
+    {
+      id: "PRJ-305",
+      name: "Website Redesign",
+      client: "Spectrum Innovations",
+      status: "Completed",
+      progress: 100,
+      budget: "$45,000.00",
+      spent: "$42,500.00",
+      startDate: "2025-01-15",
+      endDate: "2025-03-31",
+    },
   ];
 
   // Return array of companies
@@ -1082,13 +1973,17 @@ const generateCompanyData = (): Company[] => {
       address: "123 Tech Lane, San Francisco, CA 94107",
       email: "info@abccorp.com",
       phone: "(555) 123-4567",
+      website: "www.abccorp.com",
+      taxId: "12-3456789",
       logo: "https://via.placeholder.com/150?text=ABC",
       revenue: {
         current: 125000,
+        lastMonth: 115000,
         percentChange: 8.5,
       },
       outstandingInvoices: {
         amount: 4750,
+        count: 5,
         percentChange: -2.3,
       },
       profitMargin: {
@@ -1096,16 +1991,17 @@ const generateCompanyData = (): Company[] => {
         percentChange: 1.5,
       },
       activeCustomers: {
-        count: 2,
-        percentChange: 0,
+        count: 5,
+        percentChange: 25.0,
       },
       customers: abcCustomers,
       invoices: abcInvoices,
       expenses: abcExpenses,
       accounts: abcAccounts,
-      transactions: abcTransactions,
+      transactions: [],
       inventory: abcInventory,
       projects: abcProjects,
+      fiscalYearStart: "January 1",
     },
     {
       id: "xyz-limited",
@@ -1114,13 +2010,17 @@ const generateCompanyData = (): Company[] => {
       address: "456 Innovation Blvd, Austin, TX 78701",
       email: "hello@xyzlimited.com",
       phone: "(555) 987-6543",
+      website: "www.xyzlimited.com",
+      taxId: "98-7654321",
       logo: "https://via.placeholder.com/150?text=XYZ",
       revenue: {
         current: 278500,
+        lastMonth: 247000,
         percentChange: 12.7,
       },
       outstandingInvoices: {
         amount: 10150,
+        count: 8,
         percentChange: 5.2,
       },
       profitMargin: {
@@ -1128,16 +2028,17 @@ const generateCompanyData = (): Company[] => {
         percentChange: 2.8,
       },
       activeCustomers: {
-        count: 3,
-        percentChange: 50.0,
+        count: 6,
+        percentChange: 20.0,
       },
       customers: xyzCustomers,
       invoices: xyzInvoices,
       expenses: xyzExpenses,
       accounts: xyzAccounts,
-      transactions: xyzTransactions,
+      transactions: [],
       inventory: xyzInventory,
       projects: xyzProjects,
+      fiscalYearStart: "January 1",
     },
     {
       id: "123-industries",
@@ -1146,13 +2047,17 @@ const generateCompanyData = (): Company[] => {
       address: "789 Factory Way, Detroit, MI 48201",
       email: "contact@123industries.com",
       phone: "(555) 456-7890",
+      website: "www.123industries.com",
+      taxId: "45-6789012",
       logo: "https://via.placeholder.com/150?text=123",
       revenue: {
         current: 875250,
+        lastMonth: 827000,
         percentChange: 5.8,
       },
       outstandingInvoices: {
         amount: 53575,
+        count: 10,
         percentChange: -8.3,
       },
       profitMargin: {
@@ -1160,16 +2065,54 @@ const generateCompanyData = (): Company[] => {
         percentChange: -1.7,
       },
       activeCustomers: {
-        count: 3,
-        percentChange: 0,
+        count: 6,
+        percentChange: 20.0,
       },
       customers: industryCustomers,
       invoices: industryInvoices,
       expenses: industryExpenses,
       accounts: industryAccounts,
-      transactions: industryTransactions,
+      transactions: [],
       inventory: industryInventory,
       projects: industryProjects,
+      fiscalYearStart: "January 1",
+    },
+    {
+      id: "gds-group",
+      name: "Global Digital Services",
+      industry: "Digital Services",
+      address: "567 Tech Park, Seattle, WA 98101",
+      email: "info@globaldigital.com",
+      phone: "(555) 789-0123",
+      website: "www.globaldigitalservices.com",
+      taxId: "78-9012345",
+      logo: "https://via.placeholder.com/150?text=GDS",
+      revenue: {
+        current: 425000,
+        lastMonth: 398000,
+        percentChange: 6.8,
+      },
+      outstandingInvoices: {
+        amount: 43550,
+        count: 9,
+        percentChange: 4.2,
+      },
+      profitMargin: {
+        value: 34.5,
+        percentChange: 1.2,
+      },
+      activeCustomers: {
+        count: 5,
+        percentChange: 25.0,
+      },
+      customers: gdsCustomers,
+      invoices: gdsInvoices,
+      expenses: gdsExpenses,
+      accounts: gdsAccounts,
+      transactions: [],
+      inventory: gdsInventory,
+      projects: gdsProjects,
+      fiscalYearStart: "January 1",
     },
   ];
 };
@@ -1177,6 +2120,14 @@ const generateCompanyData = (): Company[] => {
 export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [companies, setCompanies] = useState<Company[]>(generateCompanyData());
   const [currentCompany, setCurrentCompany] = useState<Company>(companies[0]);
+
+  const switchCompany = (id: string) => {
+    const foundCompany = companies.find(company => company.id === id);
+    if (foundCompany) {
+      setCurrentCompany(foundCompany);
+      toast.success(`Switched to ${foundCompany.name}`);
+    }
+  };
 
   const addCompany = (companyData: Partial<Company>) => {
     const newCompany: Company = {
@@ -1186,13 +2137,17 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       address: companyData.address || "",
       email: companyData.email || "",
       phone: companyData.phone || "",
+      website: companyData.website || "",
+      taxId: companyData.taxId || "",
       logo: companyData.logo || "https://via.placeholder.com/150?text=NEW",
       revenue: companyData.revenue || {
         current: 0,
+        lastMonth: 0,
         percentChange: 0,
       },
       outstandingInvoices: companyData.outstandingInvoices || {
         amount: 0,
+        count: 0,
         percentChange: 0,
       },
       profitMargin: companyData.profitMargin || {
@@ -1210,6 +2165,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       transactions: companyData.transactions || [],
       inventory: companyData.inventory || [],
       projects: companyData.projects || [],
+      fiscalYearStart: companyData.fiscalYearStart || "January 1",
     };
 
     const updatedCompanies = [...companies, newCompany];
@@ -1255,7 +2211,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       value={{
         companies,
         currentCompany,
-        setCurrentCompany,
+        switchCompany,
         addCompany,
         updateCompany,
         deleteCompany,

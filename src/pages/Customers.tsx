@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { FilterButton, ExportButton } from "@/components/common/ActionButtons";
 import { toast } from "sonner";
 import { useCompany } from "@/contexts/CompanyContext";
+import { Status } from "@/contexts/CompanyContext";
 
 const Customers: React.FC = () => {
   const { currentCompany, updateCompany } = useCompany();

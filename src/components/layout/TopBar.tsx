@@ -275,6 +275,17 @@ const TopBar: React.FC = () => {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="website" className="text-right">
+                Website
+              </Label>
+              <Input
+                id="website"
+                value={newCompanyData.website}
+                onChange={handleNewCompanyInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="taxId" className="text-right">
                 Tax ID
               </Label>

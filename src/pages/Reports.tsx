@@ -58,6 +58,24 @@ const Reports: React.FC = () => {
         { name: "Vendor Balances", icon: FileText, description: "Current balances for all vendors" },
         { name: "Upcoming Payments", icon: FileText, description: "Schedule of bills due soon" }
       ]
+    },
+    {
+      title: "Inventory Reports",
+      description: `Manage ${currentCompany.name}'s inventory`,
+      reports: [
+        { name: "Inventory Valuation", icon: FileText, description: `Value of ${currentCompany.inventory.length} inventory items` },
+        { name: "Low Stock Report", icon: FileText, description: "Items that need to be reordered" },
+        { name: "Inventory Movement", icon: FileText, description: "Track inventory changes over time" }
+      ]
+    },
+    {
+      title: "Project Reports",
+      description: `Monitor ${currentCompany.name}'s project performance`,
+      reports: [
+        { name: "Project Profitability", icon: FileText, description: `Profitability of ${currentCompany.projects.length} projects` },
+        { name: "Resource Utilization", icon: FileText, description: "How resources are being used across projects" },
+        { name: "Project Timeline", icon: FileText, description: "Track project timelines and milestones" }
+      ]
     }
   ];
 
