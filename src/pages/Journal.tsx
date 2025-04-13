@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Search } from "lucide-react";
@@ -13,14 +13,18 @@ import {
   ActionDropdown 
 } from "@/components/common/ActionButtons";
 import { handleCreateItem } from "@/utils/navigationUtils";
+import { useCompany } from "@/contexts/CompanyContext";
 
 const Journal: React.FC = () => {
-  // Sample journal entries
+  const { currentCompany } = useCompany();
+  const [searchText, setSearchText] = useState("");
+  
+  // Sample journal entries - would be company-specific in a real app
   const journalEntries = [
     { 
       id: "JE-001", 
       date: "2025-04-10", 
-      memo: "Monthly Rent Payment", 
+      memo: `${currentCompany.name} Monthly Rent Payment`, 
       debitAccount: "Rent Expense", 
       creditAccount: "Bank Account", 
       amount: "$2,500.00",
@@ -29,7 +33,7 @@ const Journal: React.FC = () => {
     { 
       id: "JE-002", 
       date: "2025-04-08", 
-      memo: "Client Retainer", 
+      memo: `${currentCompany.name} Client Retainer`, 
       debitAccount: "Bank Account", 
       creditAccount: "Unearned Revenue", 
       amount: "$5,000.00",
@@ -38,7 +42,7 @@ const Journal: React.FC = () => {
     { 
       id: "JE-003", 
       date: "2025-04-05", 
-      memo: "Payroll Entry", 
+      memo: `${currentCompany.name} Payroll Entry`, 
       debitAccount: "Salary Expense", 
       creditAccount: "Bank Account", 
       amount: "$8,750.00",
@@ -47,7 +51,7 @@ const Journal: React.FC = () => {
     { 
       id: "JE-004", 
       date: "2025-04-03", 
-      memo: "Utility Payment", 
+      memo: `${currentCompany.name} Utility Payment`, 
       debitAccount: "Utilities Expense", 
       creditAccount: "Bank Account", 
       amount: "$345.67",
@@ -56,20 +60,28 @@ const Journal: React.FC = () => {
     { 
       id: "JE-005", 
       date: "2025-04-01", 
-      memo: "Depreciation Expense", 
+      memo: `${currentCompany.name} Depreciation Expense`, 
       debitAccount: "Depreciation Expense", 
       creditAccount: "Accumulated Depreciation", 
       amount: "$833.33",
       status: "Draft"
     },
   ];
+  
+  // Filter journal entries based on search text
+  const filteredJournalEntries = journalEntries.filter(entry => 
+    entry.id.toLowerCase().includes(searchText.toLowerCase()) ||
+    entry.memo.toLowerCase().includes(searchText.toLowerCase()) ||
+    entry.debitAccount.toLowerCase().includes(searchText.toLowerCase()) ||
+    entry.creditAccount.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Journal Entries</h1>
-          <p className="text-muted-foreground">Record and manage your manual journal entries</p>
+          <p className="text-muted-foreground">Record and manage {currentCompany.name}'s manual journal entries</p>
         </div>
         <Button 
           className="flex items-center gap-2"
@@ -87,6 +99,8 @@ const Journal: React.FC = () => {
             type="search"
             placeholder="Search journal entries..."
             className="w-full sm:w-[300px] pl-8"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -99,7 +113,7 @@ const Journal: React.FC = () => {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Journal Entries</CardTitle>
-          <CardDescription>Showing all manual journal entries</CardDescription>
+          <CardDescription>Showing {currentCompany.name}'s manual journal entries</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -116,31 +130,39 @@ const Journal: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {journalEntries.map((entry) => (
-                <TableRow key={entry.id}>
-                  <TableCell className="font-medium">{entry.id}</TableCell>
-                  <TableCell>{entry.date}</TableCell>
-                  <TableCell>{entry.memo}</TableCell>
-                  <TableCell>{entry.debitAccount}</TableCell>
-                  <TableCell>{entry.creditAccount}</TableCell>
-                  <TableCell>{entry.amount}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      entry.status === "Posted" 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}>
-                      {entry.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end items-center gap-1">
-                      <ViewButton id={entry.id} type="Journal Entry" />
-                      <ActionDropdown id={entry.id} type="Journal Entry" />
-                    </div>
+              {filteredJournalEntries.length > 0 ? (
+                filteredJournalEntries.map((entry) => (
+                  <TableRow key={entry.id}>
+                    <TableCell className="font-medium">{entry.id}</TableCell>
+                    <TableCell>{entry.date}</TableCell>
+                    <TableCell>{entry.memo}</TableCell>
+                    <TableCell>{entry.debitAccount}</TableCell>
+                    <TableCell>{entry.creditAccount}</TableCell>
+                    <TableCell>{entry.amount}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        entry.status === "Posted" 
+                          ? "bg-green-100 text-green-800" 
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}>
+                        {entry.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end items-center gap-1">
+                        <ViewButton id={entry.id} type="Journal Entry" />
+                        <ActionDropdown id={entry.id} type="Journal Entry" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                    {searchText ? "No journal entries found matching your search" : "No journal entries found for this company."}
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

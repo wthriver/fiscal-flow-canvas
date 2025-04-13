@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Search } from "lucide-react";
@@ -13,23 +13,25 @@ import {
   ActionDropdown 
 } from "@/components/common/ActionButtons";
 import { handleCreateItem } from "@/utils/navigationUtils";
+import { useCompany } from "@/contexts/CompanyContext";
 
 const Expenses: React.FC = () => {
-  // Sample expense data
-  const expenses = [
-    { id: "EXP-001", category: "Office Supplies", vendor: "Staples", date: "2025-04-09", amount: "$150.00", status: "Approved" },
-    { id: "EXP-002", category: "Travel", vendor: "Uber", date: "2025-04-07", amount: "$48.75", status: "Pending" },
-    { id: "EXP-003", category: "Utilities", vendor: "Electric Company", date: "2025-04-05", amount: "$235.40", status: "Approved" },
-    { id: "EXP-004", category: "Software", vendor: "Adobe", date: "2025-04-02", amount: "$59.99", status: "Approved" },
-    { id: "EXP-005", category: "Meals", vendor: "Restaurant Corp", date: "2025-03-30", amount: "$87.50", status: "Denied" },
-  ];
+  const { currentCompany } = useCompany();
+  const [searchText, setSearchText] = useState("");
+  
+  // Filter expenses based on search text
+  const filteredExpenses = currentCompany.expenses.filter(expense => 
+    expense.id.toLowerCase().includes(searchText.toLowerCase()) ||
+    expense.vendor.toLowerCase().includes(searchText.toLowerCase()) ||
+    expense.category.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Expenses</h1>
-          <p className="text-muted-foreground">Track and manage your business expenses</p>
+          <p className="text-muted-foreground">Track and manage {currentCompany.name}'s business expenses</p>
         </div>
         <Button 
           className="flex items-center gap-2"
@@ -47,6 +49,8 @@ const Expenses: React.FC = () => {
             type="search"
             placeholder="Search expenses..."
             className="w-full sm:w-[300px] pl-8"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -59,7 +63,7 @@ const Expenses: React.FC = () => {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Recent Expenses</CardTitle>
-          <CardDescription>You have {expenses.length} total expenses</CardDescription>
+          <CardDescription>You have {currentCompany.expenses.length} total expenses</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -75,32 +79,40 @@ const Expenses: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {expenses.map((expense) => (
-                <TableRow key={expense.id}>
-                  <TableCell className="font-medium">{expense.id}</TableCell>
-                  <TableCell>{expense.category}</TableCell>
-                  <TableCell>{expense.vendor}</TableCell>
-                  <TableCell>{expense.date}</TableCell>
-                  <TableCell>{expense.amount}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      expense.status === "Approved" 
-                        ? "bg-green-100 text-green-800" 
-                        : expense.status === "Pending" 
-                          ? "bg-yellow-100 text-yellow-800" 
-                          : "bg-red-100 text-red-800"
-                    }`}>
-                      {expense.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end items-center gap-1">
-                      <ViewButton id={expense.id} type="Expense" />
-                      <ActionDropdown id={expense.id} type="Expense" />
-                    </div>
+              {filteredExpenses.length > 0 ? (
+                filteredExpenses.map((expense) => (
+                  <TableRow key={expense.id}>
+                    <TableCell className="font-medium">{expense.id}</TableCell>
+                    <TableCell>{expense.category}</TableCell>
+                    <TableCell>{expense.vendor}</TableCell>
+                    <TableCell>{expense.date}</TableCell>
+                    <TableCell>{expense.amount}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        expense.status === "Approved" || expense.status === "Paid"
+                          ? "bg-green-100 text-green-800" 
+                          : expense.status === "Pending" 
+                            ? "bg-yellow-100 text-yellow-800" 
+                            : "bg-red-100 text-red-800"
+                      }`}>
+                        {expense.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end items-center gap-1">
+                        <ViewButton id={expense.id} type="Expense" />
+                        <ActionDropdown id={expense.id} type="Expense" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                    {searchText ? "No expenses found matching your search" : "No expenses found for this company."}
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

@@ -5,24 +5,27 @@ import { Button } from "@/components/ui/button";
 import { Download, FileText, BarChart4, TrendingUp, Printer, Calendar, Share2 } from "lucide-react";
 import { DateRangeButton, ExportButton } from "@/components/common/ActionButtons";
 import { toast } from "sonner";
+import { useCompany } from "@/contexts/CompanyContext";
 
 const Reports: React.FC = () => {
+  const { currentCompany } = useCompany();
+  
   const handleGenerateReport = (reportName: string) => {
-    toast.success(`Generating ${reportName} report`);
+    toast.success(`Generating ${reportName} report for ${currentCompany.name}`);
   };
 
   const handleViewReport = (reportName: string) => {
-    toast.info(`Viewing ${reportName} report`);
+    toast.info(`Viewing ${reportName} report for ${currentCompany.name}`);
   };
 
   const handleShareReport = (reportName: string) => {
-    toast.info(`Share options for ${reportName}`);
+    toast.info(`Share options for ${currentCompany.name}'s ${reportName} report`);
   };
 
   const reportCategories = [
     {
       title: "Financial Statements",
-      description: "Core financial reports for your business",
+      description: `Core financial reports for ${currentCompany.name}`,
       reports: [
         { name: "Balance Sheet", icon: FileText, description: "View your assets, liabilities, and equity" },
         { name: "Profit & Loss", icon: TrendingUp, description: "Income and expenses for a specific period" },
@@ -31,7 +34,7 @@ const Reports: React.FC = () => {
     },
     {
       title: "Tax Reports",
-      description: "Reports to help with tax compliance",
+      description: `Reports to help with ${currentCompany.name}'s tax compliance`,
       reports: [
         { name: "Sales Tax Summary", icon: FileText, description: "Summary of collected and paid sales taxes" },
         { name: "Tax Liability", icon: FileText, description: "Track your tax obligations" },
@@ -40,7 +43,7 @@ const Reports: React.FC = () => {
     },
     {
       title: "Accounts Receivable",
-      description: "Track money owed to your business",
+      description: `Track money owed to ${currentCompany.name}`,
       reports: [
         { name: "A/R Aging Summary", icon: FileText, description: "See overdue customer invoices" },
         { name: "Customer Balances", icon: FileText, description: "Current balances for all customers" },
@@ -49,7 +52,7 @@ const Reports: React.FC = () => {
     },
     {
       title: "Accounts Payable",
-      description: "Track money your business owes",
+      description: `Track money ${currentCompany.name} owes`,
       reports: [
         { name: "A/P Aging Summary", icon: FileText, description: "See overdue bills by vendor" },
         { name: "Vendor Balances", icon: FileText, description: "Current balances for all vendors" },
@@ -63,7 +66,7 @@ const Reports: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Reports</h1>
-          <p className="text-muted-foreground">Generate and view financial reports for your business</p>
+          <p className="text-muted-foreground">Generate and view financial reports for {currentCompany.name}</p>
         </div>
         <div className="flex gap-2">
           <DateRangeButton type="Reports" />

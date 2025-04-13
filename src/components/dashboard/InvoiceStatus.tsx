@@ -50,7 +50,10 @@ const InvoiceStatus: React.FC = () => {
               ))}
             </Pie>
             <Tooltip
-              formatter={(value) => [`${value.toFixed(0)}%`, "Percentage"]}
+              formatter={(value) => {
+                // Ensure value is a number before calling toFixed
+                return [typeof value === 'number' ? `${value.toFixed(0)}%` : `${value}%`, "Percentage"];
+              }}
               contentStyle={{
                 backgroundColor: "white",
                 border: "1px solid #e2e8f0",
