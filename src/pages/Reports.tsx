@@ -15,7 +15,7 @@ const Reports: React.FC = () => {
   };
 
   const handleViewReport = (reportName: string) => {
-    toast.info(`Viewing ${reportName} report for ${currentCompany.name}`);
+    toast.info(`Viewing ${currentCompany.name}'s ${reportName} report`);
   };
 
   const handleShareReport = (reportName: string) => {
@@ -46,7 +46,7 @@ const Reports: React.FC = () => {
       description: `Track money owed to ${currentCompany.name}`,
       reports: [
         { name: "A/R Aging Summary", icon: FileText, description: "See overdue customer invoices" },
-        { name: "Customer Balances", icon: FileText, description: "Current balances for all customers" },
+        { name: "Customer Balances", icon: FileText, description: `Current balances for all ${currentCompany.customers.length} customers` },
         { name: "Collections Report", icon: FileText, description: "Track your collection efforts" }
       ]
     },
@@ -70,7 +70,7 @@ const Reports: React.FC = () => {
         </div>
         <div className="flex gap-2">
           <DateRangeButton type="Reports" />
-          <Button variant="outline" className="flex items-center gap-2" onClick={() => toast.info("Print report options")}>
+          <Button variant="outline" className="flex items-center gap-2" onClick={() => toast.info(`Print report options for ${currentCompany.name}`)}>
             <Printer size={16} />
             <span>Print</span>
           </Button>

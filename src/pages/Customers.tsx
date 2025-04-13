@@ -26,7 +26,7 @@ const Customers: React.FC = () => {
     createModal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
     createModal.innerHTML = `
       <div class="bg-white rounded-lg p-6 max-w-xl w-full mx-4">
-        <h3 class="text-lg font-bold mb-4">Add New Customer</h3>
+        <h3 class="text-lg font-bold mb-4">Add New Customer for ${currentCompany.name}</h3>
         <div class="space-y-4 mb-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -102,7 +102,7 @@ const Customers: React.FC = () => {
         phone: newPhone,
         openInvoices: 0,
         balance: "$0.00",
-        status: "Active"
+        status: "Active" as Status
       };
       
       // Update company with new customer
@@ -110,7 +110,7 @@ const Customers: React.FC = () => {
         customers: [...currentCompany.customers, newCustomer]
       });
       
-      toast.success("New customer created successfully");
+      toast.success(`New customer created for ${currentCompany.name}`);
       document.body.removeChild(createModal);
     });
   };
@@ -365,7 +365,7 @@ const Customers: React.FC = () => {
         customers: updatedCustomers
       });
       
-      toast.success(`Customer ${updatedName} updated successfully`);
+      toast.success(`Customer ${updatedName} updated successfully for ${currentCompany.name}`);
       document.body.removeChild(editModal);
     });
   };
@@ -409,7 +409,7 @@ const Customers: React.FC = () => {
     });
     
     document.getElementById('send-email-btn')?.addEventListener('click', () => {
-      toast.success(`Email sent to ${email}`);
+      toast.success(`Email sent to ${email} from ${currentCompany.name}`);
       document.body.removeChild(emailModal);
     });
   };
@@ -420,7 +420,7 @@ const Customers: React.FC = () => {
     
     if (!customer) return;
     
-    toast.info(`Generating statement for ${customer.name}`);
+    toast.info(`Generating statement for ${customer.name} from ${currentCompany.name}`);
     
     // Simulate loading
     setTimeout(() => {
@@ -433,7 +433,7 @@ const Customers: React.FC = () => {
   const inactiveCustomers = currentCompany.customers.filter(c => c.status === "Inactive").length;
   const customersWithInvoices = currentCompany.customers.filter(c => c.openInvoices > 0).length;
   const totalReceivables = currentCompany.customers.reduce((sum, customer) => {
-    const balance = parseFloat(customer.balance.replace('$', '').replace(',', ''));
+    const balance = parseFloat(customer.balance.replace(/[$,]/g, ''));
     return sum + balance;
   }, 0);
 

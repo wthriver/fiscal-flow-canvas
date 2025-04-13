@@ -8,23 +8,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { FilterButton, ExportButton, ViewButton, EditButton, DeleteButton } from "@/components/common/ActionButtons";
 import { handleCreateItem, handleViewItem } from "@/utils/navigationUtils";
 import { toast } from "sonner";
+import { useCompany } from "@/contexts/CompanyContext";
 
 const Banking: React.FC = () => {
-  // Sample accounts data
-  const [accounts, setAccounts] = useState([
-    { id: "acc-1", name: "Business Checking", institution: "First National Bank", balance: "$24,587.65", lastSync: "Today at 9:30 AM" },
-    { id: "acc-2", name: "Business Savings", institution: "First National Bank", balance: "$58,900.00", lastSync: "Today at 9:30 AM" },
-    { id: "acc-3", name: "Credit Card", institution: "Capital Finance", balance: "-$4,325.18", lastSync: "Yesterday at 11:45 PM" }
-  ]);
-
-  // Sample transactions data
-  const [transactions, setTransactions] = useState([
-    { id: "TRN-001", account: "Business Checking", date: "2025-04-11", description: "Client Payment - XYZ Corp", amount: "+$5,000.00", category: "Income", reconciled: true },
-    { id: "TRN-002", account: "Business Checking", date: "2025-04-10", description: "Office Supplies", amount: "-$156.78", category: "Office Expenses", reconciled: true },
-    { id: "TRN-003", account: "Credit Card", date: "2025-04-10", description: "Software Subscription", amount: "-$49.99", category: "Software", reconciled: false },
-    { id: "TRN-004", account: "Business Checking", date: "2025-04-09", description: "Utilities - Electricity", amount: "-$235.67", category: "Utilities", reconciled: true },
-    { id: "TRN-005", account: "Business Savings", date: "2025-04-08", description: "Transfer from Checking", amount: "+$2,000.00", category: "Transfer", reconciled: true },
-  ]);
+  const { currentCompany } = useCompany();
+  const [searchText, setSearchText] = useState("");
+  
+  // Filter transactions based on search text
+  const filteredTransactions = currentCompany.transactions.filter(transaction => 
+    transaction.id.toLowerCase().includes(searchText.toLowerCase()) ||
+    transaction.account.toLowerCase().includes(searchText.toLowerCase()) ||
+    transaction.description.toLowerCase().includes(searchText.toLowerCase()) ||
+    transaction.category.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   const handleAddTransaction = () => {
     handleCreateItem("Transaction");
@@ -37,7 +33,7 @@ const Banking: React.FC = () => {
     connectBankModal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
     connectBankModal.innerHTML = `
       <div class="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
-        <h3 class="text-lg font-bold mb-4">Connect Bank Account</h3>
+        <h3 class="text-lg font-bold mb-4">Connect Bank Account for ${currentCompany.name}</h3>
         <div class="space-y-4 mb-4">
           <p class="text-sm text-gray-600">Select your bank to securely connect your accounts. We use industry-standard encryption to protect your data.</p>
           
@@ -114,18 +110,7 @@ const Banking: React.FC = () => {
       
       document.getElementById('connect-cred')?.addEventListener('click', () => {
         document.body.removeChild(credentialsModal);
-        toast.success('Bank connected successfully! New accounts added.');
-        
-        // Add a new account to simulate the connection
-        const newAccount = {
-          id: `acc-${accounts.length + 1}`,
-          name: "Business Checking 2",
-          institution: "First National Bank",
-          balance: "$12,345.67",
-          lastSync: "Just now"
-        };
-        
-        setAccounts([...accounts, newAccount]);
+        toast.success(`Bank connected successfully for ${currentCompany.name}! New accounts added.`);
       });
     });
   };
@@ -141,7 +126,7 @@ const Banking: React.FC = () => {
           <div>
             <label class="block text-sm font-medium mb-1">To Account</label>
             <select class="w-full p-2 border rounded-md">
-              ${accounts.filter(a => a.id !== accountId).map(a => 
+              ${currentCompany.accounts.filter(a => a.id !== accountId).map(a => 
                 `<option value="${a.id}">${a.name}</option>`
               ).join('')}
             </select>
@@ -173,21 +158,8 @@ const Banking: React.FC = () => {
     });
     
     document.getElementById('complete-transfer')?.addEventListener('click', () => {
-      toast.success('Transfer completed successfully');
+      toast.success(`Transfer completed successfully for ${currentCompany.name}`);
       document.body.removeChild(transferModal);
-      
-      // Add a new transaction to simulate the transfer
-      const newTransaction = {
-        id: `TRN-${transactions.length + 1}`,
-        account: name,
-        date: new Date().toISOString().split('T')[0],
-        description: "Transfer to another account",
-        amount: "-$500.00",
-        category: "Transfer",
-        reconciled: true
-      };
-      
-      setTransactions([newTransaction, ...transactions]);
     });
   };
   
@@ -202,7 +174,7 @@ const Banking: React.FC = () => {
           <div>
             <label class="block text-sm font-medium mb-1">From Account</label>
             <select class="w-full p-2 border rounded-md">
-              ${accounts.filter(a => a.id !== accountId).map(a => 
+              ${currentCompany.accounts.filter(a => a.id !== accountId).map(a => 
                 `<option value="${a.id}">${a.name}</option>`
               ).join('')}
             </select>
@@ -234,21 +206,8 @@ const Banking: React.FC = () => {
     });
     
     document.getElementById('complete-transfer-in')?.addEventListener('click', () => {
-      toast.success('Transfer completed successfully');
+      toast.success(`Transfer completed successfully for ${currentCompany.name}`);
       document.body.removeChild(transferModal);
-      
-      // Add a new transaction to simulate the transfer
-      const newTransaction = {
-        id: `TRN-${transactions.length + 1}`,
-        account: name,
-        date: new Date().toISOString().split('T')[0],
-        description: "Transfer from another account",
-        amount: "+$500.00",
-        category: "Transfer",
-        reconciled: true
-      };
-      
-      setTransactions([newTransaction, ...transactions]);
     });
   };
   
@@ -295,7 +254,7 @@ const Banking: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Banking</h1>
-          <p className="text-muted-foreground">Manage your financial accounts and transactions</p>
+          <p className="text-muted-foreground">Manage {currentCompany.name}'s financial accounts and transactions</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="flex items-center gap-2" onClick={handleConnectBank}>
@@ -310,7 +269,7 @@ const Banking: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {accounts.map((account) => (
+        {currentCompany.accounts.map((account) => (
           <Card key={account.id}>
             <CardHeader className="pb-2">
               <CardDescription>{account.institution}</CardDescription>
@@ -360,6 +319,8 @@ const Banking: React.FC = () => {
             type="search"
             placeholder="Search transactions..."
             className="w-full sm:w-[300px] pl-8"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
@@ -371,7 +332,7 @@ const Banking: React.FC = () => {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Recent Transactions</CardTitle>
-          <CardDescription>Showing the latest transactions across all accounts</CardDescription>
+          <CardDescription>Showing {currentCompany.name}'s latest transactions across all accounts</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -387,35 +348,43 @@ const Banking: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((transaction) => (
-                <TableRow key={transaction.id} id={`row-${transaction.id}`}>
-                  <TableCell>{transaction.date}</TableCell>
-                  <TableCell className="font-medium">{transaction.description}</TableCell>
-                  <TableCell>{transaction.account}</TableCell>
-                  <TableCell>{transaction.category}</TableCell>
-                  <TableCell className={transaction.amount.startsWith("+") ? "text-green-600" : "text-red-600"}>
-                    {transaction.amount}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {transaction.reconciled ? (
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Reconciled
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        Pending
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <ViewButton id={transaction.id} type="Transaction" />
-                      <EditButton id={transaction.id} type="Transaction" />
-                      <DeleteButton id={transaction.id} type="Transaction" />
-                    </div>
+              {filteredTransactions.length > 0 ? (
+                filteredTransactions.map((transaction) => (
+                  <TableRow key={transaction.id} id={`row-${transaction.id}`}>
+                    <TableCell>{transaction.date}</TableCell>
+                    <TableCell className="font-medium">{transaction.description}</TableCell>
+                    <TableCell>{transaction.account}</TableCell>
+                    <TableCell>{transaction.category}</TableCell>
+                    <TableCell className={transaction.amount.startsWith("+") ? "text-green-600" : "text-red-600"}>
+                      {transaction.amount}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {transaction.reconciled ? (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Reconciled
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          Pending
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <ViewButton id={transaction.id} type="Transaction" />
+                        <EditButton id={transaction.id} type="Transaction" />
+                        <DeleteButton id={transaction.id} type="Transaction" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                    {searchText ? "No transactions found matching your search" : "No transactions found for this company."}
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

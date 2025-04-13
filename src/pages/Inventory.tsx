@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, ArrowUpDown, Search, Package, AlertCircle } from "lucide-react";
@@ -8,66 +8,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { FilterButton, ExportButton } from "@/components/common/ActionButtons";
 import { toast } from "sonner";
 import { handleCreateItem } from "@/utils/navigationUtils";
+import { useCompany } from "@/contexts/CompanyContext";
 
 const Inventory: React.FC = () => {
-  // Sample inventory items
-  const inventoryItems = [
-    { 
-      id: "INV-001", 
-      name: "Widget Pro", 
-      sku: "WDG-PRO-001", 
-      quantity: 250, 
-      reorderPoint: 50, 
-      costPrice: "$15.00", 
-      sellPrice: "$29.99",
-      category: "Hardware",
-      status: "In Stock" 
-    },
-    { 
-      id: "INV-002", 
-      name: "Premium Gadget", 
-      sku: "PRM-GDG-002", 
-      quantity: 125, 
-      reorderPoint: 30, 
-      costPrice: "$25.00", 
-      sellPrice: "$49.99",
-      category: "Electronics",
-      status: "In Stock" 
-    },
-    { 
-      id: "INV-003", 
-      name: "Basic Tool Kit", 
-      sku: "BSC-TLK-003", 
-      quantity: 15, 
-      reorderPoint: 20, 
-      costPrice: "$35.00", 
-      sellPrice: "$75.00",
-      category: "Tools",
-      status: "Low Stock" 
-    },
-    { 
-      id: "INV-004", 
-      name: "Deluxe Component", 
-      sku: "DLX-CMP-004", 
-      quantity: 78, 
-      reorderPoint: 25, 
-      costPrice: "$12.50", 
-      sellPrice: "$24.99",
-      category: "Hardware",
-      status: "In Stock" 
-    },
-    { 
-      id: "INV-005", 
-      name: "Premium Service Plan", 
-      sku: "PRM-SVC-005", 
-      quantity: 0, 
-      reorderPoint: 0, 
-      costPrice: "$0.00", 
-      sellPrice: "$199.99",
-      category: "Services",
-      status: "Service Item" 
-    },
-  ];
+  const { currentCompany } = useCompany();
+  const [searchText, setSearchText] = useState("");
+
+  // Filter inventory items based on search text
+  const filteredItems = currentCompany.inventory.filter(item => 
+    item.name.toLowerCase().includes(searchText.toLowerCase()) ||
+    item.sku.toLowerCase().includes(searchText.toLowerCase()) ||
+    item.category.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   const handleAdjustStock = () => {
     // Display a stock adjustment modal
@@ -81,7 +33,7 @@ const Inventory: React.FC = () => {
             <label class="block text-sm font-medium mb-1">Item</label>
             <select class="w-full p-2 border rounded-md">
               <option value="">Select an item</option>
-              ${inventoryItems.map(item => `<option value="${item.id}">${item.name}</option>`).join('')}
+              ${currentCompany.inventory.map(item => `<option value="${item.id}">${item.name}</option>`).join('')}
             </select>
           </div>
           <div>
@@ -125,14 +77,14 @@ const Inventory: React.FC = () => {
     });
     
     document.getElementById('save-adjust')?.addEventListener('click', () => {
-      toast.success("Stock adjustment saved successfully");
+      toast.success(`Stock adjustment saved for ${currentCompany.name}`);
       document.body.removeChild(adjustModal);
     });
   };
 
   const handleViewItem = (id: string) => {
     // Find the item
-    const item = inventoryItems.find(item => item.id === id);
+    const item = currentCompany.inventory.find(item => item.id === id);
     
     if (!item) return;
     
@@ -227,7 +179,7 @@ const Inventory: React.FC = () => {
 
   const handleEditItem = (id: string) => {
     // Find the item
-    const item = inventoryItems.find(item => item.id === id);
+    const item = currentCompany.inventory.find(item => item.id === id);
     
     if (!item) return;
     
@@ -299,17 +251,25 @@ const Inventory: React.FC = () => {
     });
     
     document.getElementById('save-edit')?.addEventListener('click', () => {
-      toast.success(`Item ${item.name} updated successfully`);
+      toast.success(`Item ${item.name} updated successfully for ${currentCompany.name}`);
       document.body.removeChild(editModal);
     });
   };
+
+  // Calculate inventory stats for current company
+  const totalItems = currentCompany.inventory.length;
+  const lowStockItems = currentCompany.inventory.filter(item => item.status === "Low Stock").length;
+  const outOfStockItems = currentCompany.inventory.filter(item => item.status === "Out of Stock").length;
+  const inventoryValue = currentCompany.inventory.reduce((sum, item) => {
+    return sum + (parseFloat(item.costPrice.replace(/[^0-9.]/g, '')) * item.quantity);
+  }, 0);
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Inventory</h1>
-          <p className="text-muted-foreground">Manage your product inventory and stock levels</p>
+          <p className="text-muted-foreground">Manage {currentCompany.name}'s product inventory and stock levels</p>
         </div>
         <div className="flex gap-2">
           <Button 
@@ -333,25 +293,25 @@ const Inventory: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl">325</CardTitle>
+            <CardTitle className="text-2xl">{totalItems}</CardTitle>
             <CardDescription>Total Items</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-amber-500">8</CardTitle>
+            <CardTitle className="text-2xl text-amber-500">{lowStockItems}</CardTitle>
             <CardDescription>Low Stock Items</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-red-500">3</CardTitle>
+            <CardTitle className="text-2xl text-red-500">{outOfStockItems}</CardTitle>
             <CardDescription>Out of Stock</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-green-500">$45,875</CardTitle>
+            <CardTitle className="text-2xl text-green-500">${inventoryValue.toLocaleString()}</CardTitle>
             <CardDescription>Inventory Value</CardDescription>
           </CardHeader>
         </Card>
@@ -364,6 +324,8 @@ const Inventory: React.FC = () => {
             type="search"
             placeholder="Search inventory..."
             className="w-full sm:w-[300px] pl-8"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -375,7 +337,7 @@ const Inventory: React.FC = () => {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Inventory Items</CardTitle>
-          <CardDescription>Manage your products and stock levels</CardDescription>
+          <CardDescription>Manage {currentCompany.name}'s products and stock levels</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -392,39 +354,47 @@ const Inventory: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {inventoryItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>{item.sku}</TableCell>
-                  <TableCell>{item.category}</TableCell>
-                  <TableCell>{item.quantity}</TableCell>
-                  <TableCell>{item.costPrice}</TableCell>
-                  <TableCell>{item.sellPrice}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      item.status === "In Stock" 
-                        ? "bg-green-100 text-green-800" 
-                        : item.status === "Low Stock" 
-                          ? "bg-yellow-100 text-yellow-800" 
-                          : item.status === "Out of Stock"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-blue-100 text-blue-800"
-                    }`}>
-                      {item.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleViewItem(item.id)}
-                    >
-                      <Package size={16} />
-                      <span className="sr-only">View</span>
-                    </Button>
+              {filteredItems.length > 0 ? (
+                filteredItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell>{item.sku}</TableCell>
+                    <TableCell>{item.category}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>{item.costPrice}</TableCell>
+                    <TableCell>{item.sellPrice}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        item.status === "In Stock" 
+                          ? "bg-green-100 text-green-800" 
+                          : item.status === "Low Stock" 
+                            ? "bg-yellow-100 text-yellow-800" 
+                            : item.status === "Out of Stock"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-blue-100 text-blue-800"
+                      }`}>
+                        {item.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleViewItem(item.id)}
+                      >
+                        <Package size={16} />
+                        <span className="sr-only">View</span>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                    {searchText ? "No items found matching your search" : "No inventory items found for this company."}
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
