@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Search, ShoppingCart, FileText, CalendarIcon, Tag } from "lucide-react";
@@ -8,56 +7,37 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { FilterButton, ExportButton } from "@/components/common/ActionButtons";
 import { toast } from "sonner";
 import { handleDateRange } from "@/utils/navigationUtils";
+import { useCompany } from "@/contexts/CompanyContext";
 
 const Sales: React.FC = () => {
-  // Sample sales data
-  const sales = [
-    { 
-      id: "SALE-001", 
-      date: "2025-04-11", 
-      customer: "ABC Corporation", 
-      items: 5,
-      total: "$1,250.00",
-      status: "Completed",
-      paymentStatus: "Paid" 
-    },
-    { 
-      id: "SALE-002", 
-      date: "2025-04-10", 
-      customer: "XYZ Limited", 
-      items: 3,
-      total: "$875.50",
-      status: "Completed",
-      paymentStatus: "Paid" 
-    },
-    { 
-      id: "SALE-003", 
-      date: "2025-04-09", 
-      customer: "123 Industries", 
-      items: 2,
-      total: "$450.00",
-      status: "Processing",
-      paymentStatus: "Pending" 
-    },
-    { 
-      id: "SALE-004", 
-      date: "2025-04-08", 
-      customer: "Global Tech", 
-      items: 8,
-      total: "$2,879.99",
-      status: "Completed",
-      paymentStatus: "Paid" 
-    },
-    { 
-      id: "SALE-005", 
-      date: "2025-04-08", 
-      customer: "Acme Inc", 
-      items: 1,
-      total: "$399.99",
-      status: "On Hold",
-      paymentStatus: "Pending" 
-    },
-  ];
+  const { currentCompany } = useCompany();
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Filter sales based on search term
+  const filteredSales = currentCompany.sales?.filter(sale => 
+    sale.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sale.customer.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  // Calculate total sales for the week
+  const salesThisWeek = filteredSales.reduce((total, sale) => {
+    const saleDate = new Date(sale.date);
+    const today = new Date();
+    const weekAgo = new Date();
+    weekAgo.setDate(today.getDate() - 7);
+    
+    if (saleDate >= weekAgo && saleDate <= today) {
+      // Extract numeric value from formatted string (e.g., "$1,250.00" to 1250.00)
+      const amount = parseFloat(sale.total.replace(/[^0-9.-]+/g, ""));
+      return total + amount;
+    }
+    return total;
+  }, 0);
+
+  // Count pending orders
+  const pendingOrders = filteredSales.filter(sale => 
+    sale.status === "Processing" || sale.status === "On Hold"
+  ).length;
 
   const handleCreateEstimate = () => {
     // Display a create estimate modal
@@ -659,7 +639,7 @@ const Sales: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Sales</h1>
-          <p className="text-muted-foreground">Manage your sales orders and transactions</p>
+          <p className="text-muted-foreground">Manage {currentCompany.name}'s sales orders and transactions</p>
         </div>
         <div className="flex gap-2">
           <Button 
@@ -683,19 +663,19 @@ const Sales: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-green-500">$5,855.48</CardTitle>
+            <CardTitle className="text-2xl text-green-500">${salesThisWeek.toFixed(2)}</CardTitle>
             <CardDescription>Sales This Week</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl">19</CardTitle>
+            <CardTitle className="text-2xl">{filteredSales.length}</CardTitle>
             <CardDescription>Total Orders</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-amber-500">3</CardTitle>
+            <CardTitle className="text-2xl text-amber-500">{pendingOrders}</CardTitle>
             <CardDescription>Pending Orders</CardDescription>
           </CardHeader>
         </Card>
@@ -714,6 +694,8 @@ const Sales: React.FC = () => {
             type="search"
             placeholder="Search sales..."
             className="w-full sm:w-[300px] pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -734,7 +716,7 @@ const Sales: React.FC = () => {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Recent Sales</CardTitle>
-          <CardDescription>View and manage your recent sales orders</CardDescription>
+          <CardDescription>View and manage {currentCompany.name}'s recent sales orders</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -751,57 +733,65 @@ const Sales: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sales.map((sale) => (
-                <TableRow key={sale.id}>
-                  <TableCell className="font-medium">{sale.id}</TableCell>
-                  <TableCell>{sale.date}</TableCell>
-                  <TableCell>{sale.customer}</TableCell>
-                  <TableCell>{sale.items}</TableCell>
-                  <TableCell>{sale.total}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      sale.status === "Completed" 
-                        ? "bg-green-100 text-green-800" 
-                        : sale.status === "Processing" 
-                          ? "bg-blue-100 text-blue-800" 
+              {filteredSales.length > 0 ? (
+                filteredSales.map((sale) => (
+                  <TableRow key={sale.id}>
+                    <TableCell className="font-medium">{sale.id}</TableCell>
+                    <TableCell>{sale.date}</TableCell>
+                    <TableCell>{sale.customer}</TableCell>
+                    <TableCell>{sale.items}</TableCell>
+                    <TableCell>{sale.total}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        sale.status === "Completed" 
+                          ? "bg-green-100 text-green-800" 
+                          : sale.status === "Processing" 
+                            ? "bg-blue-100 text-blue-800" 
+                            : "bg-yellow-100 text-yellow-800"
+                      }`}>
+                        {sale.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        sale.paymentStatus === "Paid" 
+                          ? "bg-green-100 text-green-800" 
                           : "bg-yellow-100 text-yellow-800"
-                    }`}>
-                      {sale.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      sale.paymentStatus === "Paid" 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}>
-                      {sale.paymentStatus}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => handleViewSale(sale.id)}
-                      >
-                        <ShoppingCart size={16} />
-                        <span className="sr-only">View Order</span>
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => handleViewInvoice(sale.id)}
-                      >
-                        <FileText size={16} />
-                        <span className="sr-only">Invoice</span>
-                      </Button>
-                    </div>
+                      }`}>
+                        {sale.paymentStatus}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleViewSale(sale.id)}
+                        >
+                          <ShoppingCart size={16} />
+                          <span className="sr-only">View Order</span>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleViewInvoice(sale.id)}
+                        >
+                          <FileText size={16} />
+                          <span className="sr-only">Invoice</span>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-4 text-muted-foreground">
+                    No sales found for {currentCompany.name}
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

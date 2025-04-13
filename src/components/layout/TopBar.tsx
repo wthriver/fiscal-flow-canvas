@@ -71,8 +71,7 @@ const TopBar: React.FC = () => {
       customers: [],
       invoices: [],
       expenses: [],
-      balance: "$0.00",
-      logo: undefined,
+      inventory: [],
       revenue: {
         current: 0,
         lastMonth: 0,
@@ -91,6 +90,7 @@ const TopBar: React.FC = () => {
         count: 0,
         percentChange: 0,
       },
+      projects: []
     });
 
     // Reset form and close dialog

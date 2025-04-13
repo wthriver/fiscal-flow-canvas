@@ -10,14 +10,14 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { Status } from "@/contexts/CompanyContext";
 
 const Customers: React.FC = () => {
-  const { currentCompany, updateCompany } = useCompany();
-  const [searchText, setSearchText] = useState("");
+  const { currentCompany } = useCompany();
+  const [search, setSearch] = useState("");
   
-  // Filter customers based on search text
+  // Filter customers based on search query
   const filteredCustomers = currentCompany.customers.filter(customer => 
-    customer.name.toLowerCase().includes(searchText.toLowerCase()) ||
-    customer.contactName.toLowerCase().includes(searchText.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchText.toLowerCase())
+    customer.name.toLowerCase().includes(search.toLowerCase()) ||
+    customer.email.toLowerCase().includes(search.toLowerCase()) ||
+    customer.contactName.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleAddCustomer = () => {
@@ -487,8 +487,8 @@ const Customers: React.FC = () => {
             type="search"
             placeholder="Search customers..."
             className="w-full sm:w-[300px] pl-8"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -571,7 +571,7 @@ const Customers: React.FC = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                    {searchText ? "No customers found matching your search" : "No customers found. Add a customer to get started."}
+                    {search ? "No customers found matching your search" : "No customers found. Add a customer to get started."}
                   </TableCell>
                 </TableRow>
               )}

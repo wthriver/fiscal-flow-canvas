@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Search, CalendarIcon } from "lucide-react";
@@ -14,66 +14,29 @@ import {
 import { handleCreateItem, handleDateRange } from "@/utils/navigationUtils";
 import { toast } from "sonner";
 import { Clock as ClockIcon, Activity as ActivityIcon, FileText as FileTextIcon } from "lucide-react";
+import { useCompany } from "@/contexts/CompanyContext";
 
 const Projects: React.FC = () => {
-  // Sample projects data
-  const projects = [
-    { 
-      id: "PROJ-001", 
-      name: "Website Redesign", 
-      client: "ABC Corporation", 
-      startDate: "2025-03-15",
-      dueDate: "2025-05-30",
-      budget: "$12,500.00",
-      tracked: "45h 30m",
-      billed: "$6,825.00",
-      status: "In Progress" 
-    },
-    { 
-      id: "PROJ-002", 
-      name: "Mobile App Development", 
-      client: "XYZ Limited", 
-      startDate: "2025-04-01",
-      dueDate: "2025-07-15",
-      budget: "$25,000.00",
-      tracked: "12h 45m",
-      billed: "$1,912.50",
-      status: "In Progress" 
-    },
-    { 
-      id: "PROJ-003", 
-      name: "Annual Audit", 
-      client: "123 Industries", 
-      startDate: "2025-02-10",
-      dueDate: "2025-03-10",
-      budget: "$5,000.00",
-      tracked: "32h 15m",
-      billed: "$4,837.50",
-      status: "Completed" 
-    },
-    { 
-      id: "PROJ-004", 
-      name: "Marketing Campaign", 
-      client: "Global Tech", 
-      startDate: "2025-04-15",
-      dueDate: "2025-05-15",
-      budget: "$8,750.00",
-      tracked: "0h 0m",
-      billed: "$0.00",
-      status: "Not Started" 
-    },
-    { 
-      id: "PROJ-005", 
-      name: "Product Launch", 
-      client: "Acme Inc", 
-      startDate: "2025-05-01",
-      dueDate: "2025-06-15",
-      budget: "$15,000.00",
-      tracked: "0h 0m",
-      billed: "$0.00",
-      status: "Not Started" 
-    },
-  ];
+  const { currentCompany } = useCompany();
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Filter projects based on search term
+  const filteredProjects = currentCompany.projects?.filter(project => 
+    project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    project.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    project.id.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  // Count project statistics
+  const activeProjects = filteredProjects.filter(project => project.status === "In Progress").length;
+  const completedProjects = filteredProjects.filter(project => project.status === "Completed").length;
+  
+  // Count overdue projects (due date is earlier than today and not completed)
+  const overdueProjects = filteredProjects.filter(project => {
+    const dueDate = new Date(project.dueDate);
+    const today = new Date();
+    return dueDate < today && project.status !== "Completed";
+  }).length;
 
   const handleAddProject = () => {
     // Display a create project modal
@@ -712,7 +675,7 @@ const Projects: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Projects</h1>
-          <p className="text-muted-foreground">Manage your client projects and track time</p>
+          <p className="text-muted-foreground">Manage {currentCompany.name}'s client projects and track time</p>
         </div>
         <div className="flex gap-2">
           <Button 
@@ -736,25 +699,25 @@ const Projects: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl">15</CardTitle>
+            <CardTitle className="text-2xl">{filteredProjects.length}</CardTitle>
             <CardDescription>Total Projects</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-primary">8</CardTitle>
+            <CardTitle className="text-2xl text-primary">{activeProjects}</CardTitle>
             <CardDescription>Active Projects</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-green-500">4</CardTitle>
+            <CardTitle className="text-2xl text-green-500">{completedProjects}</CardTitle>
             <CardDescription>Completed Projects</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-amber-500">3</CardTitle>
+            <CardTitle className="text-2xl text-amber-500">{overdueProjects}</CardTitle>
             <CardDescription>Overdue Projects</CardDescription>
           </CardHeader>
         </Card>
@@ -767,6 +730,8 @@ const Projects: React.FC = () => {
             type="search"
             placeholder="Search projects..."
             className="w-full sm:w-[300px] pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -787,7 +752,7 @@ const Projects: React.FC = () => {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Projects</CardTitle>
-          <CardDescription>View and manage your client projects</CardDescription>
+          <CardDescription>View and manage {currentCompany.name}'s client projects</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -804,58 +769,66 @@ const Projects: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {projects.map((project) => (
-                <TableRow key={project.id}>
-                  <TableCell className="font-medium">{project.name}</TableCell>
-                  <TableCell>{project.client}</TableCell>
-                  <TableCell>{project.dueDate}</TableCell>
-                  <TableCell>{project.budget}</TableCell>
-                  <TableCell>{project.tracked}</TableCell>
-                  <TableCell>{project.billed}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      project.status === "Completed" 
-                        ? "bg-green-100 text-green-800" 
-                        : project.status === "In Progress" 
-                          ? "bg-blue-100 text-blue-800" 
-                          : "bg-gray-100 text-gray-800"
-                    }`}>
-                      {project.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => handleTrackTime(project.id)}
-                      >
-                        <ClockIcon size={16} />
-                        <span className="sr-only">Track Time</span>
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => handleViewProject(project.id)}
-                      >
-                        <ActivityIcon size={16} />
-                        <span className="sr-only">Activity</span>
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => handleViewInvoice(project.id)}
-                      >
-                        <FileTextIcon size={16} />
-                        <span className="sr-only">Invoice</span>
-                      </Button>
-                    </div>
+              {filteredProjects.length > 0 ? (
+                filteredProjects.map((project) => (
+                  <TableRow key={project.id}>
+                    <TableCell className="font-medium">{project.name}</TableCell>
+                    <TableCell>{project.client}</TableCell>
+                    <TableCell>{project.dueDate}</TableCell>
+                    <TableCell>{project.budget}</TableCell>
+                    <TableCell>{project.tracked}</TableCell>
+                    <TableCell>{project.billed}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        project.status === "Completed" 
+                          ? "bg-green-100 text-green-800" 
+                          : project.status === "In Progress" 
+                            ? "bg-blue-100 text-blue-800" 
+                            : "bg-gray-100 text-gray-800"
+                      }`}>
+                        {project.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleTrackTime(project.id)}
+                        >
+                          <ClockIcon size={16} />
+                          <span className="sr-only">Track Time</span>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleViewProject(project.id)}
+                        >
+                          <ActivityIcon size={16} />
+                          <span className="sr-only">Activity</span>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleViewInvoice(project.id)}
+                        >
+                          <FileTextIcon size={16} />
+                          <span className="sr-only">Invoice</span>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-4 text-muted-foreground">
+                    No projects found for {currentCompany.name}
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
