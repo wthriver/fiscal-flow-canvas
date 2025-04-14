@@ -18,6 +18,8 @@ export interface Company {
   sales: Sale[];
   taxReports: TaxReport[];
   taxRates: TaxRate[];
+  accounts: BankAccount[];
+  transactions: Transaction[];
   revenue: {
     current: number;
     lastMonth: number;
@@ -36,6 +38,24 @@ export interface Company {
     count: number;
     percentChange: number;
   };
+}
+
+export interface BankAccount {
+  id: string;
+  name: string;
+  institution: string;
+  balance: string;
+  lastSync: string;
+}
+
+export interface Transaction {
+  id: string;
+  date: string;
+  description: string;
+  account: string;
+  category: string;
+  amount: string;
+  reconciled: boolean;
 }
 
 export interface Customer {
@@ -89,7 +109,7 @@ export interface Project {
   client: string;
   startDate: string;
   endDate: string;
-  dueDate: string; // Added missing property
+  dueDate: string;
   status: string;
   budget: string;
   spent: string;
@@ -98,8 +118,8 @@ export interface Project {
   description: string;
   tasks: Task[];
   team: TeamMember[];
-  tracked: string; // Added missing property
-  billed: string; // Added missing property
+  tracked: string;
+  billed: string;
 }
 
 export interface Task {
@@ -150,9 +170,129 @@ interface CompanyContextType {
   currentCompany: Company;
   switchCompany: (companyId: string) => void;
   addCompany: (company: Omit<Company, "id">) => void;
+  updateCompany?: (companyId: string, data: Partial<Company>) => void;
 }
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
+
+// Sample bank accounts for demo
+const demoAccounts: BankAccount[] = [
+  {
+    id: "acc001",
+    name: "Business Checking",
+    institution: "First National Bank",
+    balance: "$15,243.89",
+    lastSync: "Today, 10:32 AM"
+  },
+  {
+    id: "acc002",
+    name: "Business Savings",
+    institution: "First National Bank",
+    balance: "$42,876.54",
+    lastSync: "Today, 10:32 AM"
+  },
+  {
+    id: "acc003",
+    name: "Operating Account",
+    institution: "Capital Financial",
+    balance: "$8,721.33",
+    lastSync: "Yesterday, 5:15 PM"
+  }
+];
+
+// Sample transactions for demo
+const demoTransactions: Transaction[] = [
+  {
+    id: "tx001",
+    date: "2025-04-14",
+    description: "Office Supplies",
+    account: "Business Checking",
+    category: "Office Expenses",
+    amount: "-$253.75",
+    reconciled: true
+  },
+  {
+    id: "tx002",
+    date: "2025-04-13",
+    description: "Client Payment - ABC Corp",
+    account: "Business Checking",
+    category: "Revenue",
+    amount: "+$1,250.00",
+    reconciled: true
+  },
+  {
+    id: "tx003",
+    date: "2025-04-12",
+    description: "Monthly Rent",
+    account: "Business Checking",
+    category: "Rent",
+    amount: "-$2,500.00",
+    reconciled: true
+  },
+  {
+    id: "tx004",
+    date: "2025-04-10",
+    description: "Utility Bill",
+    account: "Business Checking",
+    category: "Utilities",
+    amount: "-$187.45",
+    reconciled: false
+  },
+  {
+    id: "tx005",
+    date: "2025-04-09",
+    description: "Client Payment - XYZ Ltd",
+    account: "Business Checking",
+    category: "Revenue",
+    amount: "+$3,450.00",
+    reconciled: true
+  },
+  {
+    id: "tx006",
+    date: "2025-04-08",
+    description: "Software Subscription",
+    account: "Business Checking",
+    category: "Software",
+    amount: "-$79.99",
+    reconciled: false
+  },
+  {
+    id: "tx007",
+    date: "2025-04-07",
+    description: "Transfer to Savings",
+    account: "Business Checking",
+    category: "Transfer",
+    amount: "-$1,000.00",
+    reconciled: true
+  },
+  {
+    id: "tx008",
+    date: "2025-04-07",
+    description: "Transfer from Checking",
+    account: "Business Savings",
+    category: "Transfer",
+    amount: "+$1,000.00",
+    reconciled: true
+  },
+  {
+    id: "tx009",
+    date: "2025-04-05",
+    description: "Client Payment - Global Tech",
+    account: "Operating Account",
+    category: "Revenue",
+    amount: "+$5,750.00",
+    reconciled: true
+  },
+  {
+    id: "tx010",
+    date: "2025-04-03",
+    description: "Insurance Premium",
+    account: "Operating Account",
+    category: "Insurance",
+    amount: "-$875.32",
+    reconciled: true
+  }
+];
 
 // Demo company data
 const demoCompany: Company = {
@@ -602,6 +742,8 @@ const demoCompany: Company = {
     { id: "TX003", name: "Sales Tax", jurisdiction: "Los Angeles", rate: "9.5%", type: "Sales" },
     { id: "TX004", name: "Property Tax", jurisdiction: "Los Angeles County", rate: "1.25%", type: "Property" }
   ],
+  accounts: demoAccounts,
+  transactions: demoTransactions,
   revenue: {
     current: 25000,
     lastMonth: 22000,
@@ -622,7 +764,7 @@ const demoCompany: Company = {
   }
 };
 
-// Update the demoCompanies to include sales and tax data
+// Update the demoCompanies with the new data structure
 const demoCompanies: Company[] = [
   {
     ...demoCompany,
@@ -630,30 +772,36 @@ const demoCompanies: Company[] = [
     name: "Acme Corporation",
     taxId: "12-3456789",
     industry: "Technology",
-    sales: [
-      { id: "SALE-001", date: "2025-04-10", customer: "ABC Corporation", items: 5, total: "$1,250.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-002", date: "2025-04-07", customer: "XYZ Limited", items: 2, total: "$780.50", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-003", date: "2025-04-05", customer: "123 Industries", items: 3, total: "$450.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-004", date: "2025-04-01", customer: "Global Tech", items: 1, total: "$1,200.00", status: "Processing", paymentStatus: "Pending" },
-      { id: "SALE-005", date: "2025-03-28", customer: "Acme Inc", items: 4, total: "$875.25", status: "On Hold", paymentStatus: "Pending" },
-      { id: "SALE-006", date: "2025-03-25", customer: "ABC Corporation", items: 2, total: "$340.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-007", date: "2025-03-20", customer: "XYZ Limited", items: 1, total: "$150.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-008", date: "2025-03-15", customer: "123 Industries", items: 3, total: "$560.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-009", date: "2025-03-10", customer: "Global Tech", items: 5, total: "$950.00", status: "Processing", paymentStatus: "Pending" },
-      { id: "SALE-010", date: "2025-03-05", customer: "Acme Inc", items: 2, total: "$480.00", status: "Completed", paymentStatus: "Paid" }
+    accounts: [
+      ...demoAccounts,
+      {
+        id: "acc004",
+        name: "Payroll Account",
+        institution: "First National Bank",
+        balance: "$18,542.21",
+        lastSync: "Today, 10:32 AM"
+      }
     ],
-    taxReports: [
-      { id: "TR001", name: "Q1 Federal Income Tax", period: "Jan-Mar 2025", dueDate: "2025-04-15", taxAmount: "$4,250.00", status: "Prepared", paymentStatus: "Pending" },
-      { id: "TR002", name: "Q1 State Income Tax", period: "Jan-Mar 2025", dueDate: "2025-04-15", taxAmount: "$1,780.50", status: "Prepared", paymentStatus: "Pending" },
-      { id: "TR003", name: "Annual Property Tax", period: "Jan-Dec 2024", dueDate: "2025-01-15", taxAmount: "$3,450.00", status: "Filed", paymentStatus: "Paid" },
-      { id: "TR004", name: "Q4 Sales Tax", period: "Oct-Dec 2024", dueDate: "2025-01-31", taxAmount: "$2,200.00", status: "Filed", paymentStatus: "Paid" },
-      { id: "TR005", name: "Q3 Sales Tax", period: "Jul-Sep 2024", dueDate: "2024-10-31", taxAmount: "$1,875.25", status: "Filed", paymentStatus: "Paid" }
-    ],
-    taxRates: [
-      { id: "TX001", name: "Federal Income Tax", jurisdiction: "Federal", rate: "21%", type: "Income" },
-      { id: "TX002", name: "State Income Tax", jurisdiction: "California", rate: "8.84%", type: "Income" },
-      { id: "TX003", name: "Sales Tax", jurisdiction: "Los Angeles", rate: "9.5%", type: "Sales" },
-      { id: "TX004", name: "Property Tax", jurisdiction: "Los Angeles County", rate: "1.25%", type: "Property" }
+    transactions: [
+      ...demoTransactions,
+      {
+        id: "tx011",
+        date: "2025-04-02",
+        description: "Employee Payroll",
+        account: "Payroll Account",
+        category: "Salary",
+        amount: "-$12,450.00",
+        reconciled: true
+      },
+      {
+        id: "tx012",
+        date: "2025-04-01",
+        description: "Quarterly Tax Payment",
+        account: "Business Checking",
+        category: "Taxes",
+        amount: "-$3,785.25",
+        reconciled: true
+      }
     ]
   },
   {
@@ -662,30 +810,75 @@ const demoCompanies: Company[] = [
     name: "TechNova Solutions",
     taxId: "98-7654321",
     industry: "Software",
-    sales: [
-      { id: "SALE-001", date: "2025-04-12", customer: "Enterprise Co", items: 3, total: "$2,450.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-002", date: "2025-04-08", customer: "Digital Systems", items: 1, total: "$950.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-003", date: "2025-04-05", customer: "Quantum LLC", items: 2, total: "$750.00", status: "Processing", paymentStatus: "Pending" },
-      { id: "SALE-004", date: "2025-04-02", customer: "Future Tech", items: 4, total: "$1,800.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-005", date: "2025-03-30", customer: "Innovation Inc", items: 2, total: "$1,275.25", status: "On Hold", paymentStatus: "Pending" },
-      { id: "SALE-006", date: "2025-03-25", customer: "Enterprise Co", items: 1, total: "$640.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-007", date: "2025-03-21", customer: "Digital Systems", items: 3, total: "$350.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-008", date: "2025-03-16", customer: "Quantum LLC", items: 2, total: "$860.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-009", date: "2025-03-12", customer: "Future Tech", items: 1, total: "$550.00", status: "Processing", paymentStatus: "Pending" },
-      { id: "SALE-010", date: "2025-03-07", customer: "Innovation Inc", items: 4, total: "$1,280.00", status: "Completed", paymentStatus: "Paid" }
+    accounts: [
+      {
+        id: "acc001",
+        name: "Main Business Account",
+        institution: "Chase Bank",
+        balance: "$28,754.32",
+        lastSync: "Today, 9:15 AM"
+      },
+      {
+        id: "acc002",
+        name: "Tax Reserve Account",
+        institution: "Chase Bank",
+        balance: "$15,320.45",
+        lastSync: "Today, 9:15 AM"
+      },
+      {
+        id: "acc003",
+        name: "Investment Account",
+        institution: "Fidelity",
+        balance: "$104,875.21",
+        lastSync: "Yesterday, 4:30 PM"
+      }
     ],
-    taxReports: [
-      { id: "TR001", name: "Q1 Federal Income Tax", period: "Jan-Mar 2025", dueDate: "2025-04-15", taxAmount: "$5,650.00", status: "Prepared", paymentStatus: "Pending" },
-      { id: "TR002", name: "Q1 State Income Tax", period: "Jan-Mar 2025", dueDate: "2025-04-15", taxAmount: "$2,380.50", status: "Prepared", paymentStatus: "Pending" },
-      { id: "TR003", name: "Annual Property Tax", period: "Jan-Dec 2024", dueDate: "2025-01-15", taxAmount: "$4,250.00", status: "Filed", paymentStatus: "Paid" },
-      { id: "TR004", name: "Q4 Sales Tax", period: "Oct-Dec 2024", dueDate: "2025-01-31", taxAmount: "$3,100.00", status: "Filed", paymentStatus: "Paid" },
-      { id: "TR005", name: "Q3 Sales Tax", period: "Jul-Sep 2024", dueDate: "2024-10-31", taxAmount: "$2,775.25", status: "Filed", paymentStatus: "Paid" }
-    ],
-    taxRates: [
-      { id: "TX001", name: "Federal Income Tax", jurisdiction: "Federal", rate: "21%", type: "Income" },
-      { id: "TX002", name: "State Income Tax", jurisdiction: "New York", rate: "6.5%", type: "Income" },
-      { id: "TX003", name: "Sales Tax", jurisdiction: "New York City", rate: "8.875%", type: "Sales" },
-      { id: "TX004", name: "Property Tax", jurisdiction: "Manhattan", rate: "1.05%", type: "Property" }
+    transactions: [
+      {
+        id: "tx001",
+        date: "2025-04-14",
+        description: "Client Payment - Enterprise Corp",
+        account: "Main Business Account",
+        category: "Revenue",
+        amount: "+$4,750.00",
+        reconciled: true
+      },
+      {
+        id: "tx002",
+        date: "2025-04-13",
+        description: "SaaS Subscriptions",
+        account: "Main Business Account",
+        category: "Software",
+        amount: "-$325.45",
+        reconciled: true
+      },
+      {
+        id: "tx003",
+        date: "2025-04-11",
+        description: "Marketing Expenses",
+        account: "Main Business Account",
+        category: "Marketing",
+        amount: "-$1,250.00",
+        reconciled: false
+      },
+      {
+        id: "tx004",
+        date: "2025-04-10",
+        description: "Quarterly Tax Transfer",
+        account: "Main Business Account",
+        category: "Transfer",
+        amount: "-$5,000.00",
+        reconciled: true
+      },
+      {
+        id: "tx005",
+        date: "2025-04-10",
+        description: "Tax Reserve Transfer",
+        account: "Tax Reserve Account",
+        category: "Transfer",
+        amount: "+$5,000.00",
+        reconciled: true
+      }
     ]
   },
   {
@@ -694,30 +887,59 @@ const demoCompanies: Company[] = [
     name: "GreenLeaf Organics",
     taxId: "45-6789012",
     industry: "Agriculture",
-    sales: [
-      { id: "SALE-001", date: "2025-04-11", customer: "Health Foods Inc", items: 10, total: "$3,250.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-002", date: "2025-04-09", customer: "Natural Grocers", items: 15, total: "$4,780.50", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-003", date: "2025-04-06", customer: "Organic Market", items: 8, total: "$2,150.00", status: "Processing", paymentStatus: "Pending" },
-      { id: "SALE-004", date: "2025-04-03", customer: "Farm Fresh", items: 12, total: "$3,200.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-005", date: "2025-03-29", customer: "Whole Foods", items: 20, total: "$5,875.25", status: "On Hold", paymentStatus: "Pending" },
-      { id: "SALE-006", date: "2025-03-26", customer: "Health Foods Inc", items: 5, total: "$1,340.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-007", date: "2025-03-22", customer: "Natural Grocers", items: 7, total: "$1,850.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-008", date: "2025-03-18", customer: "Organic Market", items: 9, total: "$2,360.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-009", date: "2025-03-13", customer: "Farm Fresh", items: 6, total: "$1,650.00", status: "Processing", paymentStatus: "Pending" },
-      { id: "SALE-010", date: "2025-03-08", customer: "Whole Foods", items: 18, total: "$4,480.00", status: "Completed", paymentStatus: "Paid" }
+    accounts: [
+      {
+        id: "acc001",
+        name: "Farm Operations",
+        institution: "Agricultural Bank",
+        balance: "$32,156.78",
+        lastSync: "Today, 11:45 AM"
+      },
+      {
+        id: "acc002",
+        name: "Equipment Fund",
+        institution: "Agricultural Bank",
+        balance: "$78,950.25",
+        lastSync: "Today, 11:45 AM"
+      }
     ],
-    taxReports: [
-      { id: "TR001", name: "Q1 Federal Income Tax", period: "Jan-Mar 2025", dueDate: "2025-04-15", taxAmount: "$3,850.00", status: "Prepared", paymentStatus: "Pending" },
-      { id: "TR002", name: "Q1 State Income Tax", period: "Jan-Mar 2025", dueDate: "2025-04-15", taxAmount: "$1,280.50", status: "Prepared", paymentStatus: "Pending" },
-      { id: "TR003", name: "Annual Property Tax", period: "Jan-Dec 2024", dueDate: "2025-01-15", taxAmount: "$2,950.00", status: "Filed", paymentStatus: "Paid" },
-      { id: "TR004", name: "Q4 Sales Tax", period: "Oct-Dec 2024", dueDate: "2025-01-31", taxAmount: "$1,900.00", status: "Filed", paymentStatus: "Paid" },
-      { id: "TR005", name: "Q3 Sales Tax", period: "Jul-Sep 2024", dueDate: "2024-10-31", taxAmount: "$1,575.25", status: "Filed", paymentStatus: "Paid" }
-    ],
-    taxRates: [
-      { id: "TX001", name: "Federal Income Tax", jurisdiction: "Federal", rate: "21%", type: "Income" },
-      { id: "TX002", name: "State Income Tax", jurisdiction: "Oregon", rate: "6.6%", type: "Income" },
-      { id: "TX003", name: "Sales Tax", jurisdiction: "Oregon", rate: "0%", type: "Sales" },
-      { id: "TX004", name: "Property Tax", jurisdiction: "Portland", rate: "1.12%", type: "Property" }
+    transactions: [
+      {
+        id: "tx001",
+        date: "2025-04-14",
+        description: "Wholesale Order - Whole Foods",
+        account: "Farm Operations",
+        category: "Revenue",
+        amount: "+$8,750.00",
+        reconciled: true
+      },
+      {
+        id: "tx002",
+        date: "2025-04-12",
+        description: "Seed Purchase",
+        account: "Farm Operations",
+        category: "Supplies",
+        amount: "-$1,856.32",
+        reconciled: true
+      },
+      {
+        id: "tx003",
+        date: "2025-04-10",
+        description: "Equipment Repair",
+        account: "Equipment Fund",
+        category: "Equipment",
+        amount: "-$785.45",
+        reconciled: false
+      },
+      {
+        id: "tx004",
+        date: "2025-04-08",
+        description: "Fertilizer Purchase",
+        account: "Farm Operations",
+        category: "Supplies",
+        amount: "-$2,450.75",
+        reconciled: true
+      }
     ]
   },
   {
@@ -726,30 +948,75 @@ const demoCompanies: Company[] = [
     name: "Atlantic Shipping",
     taxId: "78-9012345",
     industry: "Logistics",
-    sales: [
-      { id: "SALE-001", date: "2025-04-13", customer: "Global Imports", items: 1, total: "$5,250.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-002", date: "2025-04-10", customer: "International Cargo", items: 1, total: "$6,780.50", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-003", date: "2025-04-07", customer: "Freight Masters", items: 1, total: "$4,350.00", status: "Processing", paymentStatus: "Pending" },
-      { id: "SALE-004", date: "2025-04-04", customer: "Express Logistics", items: 1, total: "$7,200.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-005", date: "2025-03-31", customer: "Sea Transport", items: 1, total: "$8,875.25", status: "On Hold", paymentStatus: "Pending" },
-      { id: "SALE-006", date: "2025-03-27", customer: "Global Imports", items: 1, total: "$4,940.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-007", date: "2025-03-23", customer: "International Cargo", items: 1, total: "$5,650.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-008", date: "2025-03-19", customer: "Freight Masters", items: 1, total: "$6,860.00", status: "Completed", paymentStatus: "Paid" },
-      { id: "SALE-009", date: "2025-03-14", customer: "Express Logistics", items: 1, total: "$4,950.00", status: "Processing", paymentStatus: "Pending" },
-      { id: "SALE-010", date: "2025-03-09", customer: "Sea Transport", items: 1, total: "$7,880.00", status: "Completed", paymentStatus: "Paid" }
+    accounts: [
+      {
+        id: "acc001",
+        name: "Operations Account",
+        institution: "Maritime Bank",
+        balance: "$145,780.45",
+        lastSync: "Today, 8:30 AM"
+      },
+      {
+        id: "acc002",
+        name: "Fleet Maintenance",
+        institution: "Maritime Bank",
+        balance: "$67,890.32",
+        lastSync: "Today, 8:30 AM"
+      },
+      {
+        id: "acc003",
+        name: "Insurance Reserve",
+        institution: "Maritime Bank",
+        balance: "$235,400.00",
+        lastSync: "Today, 8:30 AM"
+      }
     ],
-    taxReports: [
-      { id: "TR001", name: "Q1 Federal Income Tax", period: "Jan-Mar 2025", dueDate: "2025-04-15", taxAmount: "$9,250.00", status: "Prepared", paymentStatus: "Pending" },
-      { id: "TR002", name: "Q1 State Income Tax", period: "Jan-Mar 2025", dueDate: "2025-04-15", taxAmount: "$3,780.50", status: "Prepared", paymentStatus: "Pending" },
-      { id: "TR003", name: "Annual Property Tax", period: "Jan-Dec 2024", dueDate: "2025-01-15", taxAmount: "$5,450.00", status: "Filed", paymentStatus: "Paid" },
-      { id: "TR004", name: "Q4 Sales Tax", period: "Oct-Dec 2024", dueDate: "2025-01-31", taxAmount: "$4,200.00", status: "Filed", paymentStatus: "Paid" },
-      { id: "TR005", name: "Q3 Sales Tax", period: "Jul-Sep 2024", dueDate: "2024-10-31", taxAmount: "$3,875.25", status: "Filed", paymentStatus: "Paid" }
-    ],
-    taxRates: [
-      { id: "TX001", name: "Federal Income Tax", jurisdiction: "Federal", rate: "21%", type: "Income" },
-      { id: "TX002", name: "State Income Tax", jurisdiction: "Florida", rate: "5.5%", type: "Income" },
-      { id: "TX003", name: "Sales Tax", jurisdiction: "Miami", rate: "7%", type: "Sales" },
-      { id: "TX004", name: "Property Tax", jurisdiction: "Miami-Dade County", rate: "1.02%", type: "Property" }
+    transactions: [
+      {
+        id: "tx001",
+        date: "2025-04-14",
+        description: "Shipping Contract - Global Imports",
+        account: "Operations Account",
+        category: "Revenue",
+        amount: "+$24,560.00",
+        reconciled: true
+      },
+      {
+        id: "tx002",
+        date: "2025-04-13",
+        description: "Fuel Purchase",
+        account: "Operations Account",
+        category: "Fuel",
+        amount: "-$8,750.45",
+        reconciled: true
+      },
+      {
+        id: "tx003",
+        date: "2025-04-11",
+        description: "Vessel Maintenance",
+        account: "Fleet Maintenance",
+        category: "Maintenance",
+        amount: "-$12,450.00",
+        reconciled: false
+      },
+      {
+        id: "tx004",
+        date: "2025-04-10",
+        description: "Dock Fees",
+        account: "Operations Account",
+        category: "Fees",
+        amount: "-$3,275.50",
+        reconciled: true
+      },
+      {
+        id: "tx005",
+        date: "2025-04-07",
+        description: "Insurance Premium",
+        account: "Insurance Reserve",
+        category: "Insurance",
+        amount: "-$8,750.00",
+        reconciled: true
+      }
     ]
   }
 ];
@@ -774,8 +1041,18 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     setCurrentCompanyId(newCompany.id);
   };
 
+  const updateCompany = (companyId: string, data: Partial<Company>) => {
+    setCompanies(prev => 
+      prev.map(company => 
+        company.id === companyId 
+          ? { ...company, ...data } 
+          : company
+      )
+    );
+  };
+
   return (
-    <CompanyContext.Provider value={{ companies, currentCompany, switchCompany, addCompany }}>
+    <CompanyContext.Provider value={{ companies, currentCompany, switchCompany, addCompany, updateCompany }}>
       {children}
     </CompanyContext.Provider>
   );
