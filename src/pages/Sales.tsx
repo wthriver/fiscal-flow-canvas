@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -320,7 +321,7 @@ const Sales: React.FC = () => {
 
   const handleViewSale = (id: string) => {
     // Find the sale
-    const sale = sales.find(sale => sale.id === id);
+    const sale = filteredSales.find(sale => sale.id === id);
     
     if (!sale) return;
     
@@ -481,7 +482,7 @@ const Sales: React.FC = () => {
 
   const handleViewInvoice = (id: string) => {
     // Find the sale
-    const sale = sales.find(sale => sale.id === id);
+    const sale = filteredSales.find(sale => sale.id === id);
     
     if (!sale) return;
     
