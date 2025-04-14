@@ -96,9 +96,12 @@ export interface Expense {
 export interface InventoryItem {
   id: string;
   name: string;
+  sku: string;
   category: string;
   quantity: number;
-  price: string;
+  costPrice: string;
+  sellPrice: string;
+  reorderPoint: number;
   status: string;
   lastUpdated: string;
 }
@@ -772,8 +775,90 @@ const demoCompanies: Company[] = [
     name: "Acme Corporation",
     taxId: "12-3456789",
     industry: "Technology",
+    inventory: [
+      {
+        id: "ITEM-001",
+        name: "Widget Pro",
+        sku: "WID-001",
+        category: "Widgets",
+        quantity: 150,
+        costPrice: "$19.99",
+        sellPrice: "$29.99",
+        reorderPoint: 25,
+        status: "In Stock",
+        lastUpdated: "2025-04-01"
+      },
+      {
+        id: "ITEM-002",
+        name: "Premium Gadget",
+        sku: "GAD-002",
+        category: "Gadgets",
+        quantity: 75,
+        costPrice: "$29.99",
+        sellPrice: "$49.99",
+        reorderPoint: 15,
+        status: "In Stock",
+        lastUpdated: "2025-03-25"
+      },
+      {
+        id: "ITEM-003",
+        name: "Basic Tool Kit",
+        sku: "TK-003",
+        category: "Tools",
+        quantity: 50,
+        costPrice: "$45.00",
+        sellPrice: "$75.00",
+        reorderPoint: 20,
+        status: "Low Stock",
+        lastUpdated: "2025-03-20"
+      },
+      {
+        id: "ITEM-004",
+        name: "Advanced Gizmo",
+        sku: "GIZ-004",
+        category: "Gizmos",
+        quantity: 25,
+        costPrice: "$69.99",
+        sellPrice: "$99.99",
+        reorderPoint: 30,
+        status: "Low Stock",
+        lastUpdated: "2025-03-15"
+      },
+      {
+        id: "ITEM-005",
+        name: "Super Thingamajig",
+        sku: "THG-005",
+        category: "Thingamajigs",
+        quantity: 0,
+        costPrice: "$99.99",
+        sellPrice: "$149.99",
+        reorderPoint: 10,
+        status: "Out of Stock",
+        lastUpdated: "2025-03-10"
+      }
+    ],
     accounts: [
-      ...demoAccounts,
+      {
+        id: "acc001",
+        name: "Business Checking",
+        institution: "First National Bank",
+        balance: "$15,243.89",
+        lastSync: "Today, 10:32 AM"
+      },
+      {
+        id: "acc002",
+        name: "Business Savings",
+        institution: "First National Bank",
+        balance: "$42,876.54",
+        lastSync: "Today, 10:32 AM"
+      },
+      {
+        id: "acc003",
+        name: "Operating Account",
+        institution: "Capital Financial",
+        balance: "$8,721.33",
+        lastSync: "Yesterday, 5:15 PM"
+      },
       {
         id: "acc004",
         name: "Payroll Account",
@@ -783,285 +868,41 @@ const demoCompanies: Company[] = [
       }
     ],
     transactions: [
-      ...demoTransactions,
       {
-        id: "tx011",
-        date: "2025-04-02",
-        description: "Employee Payroll",
-        account: "Payroll Account",
-        category: "Salary",
-        amount: "-$12,450.00",
-        reconciled: true
-      },
-      {
-        id: "tx012",
-        date: "2025-04-01",
-        description: "Quarterly Tax Payment",
+        id: "tx001",
+        date: "2025-04-14",
+        description: "Office Supplies",
         account: "Business Checking",
-        category: "Taxes",
-        amount: "-$3,785.25",
-        reconciled: true
-      }
-    ]
-  },
-  {
-    ...demoCompany,
-    id: "2",
-    name: "TechNova Solutions",
-    taxId: "98-7654321",
-    industry: "Software",
-    accounts: [
-      {
-        id: "acc001",
-        name: "Main Business Account",
-        institution: "Chase Bank",
-        balance: "$28,754.32",
-        lastSync: "Today, 9:15 AM"
-      },
-      {
-        id: "acc002",
-        name: "Tax Reserve Account",
-        institution: "Chase Bank",
-        balance: "$15,320.45",
-        lastSync: "Today, 9:15 AM"
-      },
-      {
-        id: "acc003",
-        name: "Investment Account",
-        institution: "Fidelity",
-        balance: "$104,875.21",
-        lastSync: "Yesterday, 4:30 PM"
-      }
-    ],
-    transactions: [
-      {
-        id: "tx001",
-        date: "2025-04-14",
-        description: "Client Payment - Enterprise Corp",
-        account: "Main Business Account",
-        category: "Revenue",
-        amount: "+$4,750.00",
+        category: "Office Expenses",
+        amount: "-$253.75",
         reconciled: true
       },
       {
         id: "tx002",
         date: "2025-04-13",
-        description: "SaaS Subscriptions",
-        account: "Main Business Account",
-        category: "Software",
-        amount: "-$325.45",
+        description: "Client Payment - ABC Corp",
+        account: "Business Checking",
+        category: "Revenue",
+        amount: "+$1,250.00",
         reconciled: true
       },
       {
         id: "tx003",
-        date: "2025-04-11",
-        description: "Marketing Expenses",
-        account: "Main Business Account",
-        category: "Marketing",
-        amount: "-$1,250.00",
-        reconciled: false
-      },
-      {
-        id: "tx004",
-        date: "2025-04-10",
-        description: "Quarterly Tax Transfer",
-        account: "Main Business Account",
-        category: "Transfer",
-        amount: "-$5,000.00",
-        reconciled: true
-      },
-      {
-        id: "tx005",
-        date: "2025-04-10",
-        description: "Tax Reserve Transfer",
-        account: "Tax Reserve Account",
-        category: "Transfer",
-        amount: "+$5,000.00",
-        reconciled: true
-      }
-    ]
-  },
-  {
-    ...demoCompany,
-    id: "3",
-    name: "GreenLeaf Organics",
-    taxId: "45-6789012",
-    industry: "Agriculture",
-    accounts: [
-      {
-        id: "acc001",
-        name: "Farm Operations",
-        institution: "Agricultural Bank",
-        balance: "$32,156.78",
-        lastSync: "Today, 11:45 AM"
-      },
-      {
-        id: "acc002",
-        name: "Equipment Fund",
-        institution: "Agricultural Bank",
-        balance: "$78,950.25",
-        lastSync: "Today, 11:45 AM"
-      }
-    ],
-    transactions: [
-      {
-        id: "tx001",
-        date: "2025-04-14",
-        description: "Wholesale Order - Whole Foods",
-        account: "Farm Operations",
-        category: "Revenue",
-        amount: "+$8,750.00",
-        reconciled: true
-      },
-      {
-        id: "tx002",
         date: "2025-04-12",
-        description: "Seed Purchase",
-        account: "Farm Operations",
-        category: "Supplies",
-        amount: "-$1,856.32",
+        description: "Monthly Rent",
+        account: "Business Checking",
+        category: "Rent",
+        amount: "-$2,500.00",
         reconciled: true
-      },
-      {
-        id: "tx003",
-        date: "2025-04-10",
-        description: "Equipment Repair",
-        account: "Equipment Fund",
-        category: "Equipment",
-        amount: "-$785.45",
-        reconciled: false
-      },
-      {
-        id: "tx004",
-        date: "2025-04-08",
-        description: "Fertilizer Purchase",
-        account: "Farm Operations",
-        category: "Supplies",
-        amount: "-$2,450.75",
-        reconciled: true
-      }
-    ]
-  },
-  {
-    ...demoCompany,
-    id: "4",
-    name: "Atlantic Shipping",
-    taxId: "78-9012345",
-    industry: "Logistics",
-    accounts: [
-      {
-        id: "acc001",
-        name: "Operations Account",
-        institution: "Maritime Bank",
-        balance: "$145,780.45",
-        lastSync: "Today, 8:30 AM"
-      },
-      {
-        id: "acc002",
-        name: "Fleet Maintenance",
-        institution: "Maritime Bank",
-        balance: "$67,890.32",
-        lastSync: "Today, 8:30 AM"
-      },
-      {
-        id: "acc003",
-        name: "Insurance Reserve",
-        institution: "Maritime Bank",
-        balance: "$235,400.00",
-        lastSync: "Today, 8:30 AM"
-      }
-    ],
-    transactions: [
-      {
-        id: "tx001",
-        date: "2025-04-14",
-        description: "Shipping Contract - Global Imports",
-        account: "Operations Account",
-        category: "Revenue",
-        amount: "+$24,560.00",
-        reconciled: true
-      },
-      {
-        id: "tx002",
-        date: "2025-04-13",
-        description: "Fuel Purchase",
-        account: "Operations Account",
-        category: "Fuel",
-        amount: "-$8,750.45",
-        reconciled: true
-      },
-      {
-        id: "tx003",
-        date: "2025-04-11",
-        description: "Vessel Maintenance",
-        account: "Fleet Maintenance",
-        category: "Maintenance",
-        amount: "-$12,450.00",
-        reconciled: false
       },
       {
         id: "tx004",
         date: "2025-04-10",
-        description: "Dock Fees",
-        account: "Operations Account",
-        category: "Fees",
-        amount: "-$3,275.50",
-        reconciled: true
+        description: "Utility Bill",
+        account: "Business Checking",
+        category: "Utilities",
+        amount: "-$187.45",
+        reconciled: false
       },
       {
         id: "tx005",
-        date: "2025-04-07",
-        description: "Insurance Premium",
-        account: "Insurance Reserve",
-        category: "Insurance",
-        amount: "-$8,750.00",
-        reconciled: true
-      }
-    ]
-  }
-];
-
-export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [companies, setCompanies] = useState<Company[]>(demoCompanies);
-  const [currentCompanyId, setCurrentCompanyId] = useState<string>(demoCompanies[0].id);
-
-  const currentCompany = companies.find(company => company.id === currentCompanyId) || companies[0];
-
-  const switchCompany = (companyId: string) => {
-    setCurrentCompanyId(companyId);
-  };
-
-  const addCompany = (companyData: Omit<Company, "id">) => {
-    const newCompany: Company = {
-      ...companyData,
-      id: `${companies.length + 1}`,
-    };
-    
-    setCompanies(prev => [...prev, newCompany]);
-    setCurrentCompanyId(newCompany.id);
-  };
-
-  const updateCompany = (companyId: string, data: Partial<Company>) => {
-    setCompanies(prev => 
-      prev.map(company => 
-        company.id === companyId 
-          ? { ...company, ...data } 
-          : company
-      )
-    );
-  };
-
-  return (
-    <CompanyContext.Provider value={{ companies, currentCompany, switchCompany, addCompany, updateCompany }}>
-      {children}
-    </CompanyContext.Provider>
-  );
-};
-
-export const useCompany = () => {
-  const context = useContext(CompanyContext);
-  if (context === undefined) {
-    throw new Error("useCompany must be used within a CompanyProvider");
-  }
-  return context;
-};

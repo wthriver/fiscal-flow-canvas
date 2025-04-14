@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, ArrowUpDown, Search, Package, AlertCircle } from "lucide-react";
+import { PlusCircle, ArrowUpDown, Search, Package } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FilterButton, ExportButton } from "@/components/common/ActionButtons";
@@ -17,7 +17,7 @@ const Inventory: React.FC = () => {
   // Filter inventory items based on search text
   const filteredItems = currentCompany.inventory.filter(item => 
     item.name.toLowerCase().includes(searchText.toLowerCase()) ||
-    item.sku.toLowerCase().includes(searchText.toLowerCase()) ||
+    (item.sku && item.sku.toLowerCase().includes(searchText.toLowerCase())) ||
     item.category.toLowerCase().includes(searchText.toLowerCase())
   );
 
@@ -260,8 +260,12 @@ const Inventory: React.FC = () => {
   const totalItems = currentCompany.inventory.length;
   const lowStockItems = currentCompany.inventory.filter(item => item.status === "Low Stock").length;
   const outOfStockItems = currentCompany.inventory.filter(item => item.status === "Out of Stock").length;
+  
+  // Safely calculate inventory value with null checks
   const inventoryValue = currentCompany.inventory.reduce((sum, item) => {
-    return sum + (parseFloat(item.costPrice.replace(/[^0-9.]/g, '')) * item.quantity);
+    if (!item.costPrice) return sum;
+    const price = parseFloat(item.costPrice.replace(/[^0-9.]/g, ''));
+    return sum + (isNaN(price) ? 0 : price * item.quantity);
   }, 0);
 
   return (
