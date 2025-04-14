@@ -178,7 +178,6 @@ interface CompanyContextType {
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
-// Sample bank accounts for demo
 const demoAccounts: BankAccount[] = [
   {
     id: "acc001",
@@ -203,7 +202,6 @@ const demoAccounts: BankAccount[] = [
   }
 ];
 
-// Sample transactions for demo
 const demoTransactions: Transaction[] = [
   {
     id: "tx001",
@@ -240,64 +238,9 @@ const demoTransactions: Transaction[] = [
     category: "Utilities",
     amount: "-$187.45",
     reconciled: false
-  },
-  {
-    id: "tx005",
-    date: "2025-04-09",
-    description: "Client Payment - XYZ Ltd",
-    account: "Business Checking",
-    category: "Revenue",
-    amount: "+$3,450.00",
-    reconciled: true
-  },
-  {
-    id: "tx006",
-    date: "2025-04-08",
-    description: "Software Subscription",
-    account: "Business Checking",
-    category: "Software",
-    amount: "-$79.99",
-    reconciled: false
-  },
-  {
-    id: "tx007",
-    date: "2025-04-07",
-    description: "Transfer to Savings",
-    account: "Business Checking",
-    category: "Transfer",
-    amount: "-$1,000.00",
-    reconciled: true
-  },
-  {
-    id: "tx008",
-    date: "2025-04-07",
-    description: "Transfer from Checking",
-    account: "Business Savings",
-    category: "Transfer",
-    amount: "+$1,000.00",
-    reconciled: true
-  },
-  {
-    id: "tx009",
-    date: "2025-04-05",
-    description: "Client Payment - Global Tech",
-    account: "Operating Account",
-    category: "Revenue",
-    amount: "+$5,750.00",
-    reconciled: true
-  },
-  {
-    id: "tx010",
-    date: "2025-04-03",
-    description: "Insurance Premium",
-    account: "Operating Account",
-    category: "Insurance",
-    amount: "-$875.32",
-    reconciled: true
   }
 ];
 
-// Demo company data
 const demoCompany: Company = {
   id: "1",
   name: "Acme Corporation",
@@ -767,7 +710,6 @@ const demoCompany: Company = {
   }
 };
 
-// Update the demoCompanies with the new data structure
 const demoCompanies: Company[] = [
   {
     ...demoCompany,
@@ -906,3 +848,136 @@ const demoCompanies: Company[] = [
       },
       {
         id: "tx005",
+        date: "2025-04-09",
+        description: "Client Payment - XYZ Ltd",
+        account: "Business Checking",
+        category: "Revenue",
+        amount: "+$3,450.00",
+        reconciled: true
+      },
+      {
+        id: "tx006",
+        date: "2025-04-08",
+        description: "Software Subscription",
+        account: "Business Checking",
+        category: "Software",
+        amount: "-$79.99",
+        reconciled: false
+      },
+      {
+        id: "tx007",
+        date: "2025-04-07",
+        description: "Transfer to Savings",
+        account: "Business Checking",
+        category: "Transfer",
+        amount: "-$1,000.00",
+        reconciled: true
+      },
+      {
+        id: "tx008",
+        date: "2025-04-07",
+        description: "Transfer from Checking",
+        account: "Business Savings",
+        category: "Transfer",
+        amount: "+$1,000.00",
+        reconciled: true
+      },
+      {
+        id: "tx009",
+        date: "2025-04-05",
+        description: "Client Payment - Global Tech",
+        account: "Operating Account",
+        category: "Revenue",
+        amount: "+$5,750.00",
+        reconciled: true
+      },
+      {
+        id: "tx010",
+        date: "2025-04-03",
+        description: "Insurance Premium",
+        account: "Operating Account",
+        category: "Insurance",
+        amount: "-$875.32",
+        reconciled: true
+      }
+    ]
+  }
+];
+
+export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [companies, setCompanies] = useState<Company[]>(demoCompanies);
+  const [currentCompanyId, setCurrentCompanyId] = useState<string>(demoCompanies[0].id);
+
+  const currentCompany = companies.find(company => company.id === currentCompanyId) || companies[0];
+
+  const switchCompany = (companyId: string) => {
+    setCurrentCompanyId(companyId);
+  };
+
+  const addCompany = (company: Omit<Company, "id">) => {
+    const newCompany: Company = {
+      ...company,
+      id: `${companies.length + 1}`,
+      customers: [],
+      invoices: [],
+      expenses: [],
+      inventory: [],
+      projects: [],
+      sales: [],
+      taxReports: [],
+      taxRates: [],
+      accounts: [],
+      transactions: [],
+      revenue: {
+        current: 0,
+        lastMonth: 0,
+        percentChange: 0
+      },
+      outstandingInvoices: {
+        amount: 0,
+        count: 0,
+        percentChange: 0
+      },
+      profitMargin: {
+        value: 0,
+        percentChange: 0
+      },
+      activeCustomers: {
+        count: 0,
+        percentChange: 0
+      }
+    };
+
+    setCompanies(prevCompanies => [...prevCompanies, newCompany]);
+  };
+
+  const updateCompany = (companyId: string, data: Partial<Company>) => {
+    setCompanies(prevCompanies => 
+      prevCompanies.map(company => 
+        company.id === companyId ? { ...company, ...data } : company
+      )
+    );
+  };
+
+  return (
+    <CompanyContext.Provider
+      value={{
+        companies,
+        currentCompany,
+        switchCompany,
+        addCompany,
+        updateCompany
+      }}
+    >
+      {children}
+    </CompanyContext.Provider>
+  );
+};
+
+export const useCompany = () => {
+  const context = useContext(CompanyContext);
+  if (context === undefined) {
+    throw new Error("useCompany must be used within a CompanyProvider");
+  }
+  return context;
+};
