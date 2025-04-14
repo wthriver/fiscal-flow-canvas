@@ -12,18 +12,101 @@ import {
   DateRangeButton, 
   ActionDropdown 
 } from "@/components/common/ActionButtons";
-import { handleCreateItem } from "@/utils/navigationUtils";
 import { useCompany } from "@/contexts/CompanyContext";
+import { NewInvoiceDialog } from "@/components/invoices/NewInvoiceDialog";
+import { FilterDialog } from "@/components/invoices/FilterDialog";
+import { DateRangeDialog } from "@/components/invoices/DateRangeDialog";
+import { ExportDialog } from "@/components/invoices/ExportDialog";
+import { useToast } from "@/hooks/use-toast";
 
 const Invoices: React.FC = () => {
-  const { currentCompany } = useCompany();
-  const [searchText, setSearchText] = useState("");
+  const { currentCompany, addInvoice } = useCompany();
+  const { toast } = useToast();
   
-  // Filter invoices based on search text
-  const filteredInvoices = currentCompany.invoices.filter(invoice => 
-    invoice.id.toLowerCase().includes(searchText.toLowerCase()) ||
-    invoice.customer.toLowerCase().includes(searchText.toLowerCase())
-  );
+  // State for searchable and filtered invoices
+  const [searchText, setSearchText] = useState("");
+  const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<{from: Date | undefined, to: Date | undefined}>({
+    from: undefined,
+    to: undefined
+  });
+  
+  // Filter invoices based on search text, status, and date range
+  const filteredInvoices = currentCompany.invoices.filter(invoice => {
+    // Text search
+    const matchesSearch = 
+      !searchText || 
+      invoice.id.toLowerCase().includes(searchText.toLowerCase()) ||
+      invoice.customer.toLowerCase().includes(searchText.toLowerCase());
+    
+    // Status filter
+    const matchesStatus = !statusFilter || invoice.status === statusFilter;
+    
+    // Date range filter
+    let matchesDateRange = true;
+    if (dateRange.from || dateRange.to) {
+      const invoiceDate = new Date(invoice.date);
+      
+      if (dateRange.from && invoiceDate < dateRange.from) {
+        matchesDateRange = false;
+      }
+      
+      if (dateRange.to) {
+        // Add one day to include the end date
+        const endDate = new Date(dateRange.to);
+        endDate.setDate(endDate.getDate() + 1);
+        if (invoiceDate > endDate) {
+          matchesDateRange = false;
+        }
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesDateRange;
+  });
+  
+  // Handler for creating a new invoice
+  const handleCreateInvoice = (invoiceData: any) => {
+    addInvoice(invoiceData);
+    setIsNewInvoiceOpen(false);
+    toast({
+      title: "Invoice Created",
+      description: `Invoice ${invoiceData.id} has been created successfully.`,
+    });
+  };
+  
+  // Handler for applying filters
+  const handleApplyFilter = (status: string | null) => {
+    setStatusFilter(status);
+    setIsFilterOpen(false);
+  };
+  
+  // Handler for applying date range
+  const handleApplyDateRange = (range: {from: Date | undefined, to: Date | undefined}) => {
+    setDateRange(range);
+    setIsDateRangeOpen(false);
+  };
+  
+  // Handler for exporting data
+  const handleExport = (format: string) => {
+    toast({
+      title: "Export Started",
+      description: `Exporting invoices as ${format.toUpperCase()}.`,
+    });
+    
+    // Simulate export process
+    setTimeout(() => {
+      toast({
+        title: "Export Complete",
+        description: `Invoices have been exported as ${format.toUpperCase()}.`,
+      });
+    }, 1500);
+    
+    setIsExportOpen(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -34,7 +117,7 @@ const Invoices: React.FC = () => {
         </div>
         <Button 
           className="flex items-center gap-2"
-          onClick={() => handleCreateItem("Invoice")}
+          onClick={() => setIsNewInvoiceOpen(true)}
         >
           <PlusCircle size={16} />
           <span>New Invoice</span>
@@ -53,17 +136,76 @@ const Invoices: React.FC = () => {
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <DateRangeButton type="Invoices" />
-          <FilterButton type="Invoices" />
-          <ExportButton type="Invoices" />
+          <Button
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1"
+            onClick={() => setIsDateRangeOpen(true)}
+          >
+            <DateRangeButton type="Invoices" />
+          </Button>
+          <Button
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1"
+            onClick={() => setIsFilterOpen(true)}
+          >
+            <FilterButton type="Invoices" />
+          </Button>
+          <Button
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1"
+            onClick={() => setIsExportOpen(true)}
+          >
+            <ExportButton type="Invoices" />
+          </Button>
         </div>
       </div>
+
+      {/* Active filters display */}
+      {(statusFilter || dateRange.from || dateRange.to) && (
+        <div className="flex flex-wrap gap-2 text-sm">
+          <span className="font-medium">Active filters:</span>
+          {statusFilter && (
+            <span className="bg-primary/10 text-primary px-2 py-1 rounded-full flex items-center">
+              Status: {statusFilter}
+              <button 
+                className="ml-1 hover:text-primary/70"
+                onClick={() => setStatusFilter(null)}
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {(dateRange.from || dateRange.to) && (
+            <span className="bg-primary/10 text-primary px-2 py-1 rounded-full flex items-center">
+              Date: {dateRange.from?.toLocaleDateString() || 'Any'} - {dateRange.to?.toLocaleDateString() || 'Any'}
+              <button 
+                className="ml-1 hover:text-primary/70"
+                onClick={() => setDateRange({from: undefined, to: undefined})}
+              >
+                ×
+              </button>
+            </span>
+          )}
+          <button 
+            className="text-primary hover:text-primary/70 underline"
+            onClick={() => {
+              setStatusFilter(null);
+              setDateRange({from: undefined, to: undefined});
+            }}
+          >
+            Clear all
+          </button>
+        </div>
+      )}
 
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Recent Invoices</CardTitle>
           <CardDescription>
-            {currentCompany.name} has {currentCompany.invoices.length} total invoices
+            {filteredInvoices.length} of {currentCompany.invoices.length} total invoices
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -110,7 +252,9 @@ const Invoices: React.FC = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
-                    {searchText ? "No invoices found matching your search" : "No invoices found for this company."}
+                    {searchText || statusFilter || dateRange.from || dateRange.to
+                      ? "No invoices found matching your search criteria"
+                      : "No invoices found for this company."}
                   </TableCell>
                 </TableRow>
               )}
@@ -118,6 +262,34 @@ const Invoices: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <NewInvoiceDialog 
+        open={isNewInvoiceOpen} 
+        onOpenChange={setIsNewInvoiceOpen}
+        onSubmit={handleCreateInvoice}
+        customers={currentCompany.customers}
+      />
+      
+      <FilterDialog
+        open={isFilterOpen}
+        onOpenChange={setIsFilterOpen}
+        onApplyFilter={handleApplyFilter}
+        currentFilter={statusFilter}
+      />
+      
+      <DateRangeDialog
+        open={isDateRangeOpen}
+        onOpenChange={setIsDateRangeOpen}
+        onApplyDateRange={handleApplyDateRange}
+        currentDateRange={dateRange}
+      />
+      
+      <ExportDialog
+        open={isExportOpen}
+        onOpenChange={setIsExportOpen}
+        onExport={handleExport}
+      />
     </div>
   );
 };

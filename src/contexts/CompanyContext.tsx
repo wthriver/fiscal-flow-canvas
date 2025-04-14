@@ -174,6 +174,7 @@ interface CompanyContextType {
   switchCompany: (companyId: string) => void;
   addCompany: (company: Omit<Company, "id">) => void;
   updateCompany?: (companyId: string, data: Partial<Company>) => void;
+  addInvoice: (invoice: Invoice) => void;
 }
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
@@ -914,41 +915,12 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     setCurrentCompanyId(companyId);
   };
 
-  const addCompany = (company: Omit<Company, "id">) => {
+  const addCompany = (companyData: Omit<Company, "id">) => {
     const newCompany: Company = {
-      ...company,
-      id: `${companies.length + 1}`,
-      customers: [],
-      invoices: [],
-      expenses: [],
-      inventory: [],
-      projects: [],
-      sales: [],
-      taxReports: [],
-      taxRates: [],
-      accounts: [],
-      transactions: [],
-      revenue: {
-        current: 0,
-        lastMonth: 0,
-        percentChange: 0
-      },
-      outstandingInvoices: {
-        amount: 0,
-        count: 0,
-        percentChange: 0
-      },
-      profitMargin: {
-        value: 0,
-        percentChange: 0
-      },
-      activeCustomers: {
-        count: 0,
-        percentChange: 0
-      }
+      ...companyData,
+      id: `${companies.length + 1}`
     };
-
-    setCompanies(prevCompanies => [...prevCompanies, newCompany]);
+    setCompanies([...companies, newCompany]);
   };
 
   const updateCompany = (companyId: string, data: Partial<Company>) => {
@@ -959,16 +931,42 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     );
   };
 
+  const addInvoice = (invoice: Invoice) => {
+    setCompanies(prevCompanies => 
+      prevCompanies.map(company => {
+        if (company.id === currentCompanyId) {
+          const updatedInvoices = [...company.invoices, invoice];
+          
+          const updatedOutstandingInvoices = { 
+            ...company.outstandingInvoices 
+          };
+          
+          if (invoice.status === "Pending" || invoice.status === "Outstanding" || invoice.status === "Overdue") {
+            const amount = parseFloat(invoice.amount.replace(/[^0-9.-]+/g, ""));
+            updatedOutstandingInvoices.count += 1;
+            updatedOutstandingInvoices.amount += amount;
+          }
+          
+          return {
+            ...company,
+            invoices: updatedInvoices,
+            outstandingInvoices: updatedOutstandingInvoices
+          };
+        }
+        return company;
+      })
+    );
+  };
+
   return (
-    <CompanyContext.Provider
-      value={{
-        companies,
-        currentCompany,
-        switchCompany,
-        addCompany,
-        updateCompany
-      }}
-    >
+    <CompanyContext.Provider value={{ 
+      companies, 
+      currentCompany, 
+      switchCompany, 
+      addCompany,
+      updateCompany,
+      addInvoice
+    }}>
       {children}
     </CompanyContext.Provider>
   );
@@ -977,7 +975,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
 export const useCompany = () => {
   const context = useContext(CompanyContext);
   if (context === undefined) {
-    throw new Error("useCompany must be used within a CompanyProvider");
+    throw new Error('useCompany must be used within a CompanyProvider');
   }
   return context;
 };
