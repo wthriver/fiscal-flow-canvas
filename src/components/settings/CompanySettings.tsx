@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useCompany } from "@/contexts/CompanyContext";
 import { toast } from "sonner";
 
-const CompanySettings: React.FC = () => {
+export const CompanySettings: React.FC = () => {
   const { currentCompany, updateCompany } = useCompany();
   const [formData, setFormData] = useState({
     name: currentCompany.name,
