@@ -12,18 +12,100 @@ import {
   DateRangeButton, 
   ActionDropdown 
 } from "@/components/common/ActionButtons";
-import { handleCreateItem } from "@/utils/navigationUtils";
 import { useCompany } from "@/contexts/CompanyContext";
+import { Expense } from "@/contexts/CompanyContext";
+import { NewExpenseDialog } from "@/components/expenses/NewExpenseDialog";
+import { FilterDialog } from "@/components/expenses/FilterDialog";
+import { ExportDialog } from "@/components/expenses/ExportDialog";
+import { DateRangeDialog } from "@/components/invoices/DateRangeDialog";
 
 const Expenses: React.FC = () => {
   const { currentCompany } = useCompany();
   const [searchText, setSearchText] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: undefined,
+    to: undefined
+  });
   
-  // Filter expenses based on search text
-  const filteredExpenses = currentCompany.expenses.filter(expense => 
-    expense.id.toLowerCase().includes(searchText.toLowerCase()) ||
-    expense.vendor.toLowerCase().includes(searchText.toLowerCase()) ||
-    expense.category.toLowerCase().includes(searchText.toLowerCase())
+  // Dialog open states
+  const [newExpenseDialogOpen, setNewExpenseDialogOpen] = useState(false);
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [dateRangeDialogOpen, setDateRangeDialogOpen] = useState(false);
+  
+  // Filter expenses based on search text, status, and date range
+  const filteredExpenses = currentCompany.expenses.filter(expense => {
+    // Search text filter
+    const matchesSearch = 
+      expense.id.toLowerCase().includes(searchText.toLowerCase()) ||
+      expense.vendor.toLowerCase().includes(searchText.toLowerCase()) ||
+      expense.category.toLowerCase().includes(searchText.toLowerCase());
+    
+    // Status filter
+    const matchesStatus = 
+      selectedStatus === "all" || 
+      expense.status.toLowerCase() === selectedStatus.toLowerCase() ||
+      (selectedStatus === "office-supplies" && expense.category === "Office Supplies") ||
+      (selectedStatus === "utilities" && expense.category === "Utilities") ||
+      (selectedStatus === "rent" && expense.category === "Rent") ||
+      (selectedStatus === "travel" && expense.category === "Travel") ||
+      (selectedStatus === "software" && expense.category === "Software");
+    
+    // Date range filter
+    let matchesDateRange = true;
+    if (dateRange.from || dateRange.to) {
+      const expenseDate = new Date(expense.date);
+      
+      if (dateRange.from && dateRange.to) {
+        matchesDateRange = expenseDate >= dateRange.from && expenseDate <= dateRange.to;
+      } else if (dateRange.from) {
+        matchesDateRange = expenseDate >= dateRange.from;
+      } else if (dateRange.to) {
+        matchesDateRange = expenseDate <= dateRange.to;
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesDateRange;
+  });
+
+  // Event handlers
+  const handleDateRangeChange = (range: { from: Date | undefined; to: Date | undefined }) => {
+    setDateRange(range);
+  };
+
+  // Custom button components for our dialogs
+  const CustomFilterButton = () => (
+    <Button 
+      variant="outline" 
+      size="sm" 
+      className="h-9"
+      onClick={() => setFilterDialogOpen(true)}
+    >
+      Filter
+    </Button>
+  );
+
+  const CustomExportButton = () => (
+    <Button 
+      variant="outline" 
+      size="sm" 
+      className="h-9"
+      onClick={() => setExportDialogOpen(true)}
+    >
+      Export
+    </Button>
+  );
+
+  const CustomDateRangeButton = () => (
+    <Button 
+      variant="outline" 
+      size="sm" 
+      className="h-9"
+      onClick={() => setDateRangeDialogOpen(true)}
+    >
+      Date Range
+    </Button>
   );
 
   return (
@@ -35,7 +117,7 @@ const Expenses: React.FC = () => {
         </div>
         <Button 
           className="flex items-center gap-2"
-          onClick={() => handleCreateItem("Expense")}
+          onClick={() => setNewExpenseDialogOpen(true)}
         >
           <PlusCircle size={16} />
           <span>Add Expense</span>
@@ -54,9 +136,9 @@ const Expenses: React.FC = () => {
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <DateRangeButton type="Expenses" />
-          <FilterButton type="Expenses" />
-          <ExportButton type="Expenses" />
+          <CustomDateRangeButton />
+          <CustomFilterButton />
+          <CustomExportButton />
         </div>
       </div>
 
@@ -109,7 +191,9 @@ const Expenses: React.FC = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
-                    {searchText ? "No expenses found matching your search" : "No expenses found for this company."}
+                    {searchText || selectedStatus !== "all" || dateRange.from || dateRange.to
+                      ? "No expenses found matching your search or filters"
+                      : "No expenses found for this company."}
                   </TableCell>
                 </TableRow>
               )}
@@ -117,6 +201,32 @@ const Expenses: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <NewExpenseDialog 
+        open={newExpenseDialogOpen} 
+        onOpenChange={setNewExpenseDialogOpen} 
+      />
+      
+      <FilterDialog 
+        open={filterDialogOpen} 
+        onOpenChange={setFilterDialogOpen}
+        onApplyFilter={setSelectedStatus}
+        currentFilter={selectedStatus}
+      />
+      
+      <ExportDialog 
+        open={exportDialogOpen} 
+        onOpenChange={setExportDialogOpen}
+        expensesCount={filteredExpenses.length}
+      />
+      
+      <DateRangeDialog 
+        open={dateRangeDialogOpen} 
+        onOpenChange={setDateRangeDialogOpen}
+        onApplyDateRange={handleDateRangeChange}
+        currentDateRange={dateRange}
+      />
     </div>
   );
 };

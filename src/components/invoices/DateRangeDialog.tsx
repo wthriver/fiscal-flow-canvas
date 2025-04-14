@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Label } from "@/components/ui/label";
+import { DateRange } from "react-day-picker";
 
 interface DateRangeDialogProps {
   open: boolean;
@@ -19,10 +20,7 @@ export const DateRangeDialog: React.FC<DateRangeDialogProps> = ({
   onApplyDateRange,
   currentDateRange
 }) => {
-  const [date, setDate] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>(currentDateRange);
+  const [date, setDate] = useState<DateRange>(currentDateRange);
 
   // Reset the date when the dialog opens to match the current range
   React.useEffect(() => {
@@ -62,8 +60,8 @@ export const DateRangeDialog: React.FC<DateRangeDialogProps> = ({
             <Calendar
               mode="range"
               selected={date}
-              onSelect={setDate}
-              className="rounded-md border"
+              onSelect={(value) => setDate(value || { from: undefined, to: undefined })}
+              className="rounded-md border pointer-events-auto"
             />
           </div>
         </div>
