@@ -3,13 +3,13 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompany } from "@/contexts/CompanyContext";
-import { format } from "date-fns";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateRangeDialog } from "@/components/invoices/DateRangeDialog";
 import { Download, Calendar } from "lucide-react";
+import { TransactionHistoryTab } from "./reports/TransactionHistoryTab";
+import { AccountStatementTab } from "./reports/AccountStatementTab";
+import { IncomeExpensesTab } from "./reports/IncomeExpensesTab";
+import { ReconciliationTab } from "./reports/ReconciliationTab";
 
 interface ReportsDialogProps {
   open: boolean;
@@ -122,7 +122,6 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
   };
 
   const handleDownloadCSV = () => {
-    // Generate CSV content based on filtered transactions
     const headers = ["Date", "Description", "Category", "Amount", "Reconciled"];
     const csvRows = [headers.join(",")];
 
@@ -211,271 +210,26 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
             </TabsList>
             
             <TabsContent value="transaction-history" className="max-h-[60vh] overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTransactions.length > 0 ? (
-                    filteredTransactions.map((transaction) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell>{transaction.date}</TableCell>
-                        <TableCell>{transaction.description}</TableCell>
-                        <TableCell>{transaction.category}</TableCell>
-                        <TableCell className={transaction.amount.startsWith("+") ? "text-green-600" : "text-red-600"}>
-                          {transaction.amount}
-                        </TableCell>
-                        <TableCell>
-                          {transaction.reconciled ? (
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              Reconciled
-                            </span>
-                          ) : (
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                              Pending
-                            </span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-4">
-                        No transactions found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+              <TransactionHistoryTab transactions={filteredTransactions} />
             </TabsContent>
             
             <TabsContent value="account-statement">
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Account Balance History</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={balanceHistory}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="date" />
-                          <YAxis />
-                          <Tooltip
-                            formatter={(value: any) => [`$${Math.abs(value).toFixed(2)}`, value < 0 ? "Debit" : "Credit"]}
-                          />
-                          <Legend />
-                          <Bar dataKey="amount" name="Transaction Amount" fill={accountName.includes("Savings") ? "#8884d8" : "#82ca9d"} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Debits</TableHead>
-                      <TableHead>Credits</TableHead>
-                      <TableHead>Balance</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {balanceHistory.length > 0 ? (
-                      balanceHistory.map((entry, index) => {
-                        const transaction = accountTransactions.find(t => t.date === entry.date);
-                        return (
-                          <TableRow key={index}>
-                            <TableCell>{entry.date}</TableCell>
-                            <TableCell>{transaction?.description || "Balance"}</TableCell>
-                            <TableCell>{entry.amount < 0 ? `$${Math.abs(entry.amount).toFixed(2)}` : ""}</TableCell>
-                            <TableCell>{entry.amount > 0 ? `$${entry.amount.toFixed(2)}` : ""}</TableCell>
-                            <TableCell>${entry.balance.toFixed(2)}</TableCell>
-                          </TableRow>
-                        );
-                      })
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4">
-                          No transactions found
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <AccountStatementTab 
+                balanceHistory={balanceHistory}
+                accountName={accountName}
+                transactions={accountTransactions}
+              />
             </TabsContent>
             
             <TabsContent value="income-expenses">
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Income vs. Expenses</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={incomeExpenseData}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="month" />
-                          <YAxis />
-                          <Tooltip formatter={(value: any) => [`$${value.toFixed(2)}`, ""]} />
-                          <Legend />
-                          <Bar dataKey="income" name="Income" fill="#82ca9d" />
-                          <Bar dataKey="expenses" name="Expenses" fill="#ff7e7e" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Month</TableHead>
-                      <TableHead>Income</TableHead>
-                      <TableHead>Expenses</TableHead>
-                      <TableHead>Net</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {incomeExpenseData.length > 0 ? (
-                      incomeExpenseData.map((entry, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{entry.month}</TableCell>
-                          <TableCell className="text-green-600">${entry.income.toFixed(2)}</TableCell>
-                          <TableCell className="text-red-600">${entry.expenses.toFixed(2)}</TableCell>
-                          <TableCell className={entry.balance >= 0 ? "text-green-600" : "text-red-600"}>
-                            ${entry.balance.toFixed(2)}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-4">
-                          No data available
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <IncomeExpensesTab incomeExpenseData={incomeExpenseData} />
             </TabsContent>
             
             <TabsContent value="reconciliation">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Reconciliation Status</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-[200px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                            data={[reconciliationData]}
-                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                            layout="vertical"
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" />
-                            <YAxis type="category" dataKey="name" hide />
-                            <Tooltip />
-                            <Legend />
-                            <Bar dataKey="reconciled" name="Reconciled" fill="#82ca9d" stackId="a" />
-                            <Bar dataKey="unreconciled" name="Unreconciled" fill="#ff7e7e" stackId="a" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Reconciliation Summary</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span>Total Transactions:</span>
-                          <span className="font-medium">{accountTransactions.length}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span>Reconciled:</span>
-                          <span className="font-medium text-green-600">{reconciliationData.reconciled}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span>Unreconciled:</span>
-                          <span className="font-medium text-red-600">{reconciliationData.unreconciled}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span>Reconciliation Rate:</span>
-                          <span className="font-medium">
-                            {accountTransactions.length > 0
-                              ? ((reconciliationData.reconciled / accountTransactions.length) * 100).toFixed(1) + "%"
-                              : "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Unreconciled Transactions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Amount</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {accountTransactions.filter(t => !t.reconciled).length > 0 ? (
-                          accountTransactions
-                            .filter(t => !t.reconciled)
-                            .map((transaction) => (
-                              <TableRow key={transaction.id}>
-                                <TableCell>{transaction.date}</TableCell>
-                                <TableCell>{transaction.description}</TableCell>
-                                <TableCell>{transaction.category}</TableCell>
-                                <TableCell className={transaction.amount.startsWith("+") ? "text-green-600" : "text-red-600"}>
-                                  {transaction.amount}
-                                </TableCell>
-                              </TableRow>
-                            ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={4} className="text-center py-4">
-                              All transactions are reconciled
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              </div>
+              <ReconciliationTab 
+                reconciliationData={reconciliationData}
+                transactions={accountTransactions}
+              />
             </TabsContent>
           </Tabs>
 
