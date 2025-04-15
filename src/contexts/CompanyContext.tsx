@@ -176,6 +176,7 @@ interface CompanyContextType {
   updateCompany?: (companyId: string, data: Partial<Company>) => void;
   addInvoice: (invoice: Invoice) => void;
   addExpense: (expense: Expense) => void;
+  addTransaction: (transaction: Transaction) => void;
 }
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
@@ -975,6 +976,22 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     );
   };
 
+  const addTransaction = (transaction: Transaction) => {
+    setCompanies(prevCompanies => 
+      prevCompanies.map(company => {
+        if (company.id === currentCompanyId) {
+          const updatedTransactions = [...company.transactions, transaction];
+          
+          return {
+            ...company,
+            transactions: updatedTransactions
+          };
+        }
+        return company;
+      })
+    );
+  };
+
   return (
     <CompanyContext.Provider value={{ 
       companies, 
@@ -983,7 +1000,8 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
       addCompany,
       updateCompany,
       addInvoice,
-      addExpense
+      addExpense,
+      addTransaction
     }}>
       {children}
     </CompanyContext.Provider>

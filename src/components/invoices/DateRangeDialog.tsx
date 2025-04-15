@@ -20,7 +20,7 @@ export const DateRangeDialog: React.FC<DateRangeDialogProps> = ({
   onApplyDateRange,
   currentDateRange
 }) => {
-  const [date, setDate] = useState<DateRange>(currentDateRange);
+  const [date, setDate] = useState<DateRange | undefined>(currentDateRange);
 
   // Reset the date when the dialog opens to match the current range
   React.useEffect(() => {
@@ -30,7 +30,7 @@ export const DateRangeDialog: React.FC<DateRangeDialogProps> = ({
   }, [open, currentDateRange]);
 
   const handleApply = () => {
-    onApplyDateRange(date);
+    onApplyDateRange(date || { from: undefined, to: undefined });
   };
 
   const handleClear = () => {
@@ -54,13 +54,13 @@ export const DateRangeDialog: React.FC<DateRangeDialogProps> = ({
             <div>
               <Label className="block mb-2">Selected Range</Label>
               <div className="text-sm text-gray-500">
-                {date.from ? format(date.from, "PPP") : "Start date"} - {date.to ? format(date.to, "PPP") : "End date"}
+                {date?.from ? format(date.from, "PPP") : "Start date"} - {date?.to ? format(date.to, "PPP") : "End date"}
               </div>
             </div>
             <Calendar
               mode="range"
               selected={date}
-              onSelect={(value) => setDate(value || { from: undefined, to: undefined })}
+              onSelect={setDate}
               className="rounded-md border pointer-events-auto"
             />
           </div>

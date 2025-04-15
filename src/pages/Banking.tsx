@@ -9,10 +9,15 @@ import { FilterButton, ExportButton, ViewButton, EditButton, DeleteButton } from
 import { handleCreateItem, handleViewItem } from "@/utils/navigationUtils";
 import { toast } from "sonner";
 import { useCompany } from "@/contexts/CompanyContext";
+import { AddTransactionDialog } from "@/components/banking/AddTransactionDialog";
+import { ReportsDialog } from "@/components/banking/ReportsDialog";
 
 const Banking: React.FC = () => {
   const { currentCompany } = useCompany();
   const [searchText, setSearchText] = useState("");
+  const [addTransactionOpen, setAddTransactionOpen] = useState(false);
+  const [reportsOpen, setReportsOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState({ id: "", name: "" });
   
   // Filter transactions based on search text
   const filteredTransactions = currentCompany.transactions.filter(transaction => 
@@ -23,8 +28,7 @@ const Banking: React.FC = () => {
   );
 
   const handleAddTransaction = () => {
-    handleCreateItem("Transaction");
-    // In a real app, you would open a form and then add the new transaction to the state
+    setAddTransactionOpen(true);
   };
 
   const handleConnectBank = () => {
@@ -212,65 +216,34 @@ const Banking: React.FC = () => {
   };
   
   const handleViewReports = (accountId: string, name: string) => {
-    // Create a reports modal - simulation
-    const reportsModal = document.createElement('div');
-    reportsModal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
-    reportsModal.innerHTML = `
-      <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-lg font-bold mb-4">Reports for ${name}</h3>
-        <div class="space-y-2 mb-4">
-          <button class="w-full text-left p-3 border rounded-md hover:bg-gray-50 flex items-center justify-between">
-            <span>Transaction History</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </button>
-          <button class="w-full text-left p-3 border rounded-md hover:bg-gray-50 flex items-center justify-between">
-            <span>Account Statement</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </button>
-          <button class="w-full text-left p-3 border rounded-md hover:bg-gray-50 flex items-center justify-between">
-            <span>Income & Expenses</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </button>
-          <button class="w-full text-left p-3 border rounded-md hover:bg-gray-50 flex items-center justify-between">
-            <span>Reconciliation Report</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </button>
-        </div>
-        <div class="flex justify-end">
-          <button class="px-4 py-2 bg-gray-200 rounded-md" id="close-reports">Close</button>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(reportsModal);
-    
-    document.getElementById('close-reports')?.addEventListener('click', () => {
-      document.body.removeChild(reportsModal);
-    });
+    setSelectedAccount({ id: accountId, name });
+    setReportsOpen(true);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold">Banking</h1>
           <p className="text-muted-foreground">Manage {currentCompany.name}'s financial accounts and transactions</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Button variant="outline" className="flex items-center gap-2" onClick={handleConnectBank}>
             <Building size={16} />
-            <span>Connect Bank</span>
+            <span className="hidden sm:inline">Connect Bank</span>
+            <span className="sm:hidden">Connect</span>
           </Button>
           <Button className="flex items-center gap-2" onClick={handleAddTransaction}>
             <PlusCircle size={16} />
-            <span>Add Transaction</span>
+            <span className="hidden sm:inline">Add Transaction</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {currentCompany.accounts.map((account) => (
-          <Card key={account.id}>
+          <Card key={account.id} className="h-full">
             <CardHeader className="pb-2">
               <CardDescription>{account.institution}</CardDescription>
               <CardTitle>{account.name}</CardTitle>
@@ -279,7 +252,7 @@ const Banking: React.FC = () => {
               <div className="text-2xl font-bold">{account.balance}</div>
               <p className="text-xs text-muted-foreground mt-1">Last synced: {account.lastSync}</p>
             </CardContent>
-            <CardFooter className="pt-1 flex justify-between">
+            <CardFooter className="pt-1 flex flex-wrap justify-between gap-1">
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -287,7 +260,8 @@ const Banking: React.FC = () => {
                 onClick={() => handleTransferOut(account.id, account.name)}
               >
                 <ArrowUpRight size={14} className="mr-1" />
-                Transfer Out
+                <span className="hidden sm:inline">Transfer Out</span>
+                <span className="sm:hidden">Out</span>
               </Button>
               <Button 
                 variant="ghost" 
@@ -296,7 +270,8 @@ const Banking: React.FC = () => {
                 onClick={() => handleTransferIn(account.id, account.name)}
               >
                 <ArrowDownLeft size={14} className="mr-1" />
-                Transfer In
+                <span className="hidden sm:inline">Transfer In</span>
+                <span className="sm:hidden">In</span>
               </Button>
               <Button 
                 variant="ghost" 
@@ -305,7 +280,7 @@ const Banking: React.FC = () => {
                 onClick={() => handleViewReports(account.id, account.name)}
               >
                 <BarChart4 size={14} className="mr-1" />
-                Reports
+                <span>Reports</span>
               </Button>
             </CardFooter>
           </Card>
@@ -334,7 +309,7 @@ const Banking: React.FC = () => {
           <CardTitle>Recent Transactions</CardTitle>
           <CardDescription>Showing {currentCompany.name}'s latest transactions across all accounts</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -389,6 +364,18 @@ const Banking: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <AddTransactionDialog
+        open={addTransactionOpen}
+        onOpenChange={setAddTransactionOpen}
+      />
+
+      <ReportsDialog
+        open={reportsOpen}
+        onOpenChange={setReportsOpen}
+        accountId={selectedAccount.id}
+        accountName={selectedAccount.name}
+      />
     </div>
   );
 };
