@@ -31,33 +31,65 @@ const Reports: React.FC = () => {
   const [activeTab, setActiveTab] = useState("all");
   
   const handleGenerateReport = (reportName: string) => {
-    toast.success(`Generating ${reportName} report for ${currentCompany.name}`);
-    // Logic to generate the report would go here
+    toast.success(`Generating ${reportName} report`, {
+      description: `Creating a detailed ${reportName} report for ${currentCompany.name}`,
+      duration: 5000,
+    });
+    
+    // Simulate report generation with loading state
+    setTimeout(() => {
+      toast.success(`${reportName} report ready`, {
+        description: "Your report has been generated successfully",
+      });
+    }, 2000);
   };
 
   const handleViewReport = (reportName: string) => {
-    toast.info(`Viewing ${currentCompany.name}'s ${reportName} report`);
-    // Logic to view the report would go here
+    toast.info(`Viewing ${reportName}`, {
+      description: `Opening ${currentCompany.name}'s ${reportName} report`,
+      action: {
+        label: "Open",
+        onClick: () => console.log("Opening report view"),
+      },
+    });
   };
 
   const handleShareReport = (reportName: string) => {
-    toast.info(`Share options for ${currentCompany.name}'s ${reportName} report`);
-    // Logic to share the report would go here
+    toast.info(`Share options for ${reportName}`, {
+      description: "Choose how you want to share this report",
+      action: {
+        label: "Email",
+        onClick: () => toast.success(`${reportName} shared via email`),
+      },
+    });
   };
 
   const handlePrint = () => {
-    toast.info(`Preparing ${currentCompany.name}'s reports for printing`);
-    window.print();
+    toast.info(`Preparing to print reports`, {
+      description: "Getting your reports ready for printing...",
+    });
+    setTimeout(() => window.print(), 1000);
   };
 
   const handleExport = () => {
-    toast.success(`Exporting ${currentCompany.name}'s reports`);
-    // Logic to export the reports would go here
+    toast.success(`Exporting reports`, {
+      description: "Your reports will be downloaded as a zip file shortly",
+    });
+    
+    // Simulate file download after a short delay
+    setTimeout(() => {
+      const link = document.createElement("a");
+      link.href = "#";
+      link.download = "company-reports.zip";
+      link.click();
+    }, 1500);
   };
 
   const handleApplyDateRange = (range: DateRange) => {
     setSelectedDateRange(range);
-    toast.success("Date range applied to reports");
+    toast.success("Date range applied", {
+      description: "Your reports have been filtered by the selected date range",
+    });
   };
 
   const reportCategories = [
@@ -138,7 +170,7 @@ const Reports: React.FC = () => {
   }, [reportCategories, searchTerm, activeTab]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold">Reports</h1>
@@ -235,13 +267,25 @@ const Reports: React.FC = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => toast.info(`Email ${report.name} report`)}>
+                            <DropdownMenuItem onClick={() => toast.info(`Email ${report.name} report sent`)}>
                               Email Report
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast.info(`Copy link to ${report.name} report`)}>
+                            <DropdownMenuItem onClick={() => {
+                              toast.success("Link copied to clipboard", {
+                                description: `Share link for ${report.name} report`
+                              });
+                            }}>
                               Copy Link
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast.info(`Download ${report.name} report as PDF`)}>
+                            <DropdownMenuItem onClick={() => {
+                              toast.success(`Downloading ${report.name} as PDF`);
+                              setTimeout(() => {
+                                const link = document.createElement("a");
+                                link.href = "#";
+                                link.download = `${report.name.replace(/\s+/g, "-").toLowerCase()}.pdf`;
+                                link.click();
+                              }, 1500);
+                            }}>
                               Download PDF
                             </DropdownMenuItem>
                           </DropdownMenuContent>

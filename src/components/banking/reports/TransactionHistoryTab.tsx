@@ -3,8 +3,14 @@ import React, { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, Share2, Search, Filter } from "lucide-react";
+import { Download, FileText, Share2, Search, Filter, Eye } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Transaction {
   id: string;
@@ -58,15 +64,34 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
   };
 
   const handleShareTransaction = (transaction: Transaction) => {
-    toast.success(`Sharing transaction details for: ${transaction.description}`);
+    toast.success(`Sharing transaction details for: ${transaction.description}`, {
+      description: "Transaction details have been copied to clipboard",
+      action: {
+        label: "Close",
+        onClick: () => console.log("Toast closed"),
+      },
+    });
   };
 
   const handleViewDetails = (transaction: Transaction) => {
-    toast.info(`Viewing details for transaction: ${transaction.description}`);
+    toast.info(`Viewing transaction: ${transaction.description}`, {
+      description: `${transaction.date} | Category: ${transaction.category} | Amount: ${transaction.amount}`,
+      duration: 5000,
+    });
   };
 
   const handleExportPDF = () => {
-    toast.success("Exporting transactions to PDF");
+    toast.success("Exporting transactions to PDF", {
+      description: "Your transactions report will be downloaded shortly",
+    });
+    
+    // Simulate PDF download after a short delay
+    setTimeout(() => {
+      const link = document.createElement("a");
+      link.href = "#";
+      link.download = "transactions-report.pdf";
+      link.click();
+    }, 1500);
   };
 
   return (
@@ -139,24 +164,50 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8" 
-                          onClick={() => handleViewDetails(transaction)}
-                        >
-                          <FileText className="h-4 w-4" />
-                          <span className="sr-only">View</span>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8" 
-                          onClick={() => handleShareTransaction(transaction)}
-                        >
-                          <Share2 className="h-4 w-4" />
-                          <span className="sr-only">Share</span>
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                            >
+                              <Eye className="h-4 w-4" />
+                              <span className="sr-only">View</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleViewDetails(transaction)}>
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toast.info(`Printing transaction: ${transaction.description}`)}>
+                              Print Transaction
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                            >
+                              <Share2 className="h-4 w-4" />
+                              <span className="sr-only">Share</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleShareTransaction(transaction)}>
+                              Share via Email
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toast.info(`Link copied for: ${transaction.description}`)}>
+                              Copy Link
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toast.info(`Exporting: ${transaction.description}`)}>
+                              Export as PDF
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
