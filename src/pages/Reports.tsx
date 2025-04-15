@@ -1,10 +1,19 @@
-import React, { useState } from "react";
+
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, BarChart4, TrendingUp, Printer, Calendar, Share2 } from "lucide-react";
+import { Download, FileText, BarChart4, TrendingUp, Printer, Calendar, Share2, Eye, ExternalLink } from "lucide-react";
 import { DateRangeDialog } from "@/components/invoices/DateRangeDialog";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useCompany } from "@/contexts/CompanyContext";
+import { format } from "date-fns";
 
 interface DateRange {
   from: Date | undefined;
@@ -18,17 +27,22 @@ const Reports: React.FC = () => {
     from: undefined,
     to: undefined,
   });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
   
   const handleGenerateReport = (reportName: string) => {
     toast.success(`Generating ${reportName} report for ${currentCompany.name}`);
+    // Logic to generate the report would go here
   };
 
   const handleViewReport = (reportName: string) => {
     toast.info(`Viewing ${currentCompany.name}'s ${reportName} report`);
+    // Logic to view the report would go here
   };
 
   const handleShareReport = (reportName: string) => {
     toast.info(`Share options for ${currentCompany.name}'s ${reportName} report`);
+    // Logic to share the report would go here
   };
 
   const handlePrint = () => {
@@ -38,6 +52,7 @@ const Reports: React.FC = () => {
 
   const handleExport = () => {
     toast.success(`Exporting ${currentCompany.name}'s reports`);
+    // Logic to export the reports would go here
   };
 
   const handleApplyDateRange = (range: DateRange) => {
@@ -47,6 +62,7 @@ const Reports: React.FC = () => {
 
   const reportCategories = [
     {
+      id: "financial",
       title: "Financial Statements",
       description: `Core financial reports for ${currentCompany.name}`,
       reports: [
@@ -56,6 +72,7 @@ const Reports: React.FC = () => {
       ]
     },
     {
+      id: "tax",
       title: "Tax Reports",
       description: `Reports to help with ${currentCompany.name}'s tax compliance`,
       reports: [
@@ -65,6 +82,7 @@ const Reports: React.FC = () => {
       ]
     },
     {
+      id: "receivable",
       title: "Accounts Receivable",
       description: `Track money owed to ${currentCompany.name}`,
       reports: [
@@ -74,6 +92,7 @@ const Reports: React.FC = () => {
       ]
     },
     {
+      id: "payable",
       title: "Accounts Payable",
       description: `Track money ${currentCompany.name} owes`,
       reports: [
@@ -83,6 +102,7 @@ const Reports: React.FC = () => {
       ]
     },
     {
+      id: "inventory",
       title: "Inventory Reports",
       description: `Manage ${currentCompany.name}'s inventory`,
       reports: [
@@ -92,6 +112,7 @@ const Reports: React.FC = () => {
       ]
     },
     {
+      id: "project",
       title: "Project Reports",
       description: `Monitor ${currentCompany.name}'s project performance`,
       reports: [
@@ -102,14 +123,33 @@ const Reports: React.FC = () => {
     }
   ];
 
+  // Filter reports based on search and active tab
+  const filteredCategories = useMemo(() => {
+    return reportCategories
+      .filter(category => activeTab === 'all' || category.id === activeTab)
+      .map(category => ({
+        ...category,
+        reports: category.reports.filter(report => 
+          report.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          report.description.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      }))
+      .filter(category => category.reports.length > 0);
+  }, [reportCategories, searchTerm, activeTab]);
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold">Reports</h1>
           <p className="text-muted-foreground">Generate and view financial reports for {currentCompany.name}</p>
+          {selectedDateRange.from && selectedDateRange.to && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Date Range: {format(selectedDateRange.from, "MMM d, yyyy")} - {format(selectedDateRange.to, "MMM d, yyyy")}
+            </p>
+          )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button 
             variant="outline" 
             className="flex items-center gap-2"
@@ -137,59 +177,118 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+        <div className="relative w-full sm:w-72">
+          <Input
+            placeholder="Search reports..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-3"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2 overflow-x-auto pb-2">
+          <Button 
+            variant={activeTab === 'all' ? "default" : "outline"} 
+            size="sm"
+            onClick={() => setActiveTab('all')}
+          >
+            All
+          </Button>
+          {reportCategories.map(category => (
+            <Button 
+              key={category.id}
+              variant={activeTab === category.id ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setActiveTab(category.id)}
+            >
+              {category.title}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid gap-6">
-        {reportCategories.map((category, idx) => (
-          <Card key={idx}>
-            <CardHeader>
-              <CardTitle>{category.title}</CardTitle>
-              <CardDescription>{category.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {category.reports.map((report, reportIdx) => (
-                  <div 
-                    key={reportIdx}
-                    className="flex flex-col p-4 border rounded-lg hover:border-primary hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <report.icon className="h-5 w-5 text-primary" />
-                        <h3 className="font-medium">{report.name}</h3>
+        {filteredCategories.length > 0 ? (
+          filteredCategories.map((category, idx) => (
+            <Card key={idx} className="transition-all hover:shadow-md">
+              <CardHeader>
+                <CardTitle>{category.title}</CardTitle>
+                <CardDescription>{category.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {category.reports.map((report, reportIdx) => (
+                    <div 
+                      key={reportIdx}
+                      className="flex flex-col p-4 border rounded-lg hover:border-primary hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          <report.icon className="h-5 w-5 text-primary" />
+                          <h3 className="font-medium">{report.name}</h3>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Share2 className="h-4 w-4" />
+                              <span className="sr-only">Share</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => toast.info(`Email ${report.name} report`)}>
+                              Email Report
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toast.info(`Copy link to ${report.name} report`)}>
+                              Copy Link
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toast.info(`Download ${report.name} report as PDF`)}>
+                              Download PDF
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => handleShareReport(report.name)}
-                      >
-                        <Share2 className="h-4 w-4" />
-                        <span className="sr-only">Share</span>
-                      </Button>
+                      <p className="text-sm text-muted-foreground">{report.description}</p>
+                      <div className="mt-4 flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="w-full flex items-center gap-1"
+                          onClick={() => handleViewReport(report.name)}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          View
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          className="w-full flex items-center gap-1"
+                          onClick={() => handleGenerateReport(report.name)}
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          Generate
+                        </Button>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">{report.description}</p>
-                    <div className="mt-4 flex gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="w-full"
-                        onClick={() => handleViewReport(report.name)}
-                      >
-                        View
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        className="w-full"
-                        onClick={() => handleGenerateReport(report.name)}
-                      >
-                        Generate
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <FileText className="h-12 w-12 mx-auto text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-medium">No Reports Found</h3>
+            <p className="text-muted-foreground">
+              {searchTerm 
+                ? `No reports match "${searchTerm}". Try a different search term.` 
+                : "No reports are available in this category."}
+            </p>
+            {searchTerm && (
+              <Button variant="outline" className="mt-4" onClick={() => setSearchTerm("")}>
+                Clear Search
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <DateRangeDialog

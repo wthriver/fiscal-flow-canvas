@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Bell, User, Menu, ChevronDown, Building, Plus } from "lucide-react";
 import { 
@@ -21,7 +20,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import Sidebar from "./Sidebar";
 import { Button } from "@/components/ui/button";
@@ -90,7 +88,12 @@ const TopBar: React.FC = () => {
         count: 0,
         percentChange: 0,
       },
-      projects: []
+      projects: [],
+      sales: [],
+      taxReports: [],
+      taxRates: [],
+      accounts: [],
+      transactions: []
     });
 
     // Reset form and close dialog
