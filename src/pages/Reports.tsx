@@ -1,14 +1,23 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, BarChart4, TrendingUp, Printer, Calendar, Share2 } from "lucide-react";
-import { DateRangeButton, ExportButton } from "@/components/common/ActionButtons";
+import { DateRangeDialog } from "@/components/invoices/DateRangeDialog";
 import { toast } from "sonner";
 import { useCompany } from "@/contexts/CompanyContext";
 
+interface DateRange {
+  from: Date | undefined;
+  to: Date | undefined;
+}
+
 const Reports: React.FC = () => {
   const { currentCompany } = useCompany();
+  const [dateRangeOpen, setDateRangeOpen] = useState(false);
+  const [selectedDateRange, setSelectedDateRange] = useState<DateRange>({
+    from: undefined,
+    to: undefined,
+  });
   
   const handleGenerateReport = (reportName: string) => {
     toast.success(`Generating ${reportName} report for ${currentCompany.name}`);
@@ -20,6 +29,20 @@ const Reports: React.FC = () => {
 
   const handleShareReport = (reportName: string) => {
     toast.info(`Share options for ${currentCompany.name}'s ${reportName} report`);
+  };
+
+  const handlePrint = () => {
+    toast.info(`Preparing ${currentCompany.name}'s reports for printing`);
+    window.print();
+  };
+
+  const handleExport = () => {
+    toast.success(`Exporting ${currentCompany.name}'s reports`);
+  };
+
+  const handleApplyDateRange = (range: DateRange) => {
+    setSelectedDateRange(range);
+    toast.success("Date range applied to reports");
   };
 
   const reportCategories = [
@@ -87,12 +110,30 @@ const Reports: React.FC = () => {
           <p className="text-muted-foreground">Generate and view financial reports for {currentCompany.name}</p>
         </div>
         <div className="flex gap-2">
-          <DateRangeButton type="Reports" />
-          <Button variant="outline" className="flex items-center gap-2" onClick={() => toast.info(`Print report options for ${currentCompany.name}`)}>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => setDateRangeOpen(true)}
+          >
+            <Calendar size={16} />
+            <span>Date Range</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={handlePrint}
+          >
             <Printer size={16} />
             <span>Print</span>
           </Button>
-          <ExportButton type="Reports" />
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={handleExport}
+          >
+            <Download size={16} />
+            <span>Export</span>
+          </Button>
         </div>
       </div>
 
@@ -150,6 +191,13 @@ const Reports: React.FC = () => {
           </Card>
         ))}
       </div>
+
+      <DateRangeDialog
+        open={dateRangeOpen}
+        onOpenChange={setDateRangeOpen}
+        onApplyDateRange={handleApplyDateRange}
+        currentDateRange={selectedDateRange}
+      />
     </div>
   );
 };

@@ -30,13 +30,22 @@ export const DateRangeDialog: React.FC<DateRangeDialogProps> = ({
   }, [open, currentDateRange]);
 
   const handleApply = () => {
-    onApplyDateRange(date || { from: undefined, to: undefined });
+    if (date) {
+      onApplyDateRange({ 
+        from: date.from || undefined,
+        to: date.to || undefined 
+      });
+    } else {
+      onApplyDateRange({ from: undefined, to: undefined });
+    }
+    onOpenChange(false);
   };
 
   const handleClear = () => {
     const clearedRange = { from: undefined, to: undefined };
     setDate(clearedRange);
     onApplyDateRange(clearedRange);
+    onOpenChange(false);
   };
 
   return (
@@ -45,7 +54,7 @@ export const DateRangeDialog: React.FC<DateRangeDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Select Date Range</DialogTitle>
           <DialogDescription>
-            Filter invoices by date range. Select a start and end date.
+            Filter reports by date range. Select a start and end date.
           </DialogDescription>
         </DialogHeader>
 
