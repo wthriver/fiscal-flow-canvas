@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,6 +39,16 @@ const Reports: React.FC = () => {
     setTimeout(() => {
       toast.success(`${reportName} report ready`, {
         description: "Your report has been generated successfully",
+        action: {
+          label: "Download",
+          onClick: () => {
+            // Create and trigger download
+            const link = document.createElement("a");
+            link.href = "#";
+            link.download = `${reportName.replace(/\s+/g, "-")}.pdf`;
+            link.click();
+          },
+        },
       });
     }, 2000);
   };
@@ -49,7 +58,12 @@ const Reports: React.FC = () => {
       description: `Opening ${currentCompany.name}'s ${reportName} report`,
       action: {
         label: "Open",
-        onClick: () => console.log("Opening report view"),
+        onClick: () => {
+          // Simulate opening a detailed view
+          toast.success(`${reportName} report opened in a new tab`, {
+            description: "Detailed view is now available"
+          });
+        },
       },
     });
   };
@@ -59,7 +73,11 @@ const Reports: React.FC = () => {
       description: "Choose how you want to share this report",
       action: {
         label: "Email",
-        onClick: () => toast.success(`${reportName} shared via email`),
+        onClick: () => {
+          toast.success(`${reportName} shared via email`, {
+            description: "Report has been emailed to recipients"
+          });
+        },
       },
     });
   };
@@ -248,7 +266,7 @@ const Reports: React.FC = () => {
                 <CardDescription>{category.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {category.reports.map((report, reportIdx) => (
                     <div 
                       key={reportIdx}
@@ -259,40 +277,18 @@ const Reports: React.FC = () => {
                           <report.icon className="h-5 w-5 text-primary" />
                           <h3 className="font-medium">{report.name}</h3>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <Share2 className="h-4 w-4" />
-                              <span className="sr-only">Share</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => toast.info(`Email ${report.name} report sent`)}>
-                              Email Report
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {
-                              toast.success("Link copied to clipboard", {
-                                description: `Share link for ${report.name} report`
-                              });
-                            }}>
-                              Copy Link
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {
-                              toast.success(`Downloading ${report.name} as PDF`);
-                              setTimeout(() => {
-                                const link = document.createElement("a");
-                                link.href = "#";
-                                link.download = `${report.name.replace(/\s+/g, "-").toLowerCase()}.pdf`;
-                                link.click();
-                              }, 1500);
-                            }}>
-                              Download PDF
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleShareReport(report.name)}
+                        >
+                          <Share2 className="h-4 w-4" />
+                          <span className="sr-only">Share</span>
+                        </Button>
                       </div>
-                      <p className="text-sm text-muted-foreground">{report.description}</p>
-                      <div className="mt-4 flex gap-2">
+                      <p className="text-sm text-muted-foreground mb-4">{report.description}</p>
+                      <div className="mt-auto flex gap-2">
                         <Button 
                           size="sm" 
                           variant="outline" 

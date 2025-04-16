@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, Share2, Search, Filter, Eye } from "lucide-react";
+import { Download, FileText, Search, Eye, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -164,50 +164,24 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8"
-                            >
-                              <Eye className="h-4 w-4" />
-                              <span className="sr-only">View</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewDetails(transaction)}>
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast.info(`Printing transaction: ${transaction.description}`)}>
-                              Print Transaction
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8"
-                            >
-                              <Share2 className="h-4 w-4" />
-                              <span className="sr-only">Share</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleShareTransaction(transaction)}>
-                              Share via Email
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast.info(`Link copied for: ${transaction.description}`)}>
-                              Copy Link
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast.info(`Exporting: ${transaction.description}`)}>
-                              Export as PDF
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleViewDetails(transaction)}
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span className="sr-only">View</span>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleShareTransaction(transaction)}
+                        >
+                          <Share2 className="h-4 w-4" />
+                          <span className="sr-only">Share</span>
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
