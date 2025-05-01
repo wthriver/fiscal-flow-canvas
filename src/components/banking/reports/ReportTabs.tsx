@@ -15,12 +15,14 @@ export const ReportTabs: React.FC<ReportTabsProps> = ({
 }) => {
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-      <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-4 w-full">
-        <TabsTrigger value="transaction-history">Transaction History</TabsTrigger>
-        <TabsTrigger value="account-statement">Account Statement</TabsTrigger>
-        <TabsTrigger value="income-expenses">Income & Expenses</TabsTrigger>
-        <TabsTrigger value="reconciliation">Reconciliation</TabsTrigger>
-      </TabsList>
+      <div className="overflow-x-auto pb-2">
+        <TabsList className="inline-flex w-auto mb-4">
+          <TabsTrigger value="transaction-history">Transaction History</TabsTrigger>
+          <TabsTrigger value="account-statement">Account Statement</TabsTrigger>
+          <TabsTrigger value="income-expenses">Income & Expenses</TabsTrigger>
+          <TabsTrigger value="reconciliation">Reconciliation</TabsTrigger>
+        </TabsList>
+      </div>
       {children}
     </Tabs>
   );

@@ -1,201 +1,94 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Building, CreditCard } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-
-// Import all our settings components
-import { ProfileSettings } from "@/components/settings/ProfileSettings";
-import { SecuritySettings } from "@/components/settings/SecuritySettings";
-import { NotificationSettings } from "@/components/settings/NotificationSettings";
-import { ConnectedAppsSettings } from "@/components/settings/ConnectedAppsSettings";
+import { Card } from "@/components/ui/card";
 import { CompanySettings } from "@/components/settings/CompanySettings";
+import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { UsersPermissionsSettings } from "@/components/settings/UsersPermissionsSettings";
-import { FiscalYearSettings } from "@/components/settings/FiscalYearSettings";
-import { ChartOfAccountsSettings } from "@/components/settings/ChartOfAccountsSettings";
+import { SecuritySettings } from "@/components/settings/SecuritySettings";
 import { BillingSettings } from "@/components/settings/BillingSettings";
+import { NotificationSettings } from "@/components/settings/NotificationSettings";
+import { ChartOfAccountsSettings } from "@/components/settings/ChartOfAccountsSettings";
+import { FiscalYearSettings } from "@/components/settings/FiscalYearSettings";
+import { ConnectedAppsSettings } from "@/components/settings/ConnectedAppsSettings";
+import { AuditTrailSettings } from "@/components/settings/AuditTrailSettings";
+import { MultiCurrencySettings } from "@/components/settings/MultiCurrencySettings";
+import { IntegrationsSettings } from "@/components/settings/IntegrationsSettings";
 
-const Settings: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("account");
-  const [activeSection, setActiveSection] = useState("profile");
-
-  // Listen for custom event to switch tabs from other components
-  useEffect(() => {
-    const handleSwitchTab = (event: Event) => {
-      const { tab, section } = (event as CustomEvent).detail;
-      if (tab) setActiveTab(tab);
-      if (section) setActiveSection(section);
-    };
-
-    window.addEventListener('switchSettingsTab', handleSwitchTab as EventListener);
-    
-    return () => {
-      window.removeEventListener('switchSettingsTab', handleSwitchTab as EventListener);
-    };
-  }, []);
-
-  const handleSectionClick = (section: string) => {
-    setActiveSection(section);
-  };
+const Settings = () => {
+  const [activeTab, setActiveTab] = useState("company");
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage your account and preferences</p>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-3 w-full md:w-auto">
-          <TabsTrigger value="account" className="flex gap-2 items-center">
-            <User className="h-4 w-4" />
-            <span>Account</span>
-          </TabsTrigger>
-          <TabsTrigger value="company" className="flex gap-2 items-center">
-            <Building className="h-4 w-4" />
-            <span>Company</span>
-          </TabsTrigger>
-          <TabsTrigger value="billing" className="flex gap-2 items-center">
-            <CreditCard className="h-4 w-4" />
-            <span>Billing</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="account" className="space-y-6">
-          <div className="grid grid-cols-12 gap-6">
-            {/* Sidebar/Navigation */}
-            <div className="col-span-12 md:col-span-3">
-              <div className="space-y-1">
-                <h2 className="text-lg font-semibold mb-3">Account Settings</h2>
-                <button
-                  onClick={() => handleSectionClick("profile")}
-                  className={`w-full p-2.5 text-left rounded-md transition-colors ${
-                    activeSection === "profile" 
-                      ? "bg-accent text-accent-foreground" 
-                      : "hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="font-medium">Your Profile</div>
-                  <div className="text-sm text-muted-foreground">Manage your personal information</div>
-                </button>
-                
-                <button
-                  onClick={() => handleSectionClick("security")}
-                  className={`w-full p-2.5 text-left rounded-md transition-colors ${
-                    activeSection === "security" 
-                      ? "bg-accent text-accent-foreground" 
-                      : "hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="font-medium">Security</div>
-                  <div className="text-sm text-muted-foreground">Password and authentication settings</div>
-                </button>
-                
-                <button
-                  onClick={() => handleSectionClick("notifications")}
-                  className={`w-full p-2.5 text-left rounded-md transition-colors ${
-                    activeSection === "notifications" 
-                      ? "bg-accent text-accent-foreground" 
-                      : "hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="font-medium">Notifications</div>
-                  <div className="text-sm text-muted-foreground">Configure your notification preferences</div>
-                </button>
-                
-                <button
-                  onClick={() => handleSectionClick("connectedApps")}
-                  className={`w-full p-2.5 text-left rounded-md transition-colors ${
-                    activeSection === "connectedApps" 
-                      ? "bg-accent text-accent-foreground" 
-                      : "hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="font-medium">Connected Apps</div>
-                  <div className="text-sm text-muted-foreground">Manage connected applications and services</div>
-                </button>
-              </div>
-            </div>
-            
-            {/* Content Area */}
-            <div className="col-span-12 md:col-span-9">
-              {activeSection === "profile" && <ProfileSettings />}
-              {activeSection === "security" && <SecuritySettings />}
-              {activeSection === "notifications" && <NotificationSettings />}
-              {activeSection === "connectedApps" && <ConnectedAppsSettings />}
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="company" className="space-y-6">
-          <div className="grid grid-cols-12 gap-6">
-            {/* Sidebar/Navigation */}
-            <div className="col-span-12 md:col-span-3">
-              <div className="space-y-1">
-                <h2 className="text-lg font-semibold mb-3">Company Settings</h2>
-                <button
-                  onClick={() => handleSectionClick("companyInfo")}
-                  className={`w-full p-2.5 text-left rounded-md transition-colors ${
-                    activeSection === "companyInfo" 
-                      ? "bg-accent text-accent-foreground" 
-                      : "hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="font-medium">Company Information</div>
-                  <div className="text-sm text-muted-foreground">Business name, address, and logo</div>
-                </button>
-                
-                <button
-                  onClick={() => handleSectionClick("usersPermissions")}
-                  className={`w-full p-2.5 text-left rounded-md transition-colors ${
-                    activeSection === "usersPermissions" 
-                      ? "bg-accent text-accent-foreground" 
-                      : "hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="font-medium">Users & Permissions</div>
-                  <div className="text-sm text-muted-foreground">Manage users and access control</div>
-                </button>
-                
-                <button
-                  onClick={() => handleSectionClick("fiscalYear")}
-                  className={`w-full p-2.5 text-left rounded-md transition-colors ${
-                    activeSection === "fiscalYear" 
-                      ? "bg-accent text-accent-foreground" 
-                      : "hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="font-medium">Fiscal Year</div>
-                  <div className="text-sm text-muted-foreground">Set your fiscal year and accounting periods</div>
-                </button>
-                
-                <button
-                  onClick={() => handleSectionClick("chartOfAccounts")}
-                  className={`w-full p-2.5 text-left rounded-md transition-colors ${
-                    activeSection === "chartOfAccounts" 
-                      ? "bg-accent text-accent-foreground" 
-                      : "hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="font-medium">Chart of Accounts</div>
-                  <div className="text-sm text-muted-foreground">Customize your accounts structure</div>
-                </button>
-              </div>
-            </div>
-            
-            {/* Content Area */}
-            <div className="col-span-12 md:col-span-9">
-              {activeSection === "companyInfo" && <CompanySettings />}
-              {activeSection === "usersPermissions" && <UsersPermissionsSettings />}
-              {activeSection === "fiscalYear" && <FiscalYearSettings />}
-              {activeSection === "chartOfAccounts" && <ChartOfAccountsSettings />}
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="billing" className="space-y-6">
-          <BillingSettings />
-        </TabsContent>
+    <div className="container mx-auto p-4 space-y-6">
+      <h1 className="text-2xl font-bold">Settings</h1>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="overflow-x-auto">
+          <TabsList className="inline-flex w-auto mb-4">
+            <TabsTrigger value="company">Company</TabsTrigger>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="users">Users & Permissions</TabsTrigger>
+            <TabsTrigger value="chart-of-accounts">Chart of Accounts</TabsTrigger>
+            <TabsTrigger value="fiscal-year">Fiscal Year</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="billing">Billing</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="connected-apps">Connected Apps</TabsTrigger>
+            <TabsTrigger value="audit-trail">Audit Trail</TabsTrigger>
+            <TabsTrigger value="multi-currency">Multi-Currency</TabsTrigger>
+            <TabsTrigger value="integrations">Integrations</TabsTrigger>
+          </TabsList>
+        </div>
+        
+        <Card>
+          <TabsContent value="company">
+            <CompanySettings />
+          </TabsContent>
+          
+          <TabsContent value="profile">
+            <ProfileSettings />
+          </TabsContent>
+          
+          <TabsContent value="users">
+            <UsersPermissionsSettings />
+          </TabsContent>
+          
+          <TabsContent value="chart-of-accounts">
+            <ChartOfAccountsSettings />
+          </TabsContent>
+          
+          <TabsContent value="fiscal-year">
+            <FiscalYearSettings />
+          </TabsContent>
+          
+          <TabsContent value="security">
+            <SecuritySettings />
+          </TabsContent>
+          
+          <TabsContent value="billing">
+            <BillingSettings />
+          </TabsContent>
+          
+          <TabsContent value="notifications">
+            <NotificationSettings />
+          </TabsContent>
+          
+          <TabsContent value="connected-apps">
+            <ConnectedAppsSettings />
+          </TabsContent>
+          
+          <TabsContent value="audit-trail">
+            <AuditTrailSettings />
+          </TabsContent>
+          
+          <TabsContent value="multi-currency">
+            <MultiCurrencySettings />
+          </TabsContent>
+          
+          <TabsContent value="integrations">
+            <IntegrationsSettings />
+          </TabsContent>
+        </Card>
       </Tabs>
     </div>
   );

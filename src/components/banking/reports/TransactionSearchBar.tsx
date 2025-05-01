@@ -32,7 +32,7 @@ export const TransactionSearchBar: React.FC<TransactionSearchBarProps> = ({
         <Button 
           size="sm" 
           variant="outline"
-          className="text-xs" 
+          className="text-xs flex-1 sm:flex-auto" 
           onClick={onExportPDF}
         >
           <FileText className="h-4 w-4 mr-1" /> Export PDF
@@ -40,7 +40,7 @@ export const TransactionSearchBar: React.FC<TransactionSearchBarProps> = ({
         <Button 
           size="sm" 
           variant="outline"
-          className="text-xs" 
+          className="text-xs flex-1 sm:flex-auto" 
           onClick={onExportCSV}
         >
           <Download className="h-4 w-4 mr-1" /> Export CSV
