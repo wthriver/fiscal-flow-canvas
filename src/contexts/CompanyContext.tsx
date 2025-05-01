@@ -426,7 +426,8 @@ const demoCompany: Company = {
       name: "Widget Pro",
       category: "Widgets",
       quantity: 150,
-      price: "$29.99",
+      costPrice: "$19.99",
+      sellPrice: "$29.99",
       status: "In Stock",
       lastUpdated: "2025-04-01"
     },
@@ -435,7 +436,8 @@ const demoCompany: Company = {
       name: "Premium Gadget",
       category: "Gadgets",
       quantity: 75,
-      price: "$49.99",
+      costPrice: "$29.99",
+      sellPrice: "$49.99",
       status: "In Stock",
       lastUpdated: "2025-03-25"
     },
@@ -444,7 +446,8 @@ const demoCompany: Company = {
       name: "Basic Tool Kit",
       category: "Tools",
       quantity: 50,
-      price: "$75.00",
+      costPrice: "$45.00",
+      sellPrice: "$75.00",
       status: "Low Stock",
       lastUpdated: "2025-03-20"
     },
@@ -453,7 +456,8 @@ const demoCompany: Company = {
       name: "Advanced Gizmo",
       category: "Gizmos",
       quantity: 25,
-      price: "$99.99",
+      costPrice: "$69.99",
+      sellPrice: "$99.99",
       status: "Low Stock",
       lastUpdated: "2025-03-15"
     },
@@ -462,7 +466,8 @@ const demoCompany: Company = {
       name: "Super Thingamajig",
       category: "Thingamajigs",
       quantity: 0,
-      price: "$149.99",
+      costPrice: "$99.99",
+      sellPrice: "$149.99",
       status: "Out of Stock",
       lastUpdated: "2025-03-10"
     }

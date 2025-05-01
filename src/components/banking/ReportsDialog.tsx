@@ -12,6 +12,7 @@ import { IncomeExpensesTab } from "./reports/IncomeExpensesTab";
 import { ReconciliationTab } from "./reports/ReconciliationTab";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { prepareTransactionData } from "@/utils/reportUtils";
 
 interface ReportsDialogProps {
   open: boolean;
@@ -34,85 +35,13 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
   });
   const [activeTab, setActiveTab] = useState("transaction-history");
 
-  // Filter transactions for the specific account
-  const accountTransactions = currentCompany.transactions.filter(
-    (transaction) => transaction.account === accountName
-  );
-
-  // Filter transactions by date range if it's set
-  const filteredTransactions = accountTransactions.filter((transaction) => {
-    if (!dateRange.from && !dateRange.to) return true;
-    
-    const transactionDate = new Date(transaction.date);
-    
-    if (dateRange.from && !dateRange.to) {
-      return transactionDate >= dateRange.from;
-    }
-    
-    if (!dateRange.from && dateRange.to) {
-      return transactionDate <= dateRange.to;
-    }
-    
-    if (dateRange.from && dateRange.to) {
-      return transactionDate >= dateRange.from && transactionDate <= dateRange.to;
-    }
-    
-    return true;
-  });
-
-  // Calculate income and expenses data for chart
-  const incomeExpenseData = accountTransactions.reduce((acc: any[], transaction) => {
-    const date = transaction.date.substring(0, 7); // Get YYYY-MM format
-    const amount = parseFloat(transaction.amount.replace(/[^0-9.-]+/g, ""));
-    const isIncome = transaction.amount.startsWith("+");
-    
-    const existingEntry = acc.find((entry) => entry.month === date);
-    
-    if (existingEntry) {
-      if (isIncome) {
-        existingEntry.income += amount;
-      } else {
-        existingEntry.expenses += amount;
-      }
-      existingEntry.balance = existingEntry.income - existingEntry.expenses;
-    } else {
-      acc.push({
-        month: date,
-        income: isIncome ? amount : 0,
-        expenses: isIncome ? 0 : amount,
-        balance: isIncome ? amount : -amount,
-      });
-    }
-    
-    return acc;
-  }, []).sort((a, b) => a.month.localeCompare(b.month));
-
-  // Create reconciliation status data
-  const reconciliationData = {
-    reconciled: accountTransactions.filter(t => t.reconciled).length,
-    unreconciled: accountTransactions.filter(t => !t.reconciled).length
-  };
-
-  // Calculate account balance over time
-  const balanceHistory = accountTransactions
-    .slice()
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .reduce((acc: any[], transaction) => {
-      const date = transaction.date;
-      const amount = parseFloat(transaction.amount.replace(/[^0-9.-]+/g, ""));
-      const isIncome = transaction.amount.startsWith("+");
-      
-      const lastBalance = acc.length > 0 ? acc[acc.length - 1].balance : 0;
-      const newBalance = isIncome ? lastBalance + amount : lastBalance - amount;
-      
-      acc.push({
-        date,
-        amount: isIncome ? amount : -amount,
-        balance: newBalance,
-      });
-      
-      return acc;
-    }, []);
+  // Get filtered transactions and calculated data
+  const { 
+    filteredTransactions, 
+    incomeExpenseData, 
+    reconciliationData, 
+    balanceHistory 
+  } = prepareTransactionData(currentCompany.transactions, accountName, dateRange);
 
   const handleApplyDateRange = (range: { from: Date | undefined; to: Date | undefined }) => {
     setDateRange(range);
@@ -130,6 +59,11 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
   };
 
   const handleDownloadCSV = () => {
+    toast.success("CSV exported successfully", {
+      description: `${accountName} transactions have been downloaded as CSV`
+    });
+    
+    // Create and download CSV file
     const headers = ["Date", "Description", "Category", "Amount", "Reconciled"];
     const csvRows = [headers.join(",")];
 
@@ -155,10 +89,6 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    toast.success("CSV exported successfully", {
-      description: `${accountName} transactions have been downloaded as CSV`
-    });
   };
 
   const handleExportPDF = () => {
@@ -250,7 +180,7 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
               <AccountStatementTab 
                 balanceHistory={balanceHistory}
                 accountName={accountName}
-                transactions={accountTransactions}
+                transactions={filteredTransactions}
               />
             </TabsContent>
             
@@ -261,12 +191,12 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
             <TabsContent value="reconciliation">
               <ReconciliationTab 
                 reconciliationData={reconciliationData}
-                transactions={accountTransactions}
+                transactions={filteredTransactions}
               />
             </TabsContent>
           </Tabs>
 
-          <DialogFooter>
+          <DialogFooter className="mt-4 sm:mt-0">
             <Button onClick={() => onOpenChange(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>

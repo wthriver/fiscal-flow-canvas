@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
+import { TransactionEditModal } from "./TransactionEditModal";
 
 interface Transaction {
   id: string;
@@ -32,8 +33,6 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: "asc" | "desc" } | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const [note, setNote] = useState("");
-  const [editedCategory, setEditedCategory] = useState("");
 
   // Filter transactions based on search term
   const filteredTransactions = transactions.filter(transaction => 
@@ -69,18 +68,12 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
 
   const handleShareTransaction = (transaction: Transaction) => {
     toast.success(`Sharing transaction details for: ${transaction.description}`, {
-      description: "Transaction details have been copied to clipboard",
-      action: {
-        label: "Close",
-        onClick: () => console.log("Toast closed"),
-      },
+      description: "Transaction details have been copied to clipboard"
     });
   };
 
   const handleViewDetails = (transaction: Transaction) => {
     setEditingTransaction(transaction);
-    setNote("");
-    setEditedCategory(transaction.category);
     
     toast.info(`Viewing transaction: ${transaction.description}`, {
       description: `${transaction.date} | Category: ${transaction.category} | Amount: ${transaction.amount}`,
@@ -90,7 +83,7 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
 
   const handleExportPDF = () => {
     toast.success("Exporting transactions to PDF", {
-      description: "Your transactions report will be downloaded shortly",
+      description: "Your transactions report will be downloaded shortly"
     });
     
     // Simulate PDF download after a short delay
@@ -100,16 +93,6 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
       link.download = "transactions-report.pdf";
       link.click();
     }, 1500);
-  };
-
-  const handleSaveChanges = () => {
-    if (!editingTransaction) return;
-    
-    toast.success("Transaction updated", {
-      description: `Category updated to ${editedCategory} and note added`,
-    });
-    
-    setEditingTransaction(null);
   };
 
   const handleExportCSV = () => {
@@ -178,67 +161,17 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
         </div>
       </div>
 
-      {/* Transaction Edit Modal */}
       {editingTransaction && (
-        <div className="border rounded-lg p-4 mb-4 bg-background shadow-sm">
-          <h3 className="text-lg font-medium mb-4">Edit Transaction Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Date</label>
-              <Input type="text" value={editingTransaction.date} readOnly />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Amount</label>
-              <Input type="text" value={editingTransaction.amount} readOnly />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
-              <Input type="text" value={editingTransaction.description} readOnly />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Category</label>
-              <Input 
-                type="text" 
-                value={editedCategory}
-                onChange={(e) => setEditedCategory(e.target.value)}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Add Note</label>
-              <Textarea 
-                placeholder="Add details about this transaction..."
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="min-h-[100px]"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Status</label>
-              <div className="flex items-center space-x-2">
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  editingTransaction.reconciled 
-                    ? "bg-green-100 text-green-800"
-                    : "bg-yellow-100 text-yellow-800"
-                }`}>
-                  {editingTransaction.reconciled ? "Reconciled" : "Pending"}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setEditingTransaction(null)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSaveChanges}
-            >
-              Save Changes
-            </Button>
-          </div>
-        </div>
+        <TransactionEditModal
+          transaction={editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+          onSave={() => {
+            toast.success("Transaction updated", {
+              description: "Transaction details have been saved"
+            });
+            setEditingTransaction(null);
+          }}
+        />
       )}
 
       <div className="rounded-md border overflow-hidden">
