@@ -20,6 +20,15 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { CompanyProvider } from "./contexts/CompanyContext";
 
+// Import new feature pages
+import Payroll from "./pages/Payroll";
+import TimeTrackingPage from "./pages/TimeTracking";
+import Budgeting from "./pages/Budgeting";
+import MultiCurrency from "./pages/MultiCurrency";
+import AuditTrail from "./pages/AuditTrail";
+import Receipts from "./pages/Receipts";
+import Integrations from "./pages/Integrations";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -43,6 +52,16 @@ const App = () => (
               <Route path="/projects" element={<Projects />} />
               <Route path="/taxes" element={<Taxes />} />
               <Route path="/settings" element={<Settings />} />
+              
+              {/* New feature routes */}
+              <Route path="/payroll" element={<Payroll />} />
+              <Route path="/time-tracking" element={<TimeTrackingPage />} />
+              <Route path="/budgeting" element={<Budgeting />} />
+              <Route path="/multi-currency" element={<MultiCurrency />} />
+              <Route path="/audit-trail" element={<AuditTrail />} />
+              <Route path="/receipts" element={<Receipts />} />
+              <Route path="/integrations" element={<Integrations />} />
+              
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

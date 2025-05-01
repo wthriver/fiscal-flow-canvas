@@ -149,16 +149,17 @@ const Expenses = () => {
       <NewExpenseDialog
         open={isNewExpenseDialogOpen}
         onOpenChange={setIsNewExpenseDialogOpen}
-        categories={expenseCategories}
       />
+      
       <FilterDialog
         open={isFilterDialogOpen}
         onOpenChange={setIsFilterDialogOpen}
-        categories={expenseCategories}
       />
+      
       <ExportDialog
         open={isExportDialogOpen}
         onOpenChange={setIsExportDialogOpen}
+        expensesCount={expenses.length}
       />
     </div>
   );
