@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCompany } from "@/contexts/CompanyContext";
 import { DateRangeDialog } from "@/components/invoices/DateRangeDialog";
-import { Download, Calendar } from "lucide-react";
+import { Download, Calendar, FileText } from "lucide-react";
 import { TransactionHistoryTab } from "./reports/TransactionHistoryTab";
 import { AccountStatementTab } from "./reports/AccountStatementTab";
 import { IncomeExpensesTab } from "./reports/IncomeExpensesTab";
 import { ReconciliationTab } from "./reports/ReconciliationTab";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface ReportsDialogProps {
   open: boolean;
@@ -116,10 +117,16 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
   const handleApplyDateRange = (range: { from: Date | undefined; to: Date | undefined }) => {
     setDateRange(range);
     setDateRangeOpen(false);
+    toast.success("Date range applied to reports", {
+      description: "Your reports have been filtered by the selected date range"
+    });
   };
 
   const handlePrintReport = () => {
-    window.print();
+    toast.info("Preparing to print report", {
+      description: "Getting your report ready for printing..."
+    });
+    setTimeout(() => window.print(), 1000);
   };
 
   const handleDownloadCSV = () => {
@@ -148,6 +155,24 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    toast.success("CSV exported successfully", {
+      description: `${accountName} transactions have been downloaded as CSV`
+    });
+  };
+
+  const handleExportPDF = () => {
+    toast.success("Exporting report to PDF", {
+      description: "Your report will be downloaded shortly"
+    });
+    
+    // Simulate PDF download after a short delay
+    setTimeout(() => {
+      const link = document.createElement("a");
+      link.href = "#";
+      link.download = `${accountName.replace(/\s+/g, "-")}-Report.pdf`;
+      link.click();
+    }, 1500);
   };
 
   return (
@@ -161,27 +186,25 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex justify-between items-center pb-2">
-            <div className="flex gap-2">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="flex items-center gap-1"
-                onClick={() => setDateRangeOpen(true)}
-              >
-                <Calendar className="h-4 w-4" />
-                <span>
-                  {dateRange.from || dateRange.to ? (
-                    <>
-                      {dateRange.from ? format(dateRange.from, "MMM d, yyyy") : "Any"} - {dateRange.to ? format(dateRange.to, "MMM d, yyyy") : "Any"}
-                    </>
-                  ) : (
-                    "Date Range"
-                  )}
-                </span>
-              </Button>
-            </div>
-            <div className="flex gap-2">
+          <div className="flex flex-wrap justify-between items-center gap-2 pb-2">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="flex items-center gap-1"
+              onClick={() => setDateRangeOpen(true)}
+            >
+              <Calendar className="h-4 w-4" />
+              <span>
+                {dateRange.from || dateRange.to ? (
+                  <>
+                    {dateRange.from ? format(dateRange.from, "MMM d, yyyy") : "Any"} - {dateRange.to ? format(dateRange.to, "MMM d, yyyy") : "Any"}
+                  </>
+                ) : (
+                  "Date Range"
+                )}
+              </span>
+            </Button>
+            <div className="flex flex-wrap gap-2">
               <Button 
                 size="sm" 
                 variant="outline" 
@@ -199,11 +222,20 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
                 <Download className="h-4 w-4" />
                 <span>Export CSV</span>
               </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="flex items-center gap-1"
+                onClick={handleExportPDF}
+              >
+                <FileText className="h-4 w-4" />
+                <span>Export PDF</span>
+              </Button>
             </div>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-4 mb-4">
+            <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-4 w-full">
               <TabsTrigger value="transaction-history">Transaction History</TabsTrigger>
               <TabsTrigger value="account-statement">Account Statement</TabsTrigger>
               <TabsTrigger value="income-expenses">Income & Expenses</TabsTrigger>

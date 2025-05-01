@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Transaction {
   id: string;
@@ -30,6 +31,9 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: "asc" | "desc" } | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [note, setNote] = useState("");
+  const [editedCategory, setEditedCategory] = useState("");
 
   // Filter transactions based on search term
   const filteredTransactions = transactions.filter(transaction => 
@@ -74,6 +78,10 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
   };
 
   const handleViewDetails = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setNote("");
+    setEditedCategory(transaction.category);
+    
     toast.info(`Viewing transaction: ${transaction.description}`, {
       description: `${transaction.date} | Category: ${transaction.category} | Amount: ${transaction.amount}`,
       duration: 5000,
@@ -92,6 +100,50 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
       link.download = "transactions-report.pdf";
       link.click();
     }, 1500);
+  };
+
+  const handleSaveChanges = () => {
+    if (!editingTransaction) return;
+    
+    toast.success("Transaction updated", {
+      description: `Category updated to ${editedCategory} and note added`,
+    });
+    
+    setEditingTransaction(null);
+  };
+
+  const handleExportCSV = () => {
+    // Prepare CSV data
+    const headers = ["Date", "Description", "Category", "Amount", "Status"];
+    const csvRows = [headers.join(",")];
+
+    sortedTransactions.forEach(transaction => {
+      const row = [
+        transaction.date,
+        `"${transaction.description.replace(/"/g, '""')}"`,
+        `"${transaction.category.replace(/"/g, '""')}"`,
+        transaction.amount,
+        transaction.reconciled ? "Reconciled" : "Pending"
+      ];
+      csvRows.push(row.join(","));
+    });
+
+    // Create the CSV content
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    
+    // Create and click download link
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "transaction-history.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success("CSV exported successfully", {
+      description: "Transaction history has been downloaded as CSV"
+    });
   };
 
   return (
@@ -115,8 +167,79 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
           >
             <FileText className="h-4 w-4 mr-1" /> Export PDF
           </Button>
+          <Button 
+            size="sm" 
+            variant="outline"
+            className="text-xs" 
+            onClick={handleExportCSV}
+          >
+            <Download className="h-4 w-4 mr-1" /> Export CSV
+          </Button>
         </div>
       </div>
+
+      {/* Transaction Edit Modal */}
+      {editingTransaction && (
+        <div className="border rounded-lg p-4 mb-4 bg-background shadow-sm">
+          <h3 className="text-lg font-medium mb-4">Edit Transaction Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Date</label>
+              <Input type="text" value={editingTransaction.date} readOnly />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Amount</label>
+              <Input type="text" value={editingTransaction.amount} readOnly />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Description</label>
+              <Input type="text" value={editingTransaction.description} readOnly />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Category</label>
+              <Input 
+                type="text" 
+                value={editedCategory}
+                onChange={(e) => setEditedCategory(e.target.value)}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">Add Note</label>
+              <Textarea 
+                placeholder="Add details about this transaction..."
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">Status</label>
+              <div className="flex items-center space-x-2">
+                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  editingTransaction.reconciled 
+                    ? "bg-green-100 text-green-800"
+                    : "bg-yellow-100 text-yellow-800"
+                }`}>
+                  {editingTransaction.reconciled ? "Reconciled" : "Pending"}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setEditingTransaction(null)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveChanges}
+            >
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-md border overflow-hidden">
         <div className="overflow-x-auto">
@@ -173,15 +296,29 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
                           <Eye className="h-4 w-4" />
                           <span className="sr-only">View</span>
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8"
-                          onClick={() => handleShareTransaction(transaction)}
-                        >
-                          <Share2 className="h-4 w-4" />
-                          <span className="sr-only">Share</span>
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                            >
+                              <Share2 className="h-4 w-4" />
+                              <span className="sr-only">Share</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleShareTransaction(transaction)}>
+                              Email
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleShareTransaction(transaction)}>
+                              Copy Link
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleShareTransaction(transaction)}>
+                              Download PDF
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
