@@ -424,50 +424,60 @@ const demoCompany: Company = {
     {
       id: "ITEM-001",
       name: "Widget Pro",
+      sku: "WID-001",
       category: "Widgets",
       quantity: 150,
       costPrice: "$19.99",
       sellPrice: "$29.99",
+      reorderPoint: 25,
       status: "In Stock",
       lastUpdated: "2025-04-01"
     },
     {
       id: "ITEM-002",
       name: "Premium Gadget",
+      sku: "GAD-002",
       category: "Gadgets",
       quantity: 75,
       costPrice: "$29.99",
       sellPrice: "$49.99",
+      reorderPoint: 15,
       status: "In Stock",
       lastUpdated: "2025-03-25"
     },
     {
       id: "ITEM-003",
       name: "Basic Tool Kit",
+      sku: "TK-003",
       category: "Tools",
       quantity: 50,
       costPrice: "$45.00",
       sellPrice: "$75.00",
+      reorderPoint: 20,
       status: "Low Stock",
       lastUpdated: "2025-03-20"
     },
     {
       id: "ITEM-004",
       name: "Advanced Gizmo",
+      sku: "GIZ-004",
       category: "Gizmos",
       quantity: 25,
       costPrice: "$69.99",
       sellPrice: "$99.99",
+      reorderPoint: 30,
       status: "Low Stock",
       lastUpdated: "2025-03-15"
     },
     {
       id: "ITEM-005",
       name: "Super Thingamajig",
+      sku: "THG-005",
       category: "Thingamajigs",
       quantity: 0,
       costPrice: "$99.99",
       sellPrice: "$149.99",
+      reorderPoint: 10,
       status: "Out of Stock",
       lastUpdated: "2025-03-10"
     }

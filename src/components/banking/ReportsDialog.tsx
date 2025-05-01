@@ -2,17 +2,17 @@
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent } from "@/components/ui/tabs";
 import { useCompany } from "@/contexts/CompanyContext";
 import { DateRangeDialog } from "@/components/invoices/DateRangeDialog";
-import { Download, Calendar, FileText } from "lucide-react";
+import { toast } from "sonner";
+import { prepareTransactionData } from "@/utils/reportUtils";
 import { TransactionHistoryTab } from "./reports/TransactionHistoryTab";
 import { AccountStatementTab } from "./reports/AccountStatementTab";
 import { IncomeExpensesTab } from "./reports/IncomeExpensesTab";
 import { ReconciliationTab } from "./reports/ReconciliationTab";
-import { format } from "date-fns";
-import { toast } from "sonner";
-import { prepareTransactionData } from "@/utils/reportUtils";
+import { ReportHeader } from "./reports/ReportHeader";
+import { ReportTabs } from "./reports/ReportTabs";
 
 interface ReportsDialogProps {
   open: boolean;
@@ -116,62 +116,20 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-wrap justify-between items-center gap-2 pb-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="flex items-center gap-1"
-              onClick={() => setDateRangeOpen(true)}
-            >
-              <Calendar className="h-4 w-4" />
-              <span>
-                {dateRange.from || dateRange.to ? (
-                  <>
-                    {dateRange.from ? format(dateRange.from, "MMM d, yyyy") : "Any"} - {dateRange.to ? format(dateRange.to, "MMM d, yyyy") : "Any"}
-                  </>
-                ) : (
-                  "Date Range"
-                )}
-              </span>
-            </Button>
-            <div className="flex flex-wrap gap-2">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="flex items-center gap-1"
-                onClick={handlePrintReport}
-              >
-                Print
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="flex items-center gap-1"
-                onClick={handleDownloadCSV}
-              >
-                <Download className="h-4 w-4" />
-                <span>Export CSV</span>
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="flex items-center gap-1"
-                onClick={handleExportPDF}
-              >
-                <FileText className="h-4 w-4" />
-                <span>Export PDF</span>
-              </Button>
-            </div>
-          </div>
+          <ReportHeader
+            title={`${accountName} Reports`}
+            description={`View detailed reports and analytics for your ${accountName}`}
+            dateRange={dateRange}
+            onDateRangeClick={() => setDateRangeOpen(true)}
+            onPrint={handlePrintReport}
+            onDownloadCSV={handleDownloadCSV}
+            onExportPDF={handleExportPDF}
+          />
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-4 w-full">
-              <TabsTrigger value="transaction-history">Transaction History</TabsTrigger>
-              <TabsTrigger value="account-statement">Account Statement</TabsTrigger>
-              <TabsTrigger value="income-expenses">Income & Expenses</TabsTrigger>
-              <TabsTrigger value="reconciliation">Reconciliation</TabsTrigger>
-            </TabsList>
-            
+          <ReportTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          >
             <TabsContent value="transaction-history" className="max-h-[60vh] overflow-auto">
               <TransactionHistoryTab transactions={filteredTransactions} />
             </TabsContent>
@@ -194,7 +152,7 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
                 transactions={filteredTransactions}
               />
             </TabsContent>
-          </Tabs>
+          </ReportTabs>
 
           <DialogFooter className="mt-4 sm:mt-0">
             <Button onClick={() => onOpenChange(false)}>Close</Button>
