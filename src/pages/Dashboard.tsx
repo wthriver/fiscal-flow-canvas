@@ -20,29 +20,29 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Revenue"
-          value={`$${currentCompany.revenue.current.toLocaleString()}.00`}
-          percentageChange={currentCompany.revenue.percentChange}
+          value={`$${currentCompany.revenue?.current?.toLocaleString() || 0}.00`}
+          percentageChange={currentCompany.revenue?.percentChange || 0}
           description="vs. last month"
           icon={<DollarSign size={20} />}
         />
         <StatCard
           title="Outstanding Invoices"
-          value={`$${currentCompany.outstandingInvoices.amount.toLocaleString()}.00`}
-          percentageChange={currentCompany.outstandingInvoices.percentChange}
+          value={`$${currentCompany.outstandingInvoices?.amount?.toLocaleString() || 0}.00`}
+          percentageChange={currentCompany.outstandingInvoices?.percentChange || 0}
           description="vs. last month"
           icon={<CreditCard size={20} />}
         />
         <StatCard
           title="Profit Margin"
-          value={`${currentCompany.profitMargin.value}%`}
-          percentageChange={currentCompany.profitMargin.percentChange}
+          value={`${currentCompany.profitMargin?.value || 0}%`}
+          percentageChange={currentCompany.profitMargin?.percentChange || 0}
           description="vs. last month"
           icon={<TrendingUp size={20} />}
         />
         <StatCard
           title="Active Customers"
-          value={currentCompany.activeCustomers.count.toString()}
-          percentageChange={currentCompany.activeCustomers.percentChange}
+          value={currentCompany.activeCustomers?.count?.toString() || "0"}
+          percentageChange={currentCompany.activeCustomers?.percentChange || 0}
           description="vs. last month"
           icon={<Users size={20} />}
         />

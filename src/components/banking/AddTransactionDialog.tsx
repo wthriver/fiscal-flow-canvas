@@ -22,7 +22,7 @@ export const AddTransactionDialog: React.FC<AddTransactionDialogProps> = ({
   const { currentCompany, addTransaction } = useCompany();
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [description, setDescription] = useState("");
-  const [account, setAccount] = useState(currentCompany.accounts[0]?.name || "");
+  const [account, setAccount] = useState(currentCompany.accounts?.[0]?.name || "");
   const [category, setCategory] = useState(expenseCategories[0] || "");
   const [amount, setAmount] = useState("");
   const [isIncome, setIsIncome] = useState(false);
@@ -46,9 +46,11 @@ export const AddTransactionDialog: React.FC<AddTransactionDialogProps> = ({
       date,
       description,
       account,
+      bankAccount: account, // Ensure both account and bankAccount are set
       category,
       amount: formattedAmount,
-      reconciled: false
+      reconciled: false,
+      type: isIncome ? "Deposit" : "Withdrawal" as "Deposit" | "Withdrawal" | "Transfer"
     };
 
     addTransaction(newTransaction);
@@ -91,7 +93,7 @@ export const AddTransactionDialog: React.FC<AddTransactionDialogProps> = ({
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
-                  {currentCompany.accounts.map((acc) => (
+                  {currentCompany.accounts && currentCompany.accounts.map((acc) => (
                     <SelectItem key={acc.id} value={acc.name}>
                       {acc.name}
                     </SelectItem>

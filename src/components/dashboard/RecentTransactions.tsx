@@ -1,147 +1,83 @@
 
 import React from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
-import { 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  CheckCircle2, 
-  AlertCircle, 
-  Clock 
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
 
-type TransactionType = "income" | "expense";
-type TransactionStatus = "completed" | "pending" | "failed";
-
-interface Transaction {
-  id: string;
-  type: TransactionType;
-  name: string;
-  date: string;
-  amount: number;
-  status: TransactionStatus;
-}
-
-const getStatusIcon = (status: TransactionStatus) => {
-  switch (status) {
-    case "completed":
-      return <CheckCircle2 size={16} className="text-finance-green-500" />;
-    case "pending":
-      return <Clock size={16} className="text-finance-blue-500" />;
-    case "failed":
-      return <AlertCircle size={16} className="text-finance-red-500" />;
-  }
-};
-
-const RecentTransactions: React.FC = () => {
+const RecentTransactions = () => {
   const { currentCompany } = useCompany();
-  
-  // Generate transactions based on company invoices and expenses
-  const generateTransactions = (): Transaction[] => {
-    const transactions: Transaction[] = [];
-    
-    // Add transactions from invoices
-    currentCompany.invoices.forEach(invoice => {
-      transactions.push({
-        id: `tr-${invoice.id}`,
-        type: "income",
-        name: `Client Payment - ${invoice.customer}`,
-        date: new Date(invoice.date).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
-        }),
-        amount: parseFloat(invoice.amount.replace(/[$,]/g, '')),
-        status: invoice.status === "Paid" ? "completed" : 
-                invoice.status === "Pending" || invoice.status === "Outstanding" ? "pending" : "failed"
-      });
-    });
-    
-    // Add transactions from expenses
-    currentCompany.expenses.forEach(expense => {
-      transactions.push({
-        id: `te-${expense.id}`,
-        type: "expense",
-        name: `${expense.category} - ${expense.vendor}`,
-        date: new Date(expense.date).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
-        }),
-        amount: parseFloat(expense.amount.replace(/[$,]/g, '')),
-        status: expense.status === "Paid" ? "completed" : 
-                expense.status === "Pending" ? "pending" : "failed"
-      });
-    });
-    
-    // Sort by date (most recent first) and limit to 5
-    return transactions
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5);
-  };
 
-  const transactions = generateTransactions();
+  // Get the 5 most recent transactions
+  const recentTransactions = [...currentCompany.transactions]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
 
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle>Recent Transactions</CardTitle>
-        <CardDescription>{currentCompany.name}'s latest financial activity</CardDescription>
+      <CardHeader>
+        <CardTitle className="text-base">Recent Transactions</CardTitle>
+        <CardDescription>
+          {recentTransactions.length} most recent transactions
+        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {transactions.length > 0 ? (
-            transactions.map((transaction) => (
+      <CardContent className="space-y-8">
+        {recentTransactions.map((transaction) => {
+          const isDeposit = transaction.type === "Deposit" || transaction.amount.startsWith("+");
+
+          return (
+            <div className="flex items-center" key={transaction.id}>
               <div
-                key={transaction.id}
-                className="flex items-center justify-between py-2"
+                className={cn(
+                  "mr-4 rounded-full p-2",
+                  isDeposit ? "bg-green-100" : "bg-red-100"
+                )}
               >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center",
-                      transaction.type === "income"
-                        ? "bg-finance-green-100 text-finance-green-600"
-                        : "bg-finance-red-100 text-finance-red-600"
-                    )}
-                  >
-                    {transaction.type === "income" ? (
-                      <ArrowDownLeft size={16} />
-                    ) : (
-                      <ArrowUpRight size={16} />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">{transaction.name}</p>
-                    <p className="text-xs text-muted-foreground">{transaction.date}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span
-                    className={cn(
-                      "font-semibold",
-                      transaction.type === "income"
-                        ? "text-finance-green-600"
-                        : "text-finance-red-600"
-                    )}
-                  >
-                    {transaction.type === "income" ? "+" : "-"}${transaction.amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                  </span>
-                  {getStatusIcon(transaction.status)}
-                </div>
+                {isDeposit ? (
+                  <ArrowUpIcon
+                    className="h-4 w-4 text-green-500"
+                    strokeWidth={3}
+                  />
+                ) : (
+                  <ArrowDownIcon
+                    className="h-4 w-4 text-red-500"
+                    strokeWidth={3}
+                  />
+                )}
               </div>
-            ))
-          ) : (
-            <div className="py-4 text-center text-muted-foreground">No recent transactions</div>
-          )}
-        </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">
+                  {transaction.description}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {transaction.date} · {transaction.category}
+                </p>
+              </div>
+              <div
+                className={cn(
+                  "ml-auto font-medium",
+                  isDeposit ? "text-green-500" : "text-red-500"
+                )}
+              >
+                {isDeposit
+                  ? transaction.amount.replace("-", "+")
+                  : transaction.amount}
+              </div>
+            </div>
+          );
+        })}
+        
+        {recentTransactions.length === 0 && (
+          <div className="text-center text-muted-foreground">
+            No recent transactions
+          </div>
+        )}
       </CardContent>
     </Card>
   );

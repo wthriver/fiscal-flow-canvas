@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 
 // Define types for Company and all related data
@@ -13,6 +12,7 @@ export interface Company {
   taxId?: string;
   currency: string;
   fiscalYear: string;
+  fiscalYearStart?: string;
   industry?: string;
   inventory: InventoryItem[];
   invoices: Invoice[];
@@ -27,240 +27,76 @@ export interface Company {
   auditTrail: AuditEntry[];
   budgets: Budget[];
   integrations: Integration[];
+  accounts: BankAccount[]; // Adding accounts
+  projects: Project[];
+  sales: Sale[];
+  taxReports: TaxReport[];
+  taxRates: TaxRate[];
+  // Dashboard metrics
+  revenue: {
+    current: number;
+    lastMonth: number;
+    percentChange: number;
+  };
+  outstandingInvoices: {
+    amount: number;
+    count: number;
+    percentChange: number;
+  };
+  profitMargin: {
+    value: number;
+    percentChange: number;
+  };
+  activeCustomers: {
+    count: number;
+    percentChange: number;
+  };
 }
 
-export interface InventoryItem {
+export interface Project {
   id: string;
   name: string;
-  sku?: string;
-  description?: string;
-  category: string;
-  quantity: number;
-  reorderPoint: number;
-  costPrice: string; 
-  sellPrice: string;
-  status: "In Stock" | "Low Stock" | "Out of Stock" | "Service Item";
-  lotNumbers?: LotNumber[];
-  serialNumbers?: SerialNumber[];
-}
-
-export interface LotNumber {
-  id: string;
-  lotNumber: string;
-  expirationDate: string;
-  quantity: number;
-}
-
-export interface SerialNumber {
-  id: string;
-  serialNumber: string;
-  purchaseDate?: string;
-  customer?: string;
-  status: "In Stock" | "Sold" | "Returned" | "Defective";
-}
-
-export interface Invoice {
-  id: string;
-  invoiceNumber: string;
-  customer: string;
-  date: string;
+  client: string;
+  startDate: string;
   dueDate: string;
-  items: InvoiceItem[];
-  amount: string;
-  status: "Draft" | "Sent" | "Viewed" | "Paid" | "Overdue" | "Cancelled";
+  status: string;
+  budget: number;
+  spent: number;
+  progress: number;
 }
 
-export interface InvoiceItem {
+export interface Sale {
   id: string;
-  description: string;
+  date: string;
+  customer: string;
+  amount: string;
+  items: SaleItem[];
+  status: string;
+}
+
+export interface SaleItem {
+  id: string;
+  product: string;
   quantity: number;
-  unitPrice: string;
-  amount: string;
+  price: string;
+  total: string;
 }
 
-export interface Expense {
-  id: string;
-  date: string;
-  vendor: string;
-  category: string;
-  description?: string;
-  amount: string;
-  status: "Paid" | "Pending" | "Denied";
-  paymentMethod: string;
-  receiptImageUrl?: string;
-}
-
-export interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  balance: string;
-  dateAdded: string;
-  notes?: string;
-}
-
-export interface Vendor {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  accountNumber?: string;
-  website?: string;
-  contactPerson?: string;
-}
-
-export interface Employee {
-  id: string;
-  name: string;
-  position: string;
-  department: string;
-  payRate: string;
-  payType: "Hourly" | "Salary";
-  startDate: string;
-  status: "Active" | "Inactive" | "On Leave";
-  taxInfo: {
-    ssn: string;
-    withholdings: number;
-    filingStatus: string;
-  };
-  bankInfo: {
-    accountNumber: string;
-    routingNumber: string;
-    accountType: "Checking" | "Savings";
-  };
-}
-
-export interface BankAccount {
-  id: string;
-  name: string;
-  accountNumber: string;
-  balance: string;
-  accountType: "Checking" | "Savings" | "Credit Card";
-  institution: string;
-  lastReconciled?: string;
-}
-
-export interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: string; 
-  type: "Deposit" | "Withdrawal" | "Transfer";
-  category: string;
-  bankAccount: string;
-  reconciled: boolean;
-}
-
-export interface TimeEntry {
-  id: string;
-  employeeId: string;
-  projectId?: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  duration: string;
-  description?: string;
-  billable: boolean;
-  billing?: {
-    rate: string;
-    amount: string;
-  };
-}
-
-export interface PayrollData {
-  payPeriods: PayPeriod[];
-  taxSettings: TaxSettings;
-  benefits: Benefit[];
-}
-
-export interface PayPeriod {
-  id: string;
-  startDate: string;
-  endDate: string;
-  payDate: string;
-  status: "Draft" | "Processing" | "Completed" | "Cancelled";
-  employees: PayrollEmployee[];
-  totalGross: string;
-  totalNet: string;
-  totalTaxes: string;
-  totalDeductions: string;
-}
-
-export interface PayrollEmployee {
-  employeeId: string;
-  hoursWorked: number;
-  grossPay: string;
-  taxes: string;
-  deductions: string;
-  netPay: string;
-}
-
-export interface TaxSettings {
-  federalEin: string;
-  stateId: string;
-  filingFrequency: "Monthly" | "Quarterly" | "Annually";
-  taxRates: {
-    federal: number;
-    state: number;
-    localTax?: number;
-    fica: {
-      social: number;
-      medicare: number;
-    };
-    futa: number;
-    suta: number;
-  };
-}
-
-export interface Benefit {
-  id: string;
-  name: string;
-  type: "Health" | "Retirement" | "Other";
-  employerContribution: string;
-  employeeContribution: string;
-}
-
-export interface AuditEntry {
-  id: string;
-  timestamp: string;
-  userId: string;
-  userName: string;
-  action: string;
-  module: string;
-  details: string;
-  ipAddress: string;
-}
-
-export interface Budget {
+export interface TaxReport {
   id: string;
   name: string;
   period: string;
-  startDate: string;
-  endDate: string;
-  categories: BudgetCategory[];
-  totalBudgeted: string;
-  totalActual: string;
+  dueDate: string;
+  status: string;
+  amount: string;
 }
 
-export interface BudgetCategory {
+export interface TaxRate {
   id: string;
   name: string;
-  budgetedAmount: string;
-  actualAmount: string;
-  variance: string;
-}
-
-export interface Integration {
-  id: string;
-  name: string;
-  provider: string;
-  status: "Active" | "Inactive" | "Error";
-  lastSync: string;
-  syncFrequency: string;
-  connectionDetails: Record<string, string>;
+  rate: number;
+  type: string;
+  effectiveDate: string;
 }
 
 // Sample data
@@ -274,6 +110,7 @@ const sampleCompany: Company = {
   taxId: "12-3456789",
   currency: "USD",
   fiscalYear: "Jan 1 - Dec 31",
+  fiscalYearStart: "January 1",
   industry: "Technology",
   inventory: [
     {
@@ -492,6 +329,7 @@ const sampleCompany: Company = {
       type: "Deposit",
       category: "Revenue",
       bankAccount: "Business Checking",
+      account: "Business Checking",
       reconciled: true
     },
     {
@@ -502,6 +340,7 @@ const sampleCompany: Company = {
       type: "Withdrawal",
       category: "Office Expense",
       bankAccount: "Business Credit Card",
+      account: "Business Credit Card",
       reconciled: true
     },
     {
@@ -512,6 +351,7 @@ const sampleCompany: Company = {
       type: "Withdrawal",
       category: "Rent",
       bankAccount: "Business Checking",
+      account: "Business Checking",
       reconciled: true
     }
   ],
@@ -519,22 +359,22 @@ const sampleCompany: Company = {
     {
       id: "time1",
       employeeId: "emp1",
-      projectId: "proj1",
+      projectId?: string;
       date: "2025-04-01",
       startTime: "09:00",
       endTime: "17:00",
       duration: "8:00",
-      description: "Development work on new feature",
+      description?: string;
       billable: true,
-      billing: {
-        rate: "$45.00",
-        amount: "$360.00"
-      }
+      billing?: {
+        rate: string;
+        amount: string;
+      };
     },
     {
       id: "time2",
       employeeId: "emp2",
-      projectId: "proj2",
+      projectId?: string;
       date: "2025-04-01",
       startTime: "10:00",
       endTime: "16:00",
@@ -688,7 +528,115 @@ const sampleCompany: Company = {
         apiVersion: "2025-01"
       }
     }
-  ]
+  ],
+  accounts: [
+    {
+      id: "bank1",
+      name: "Business Checking",
+      accountNumber: "XXXXX7890",
+      balance: "$15,243.89",
+      accountType: "Checking",
+      institution: "First National Bank",
+      lastReconciled: "2025-03-31"
+    },
+    {
+      id: "bank2",
+      name: "Business Savings",
+      accountNumber: "XXXXX4321",
+      balance: "$42,876.54",
+      accountType: "Savings",
+      institution: "First National Bank",
+      lastReconciled: "2025-03-31"
+    },
+    {
+      id: "bank3",
+      name: "Business Credit Card",
+      accountNumber: "XXXX-XXXX-XXXX-1234",
+      balance: "-$4,567.23",
+      accountType: "Credit Card",
+      institution: "Finance Card Services",
+      lastReconciled: "2025-03-25"
+    }
+  ],
+  projects: [
+    {
+      id: "proj1",
+      name: "Website Redesign",
+      client: "XYZ Corp",
+      startDate: "2025-01-15",
+      dueDate: "2025-05-30",
+      status: "In Progress",
+      budget: 10000,
+      spent: 4500,
+      progress: 45
+    },
+    {
+      id: "proj2",
+      name: "Marketing Campaign",
+      client: "ABC Ltd",
+      startDate: "2025-03-01",
+      dueDate: "2025-04-15",
+      status: "Completed",
+      budget: 5000,
+      spent: 4800,
+      progress: 100
+    }
+  ],
+  sales: [
+    {
+      id: "sale1",
+      date: "2025-04-01",
+      customer: "XYZ Corp",
+      amount: "$499.98",
+      items: [
+        {
+          id: "item1",
+          product: "Product A",
+          quantity: 5,
+          price: "$99.99",
+          total: "$499.95"
+        }
+      ],
+      status: "Completed"
+    }
+  ],
+  taxReports: [
+    {
+      id: "tax1",
+      name: "Quarterly Sales Tax",
+      period: "Q1 2025",
+      dueDate: "2025-04-30",
+      status: "Pending",
+      amount: "$1,245.67"
+    }
+  ],
+  taxRates: [
+    {
+      id: "tr1",
+      name: "Standard Sales Tax",
+      rate: 7.5,
+      type: "Sales",
+      effectiveDate: "2025-01-01"
+    }
+  ],
+  revenue: {
+    current: 12500,
+    lastMonth: 10000,
+    percentChange: 25
+  },
+  outstandingInvoices: {
+    amount: 1999,
+    count: 3,
+    percentChange: -10
+  },
+  profitMargin: {
+    value: 32,
+    percentChange: 5
+  },
+  activeCustomers: {
+    count: 12,
+    percentChange: 20
+  }
 };
 
 const sampleCompany2: Company = {
@@ -701,6 +649,7 @@ const sampleCompany2: Company = {
   taxId: "98-7654321",
   currency: "USD",
   fiscalYear: "Jul 1 - Jun 30",
+  fiscalYearStart: "July 1",
   industry: "Manufacturing",
   inventory: [
     {
@@ -853,6 +802,7 @@ const sampleCompany2: Company = {
       type: "Deposit",
       category: "Revenue",
       bankAccount: "Operations Account",
+      account: "Operations Account",
       reconciled: true
     },
     {
@@ -863,6 +813,7 @@ const sampleCompany2: Company = {
       type: "Withdrawal",
       category: "Materials",
       bankAccount: "Operations Account",
+      account: "Operations Account",
       reconciled: true
     }
   ],
@@ -979,7 +930,86 @@ const sampleCompany2: Company = {
         accountsConnected: "1"
       }
     }
-  ]
+  ],
+  accounts: [
+    {
+      id: "bank1",
+      name: "Operations Account",
+      accountNumber: "XXXXX5432",
+      balance: "$32,567.89",
+      accountType: "Checking",
+      institution: "Business Bank",
+      lastReconciled: "2025-03-31"
+    }
+  ],
+  projects: [
+    {
+      id: "proj1",
+      name: "Product Development",
+      client: "Internal",
+      startDate: "2025-02-01",
+      dueDate: "2025-08-15",
+      status: "In Progress",
+      budget: 50000,
+      spent: 15000,
+      progress: 30
+    }
+  ],
+  sales: [
+    {
+      id: "sale1",
+      date: "2025-03-15",
+      customer: "Acme Corp",
+      amount: "$799.88",
+      items: [
+        {
+          id: "item1",
+          product: "Widget X",
+          quantity: 10,
+          price: "$49.99",
+          total: "$499.90"
+        }
+      ],
+      status: "Completed"
+    }
+  ],
+  taxReports: [
+    {
+      id: "tax1",
+      name: "Annual Business Tax",
+      period: "FY 2025",
+      dueDate: "2025-09-15",
+      status: "Not Started",
+      amount: "$12,450.00"
+    }
+  ],
+  taxRates: [
+    {
+      id: "tr1",
+      name: "Manufacturing Tax",
+      rate: 5.2,
+      type: "Sales",
+      effectiveDate: "2025-01-01"
+    }
+  ],
+  revenue: {
+    current: 45000,
+    lastMonth: 42000,
+    percentChange: 7.14
+  },
+  outstandingInvoices: {
+    amount: 0,
+    count: 0,
+    percentChange: -100
+  },
+  profitMargin: {
+    value: 28,
+    percentChange: -2
+  },
+  activeCustomers: {
+    count: 8,
+    percentChange: 0
+  }
 };
 
 // Create context
@@ -987,6 +1017,12 @@ type CompanyContextType = {
   companies: Company[];
   currentCompany: Company;
   setCurrentCompany: (company: Company) => void;
+  switchCompany: (companyId: string) => void;
+  addCompany: (companyData: Partial<Company>) => void;
+  updateCompany: (companyId: string, companyData: Partial<Company>) => void;
+  addTransaction: (transaction: Partial<Transaction>) => void;
+  addExpense: (expense: Partial<Expense>) => void;
+  addInvoice: (invoice: Partial<Invoice>) => void;
 };
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
@@ -996,10 +1032,169 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [companies, setCompanies] = useState<Company[]>([sampleCompany, sampleCompany2]);
   const [currentCompany, setCurrentCompany] = useState<Company>(companies[0]);
 
+  // Switch between companies
+  const switchCompany = (companyId: string) => {
+    const company = companies.find(c => c.id === companyId);
+    if (company) {
+      setCurrentCompany(company);
+    }
+  };
+
+  // Add a new company
+  const addCompany = (companyData: Partial<Company>) => {
+    const newCompany: Company = {
+      id: `comp-${Date.now()}`,
+      name: companyData.name || "New Company",
+      address: companyData.address || "",
+      phone: companyData.phone || "",
+      email: companyData.email || "",
+      website: companyData.website || "",
+      taxId: companyData.taxId || "",
+      currency: companyData.currency || "USD",
+      fiscalYear: companyData.fiscalYear || "Jan 1 - Dec 31",
+      fiscalYearStart: companyData.fiscalYearStart || "January 1",
+      industry: companyData.industry || "",
+      inventory: companyData.inventory || [],
+      invoices: companyData.invoices || [],
+      expenses: companyData.expenses || [],
+      customers: companyData.customers || [],
+      vendors: companyData.vendors || [],
+      employees: companyData.employees || [],
+      bankAccounts: companyData.bankAccounts || [],
+      transactions: companyData.transactions || [],
+      timeEntries: companyData.timeEntries || [],
+      payrollData: companyData.payrollData || {
+        payPeriods: [],
+        taxSettings: {
+          federalEin: "",
+          stateId: "",
+          filingFrequency: "Monthly",
+          taxRates: {
+            federal: 0,
+            state: 0,
+            fica: {
+              social: 0,
+              medicare: 0
+            },
+            futa: 0,
+            suta: 0
+          }
+        },
+        benefits: []
+      },
+      auditTrail: companyData.auditTrail || [],
+      budgets: companyData.budgets || [],
+      integrations: companyData.integrations || [],
+      accounts: companyData.accounts || [],
+      projects: companyData.projects || [],
+      sales: companyData.sales || [],
+      taxReports: companyData.taxReports || [],
+      taxRates: companyData.taxRates || [],
+      revenue: companyData.revenue || {
+        current: 0,
+        lastMonth: 0,
+        percentChange: 0
+      },
+      outstandingInvoices: companyData.outstandingInvoices || {
+        amount: 0,
+        count: 0,
+        percentChange: 0
+      },
+      profitMargin: companyData.profitMargin || {
+        value: 0,
+        percentChange: 0
+      },
+      activeCustomers: companyData.activeCustomers || {
+        count: 0,
+        percentChange: 0
+      }
+    };
+    
+    setCompanies(prev => [...prev, newCompany]);
+    setCurrentCompany(newCompany);
+  };
+
+  // Update company information
+  const updateCompany = (companyId: string, companyData: Partial<Company>) => {
+    setCompanies(prev => 
+      prev.map(company => 
+        company.id === companyId 
+          ? { ...company, ...companyData } 
+          : company
+      )
+    );
+    
+    if (currentCompany.id === companyId) {
+      setCurrentCompany(prev => ({ ...prev, ...companyData }));
+    }
+  };
+
+  // Add a new transaction
+  const addTransaction = (transaction: Partial<Transaction>) => {
+    const newTransaction: Transaction = {
+      id: transaction.id || `trans-${Date.now()}`,
+      date: transaction.date || new Date().toISOString().split('T')[0],
+      description: transaction.description || "",
+      amount: transaction.amount || "$0.00",
+      type: transaction.type || "Deposit",
+      category: transaction.category || "Uncategorized",
+      bankAccount: transaction.bankAccount || "",
+      account: transaction.account || "",
+      reconciled: transaction.reconciled || false
+    };
+    
+    updateCompany(currentCompany.id, {
+      transactions: [...currentCompany.transactions, newTransaction]
+    });
+  };
+
+  // Add a new expense
+  const addExpense = (expense: Partial<Expense>) => {
+    const newExpense: Expense = {
+      id: expense.id || `exp-${Date.now()}`,
+      date: expense.date || new Date().toISOString().split('T')[0],
+      vendor: expense.vendor || "",
+      category: expense.category || "Uncategorized",
+      description: expense.description || "",
+      amount: expense.amount || "$0.00",
+      status: expense.status || "Pending",
+      paymentMethod: expense.paymentMethod || "Cash",
+      receiptImageUrl: expense.receiptImageUrl
+    };
+    
+    updateCompany(currentCompany.id, {
+      expenses: [...currentCompany.expenses, newExpense]
+    });
+  };
+
+  // Add a new invoice
+  const addInvoice = (invoice: Partial<Invoice>) => {
+    const newInvoice: Invoice = {
+      id: invoice.id || `inv-${Date.now()}`,
+      invoiceNumber: invoice.invoiceNumber || `INV-${Date.now().toString().slice(-6)}`,
+      customer: invoice.customer || "",
+      date: invoice.date || new Date().toISOString().split('T')[0],
+      dueDate: invoice.dueDate || new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+      items: invoice.items || [],
+      amount: invoice.amount || "$0.00",
+      status: invoice.status || "Draft"
+    };
+    
+    updateCompany(currentCompany.id, {
+      invoices: [...currentCompany.invoices, newInvoice]
+    });
+  };
+
   const contextValue: CompanyContextType = {
     companies,
     currentCompany,
     setCurrentCompany,
+    switchCompany,
+    addCompany,
+    updateCompany,
+    addTransaction,
+    addExpense,
+    addInvoice
   };
 
   return (

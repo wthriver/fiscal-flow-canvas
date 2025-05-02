@@ -14,10 +14,10 @@ export const CompanySettings: React.FC = () => {
     address: currentCompany.address,
     phone: currentCompany.phone,
     email: currentCompany.email,
-    website: currentCompany.website,
-    taxId: currentCompany.taxId,
-    industry: currentCompany.industry,
-    fiscalYearStart: currentCompany.fiscalYearStart,
+    website: currentCompany.website || "",
+    taxId: currentCompany.taxId || "",
+    industry: currentCompany.industry || "",
+    fiscalYearStart: currentCompany.fiscalYearStart || currentCompany.fiscalYear.split(" - ")[0],
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

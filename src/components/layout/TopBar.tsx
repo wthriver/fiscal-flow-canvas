@@ -6,7 +6,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuLabel, 
   DropdownMenuSeparator, 
-  DropdownMenuTrigger
+  DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { 
   Sheet, 
@@ -64,37 +64,7 @@ const TopBar: React.FC = () => {
     }
 
     // Add the new company with default data
-    addCompany({
-      ...newCompanyData,
-      customers: [],
-      invoices: [],
-      expenses: [],
-      inventory: [],
-      revenue: {
-        current: 0,
-        lastMonth: 0,
-        percentChange: 0,
-      },
-      outstandingInvoices: {
-        amount: 0,
-        count: 0,
-        percentChange: 0,
-      },
-      profitMargin: {
-        value: 0,
-        percentChange: 0,
-      },
-      activeCustomers: {
-        count: 0,
-        percentChange: 0,
-      },
-      projects: [],
-      sales: [],
-      taxReports: [],
-      taxRates: [],
-      accounts: [],
-      transactions: []
-    });
+    addCompany(newCompanyData);
 
     // Reset form and close dialog
     setNewCompanyData({
@@ -108,6 +78,7 @@ const TopBar: React.FC = () => {
       fiscalYearStart: "January 1",
     });
     setIsCreateDialogOpen(false);
+    toast.success(`Company "${newCompanyData.name}" created successfully`);
   };
 
   const handleProfileClick = () => {

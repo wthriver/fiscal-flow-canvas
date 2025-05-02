@@ -4,26 +4,29 @@ import { toast } from "sonner";
 import { TransactionEditModal } from "./TransactionEditModal";
 import { TransactionSearchBar } from "./TransactionSearchBar";
 import { TransactionTable } from "./TransactionTable";
+import { Transaction as CompanyTransaction } from "@/contexts/CompanyContext";
 
-interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: string;
-  category: string;
-  reconciled: boolean;
+// Define a component-specific Transaction that includes all required fields
+interface Transaction extends CompanyTransaction {
+  account: string;
 }
 
 interface TransactionHistoryTabProps {
-  transactions: Transaction[];
+  transactions: CompanyTransaction[];
 }
 
 export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
-  transactions
+  transactions: inputTransactions
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: "asc" | "desc" } | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+
+  // Convert CompanyTransaction to the Transaction format required by this component
+  const transactions: Transaction[] = inputTransactions.map(t => ({
+    ...t,
+    account: t.account || t.bankAccount // Make sure account is defined
+  }));
 
   // Filter transactions based on search term
   const filteredTransactions = transactions.filter(transaction => 

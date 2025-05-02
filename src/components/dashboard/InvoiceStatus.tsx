@@ -1,67 +1,64 @@
 
 import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { useCompany } from "@/contexts/CompanyContext";
 
-const InvoiceStatus: React.FC = () => {
+const InvoiceStatus = () => {
   const { currentCompany } = useCompany();
   
-  // Calculate invoice status data based on current company
-  const calculateInvoiceStatusData = () => {
-    // Count invoices by status
-    const paidCount = currentCompany.invoices.filter(inv => inv.status === "Paid").length;
-    const pendingCount = currentCompany.invoices.filter(inv => inv.status === "Pending" || inv.status === "Outstanding").length;
-    const overdueCount = currentCompany.invoices.filter(inv => inv.status === "Overdue").length;
-    
-    const total = Math.max(paidCount + pendingCount + overdueCount, 1); // Avoid division by zero
-    
-    return [
-      { name: "Paid", value: (paidCount / total) * 100, color: "#16a34a" },
-      { name: "Unpaid", value: (pendingCount / total) * 100, color: "#f97316" },
-      { name: "Overdue", value: (overdueCount / total) * 100, color: "#dc2626" },
-    ];
+  // Calculate counts for different invoice statuses
+  const invoiceStatusCounts = {
+    paid: currentCompany.invoices.filter(inv => inv.status === "Paid").length,
+    pending: currentCompany.invoices.filter(inv => ["Draft", "Sent", "Viewed"].includes(inv.status)).length,
+    overdue: currentCompany.invoices.filter(inv => inv.status === "Overdue").length,
   };
-
-  const data = calculateInvoiceStatusData();
-
+  
+  const total = Object.values(invoiceStatusCounts).reduce((a, b) => a + b, 0);
+  
+  // Calculate percentages
+  const percentages = {
+    paid: total > 0 ? (invoiceStatusCounts.paid / total * 100) : 0,
+    pending: total > 0 ? (invoiceStatusCounts.pending / total * 100) : 0,
+    overdue: total > 0 ? (invoiceStatusCounts.overdue / total * 100) : 0,
+  };
+  
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle>Invoice Status</CardTitle>
-        <CardDescription>Summary of {currentCompany.name}'s invoice status</CardDescription>
+      <CardHeader>
+        <CardTitle className="text-base">Invoice Status</CardTitle>
+        <CardDescription>
+          {total} total invoices
+        </CardDescription>
       </CardHeader>
-      <CardContent className="h-[200px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={50}
-              outerRadius={70}
-              paddingAngle={2}
-              dataKey="value"
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              labelLine={false}
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip
-              formatter={(value) => {
-                // Ensure value is a number before calling toFixed
-                return [typeof value === 'number' ? `${value.toFixed(0)}%` : `${value}%`, "Percentage"];
-              }}
-              contentStyle={{
-                backgroundColor: "white",
-                border: "1px solid #e2e8f0",
-                borderRadius: "6px",
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <div>Paid</div>
+            <div className="font-medium">{invoiceStatusCounts.paid}</div>
+          </div>
+          <Progress value={percentages.paid} className="h-2 bg-muted" />
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <div>Pending</div>
+            <div className="font-medium">{invoiceStatusCounts.pending}</div>
+          </div>
+          <Progress value={percentages.pending} className="h-2 bg-muted" />
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <div>Overdue</div>
+            <div className="font-medium">{invoiceStatusCounts.overdue}</div>
+          </div>
+          <Progress value={percentages.overdue} className="h-2 bg-muted" />
+        </div>
       </CardContent>
     </Card>
   );
