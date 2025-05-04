@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 
 // Define types for Company and all related data
@@ -610,12 +609,12 @@ const sampleCompany: Company = {
     {
       id: "time1",
       employeeId: "emp1",
-      projectId: "proj1",
+      projectId: undefined,
       date: "2025-04-01",
       startTime: "09:00",
       endTime: "17:00",
       duration: "8:00",
-      description: "Software development",
+      description: undefined,
       billable: true,
       billing: {
         rate: "$45.00",
@@ -625,6 +624,7 @@ const sampleCompany: Company = {
     {
       id: "time2",
       employeeId: "emp2",
+      projectId: undefined,
       date: "2025-04-01",
       startTime: "10:00",
       endTime: "16:00",
@@ -1114,6 +1114,7 @@ const sampleCompany2: Company = {
     {
       id: "time1",
       employeeId: "emp1",
+      projectId: undefined,
       date: "2025-03-30",
       startTime: "08:00",
       endTime: "17:00",

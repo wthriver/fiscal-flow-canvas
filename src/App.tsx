@@ -20,14 +20,13 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { CompanyProvider } from "./contexts/CompanyContext";
 
-// Import feature pages
+// Feature pages
 import Payroll from "./pages/Payroll";
 import TimeTrackingPage from "./pages/TimeTracking";
 import Budgeting from "./pages/Budgeting";
 import Receipts from "./pages/Receipts";
 
-// Settings related pages are now accessed through the Settings page
-// These routes remain for direct access
+// All settings-related pages
 import AuditTrail from "./pages/AuditTrail";
 import MultiCurrency from "./pages/MultiCurrency";
 import Integrations from "./pages/Integrations";
@@ -43,6 +42,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route element={<AppLayout />}>
+              {/* Main modules */}
               <Route path="/" element={<Dashboard />} />
               <Route path="/invoices" element={<Invoices />} />
               <Route path="/expenses" element={<Expenses />} />
@@ -50,19 +50,24 @@ const App = () => (
               <Route path="/banking" element={<Banking />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/journal" element={<Journal />} />
+              
+              {/* Business modules */}
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/customers" element={<Customers />} />
               <Route path="/sales" element={<Sales />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/time-tracking" element={<TimeTrackingPage />} />
               <Route path="/taxes" element={<Taxes />} />
-              <Route path="/settings" element={<Settings />} />
               
-              {/* Advanced feature routes */}
+              {/* Advanced modules */}
               <Route path="/payroll" element={<Payroll />} />
               <Route path="/budgeting" element={<Budgeting />} />
               
-              {/* Settings-related pages for direct access */}
+              {/* Settings */}
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/audit-trail" element={<AuditTrail />} />
+              <Route path="/settings/multi-currency" element={<MultiCurrency />} />
+              <Route path="/settings/integrations" element={<Integrations />} />
               <Route path="/audit-trail" element={<AuditTrail />} />
               <Route path="/multi-currency" element={<MultiCurrency />} />
               <Route path="/integrations" element={<Integrations />} />

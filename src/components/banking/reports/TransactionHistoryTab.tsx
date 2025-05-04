@@ -4,29 +4,28 @@ import { toast } from "sonner";
 import { TransactionEditModal } from "./TransactionEditModal";
 import { TransactionSearchBar } from "./TransactionSearchBar";
 import { TransactionTable } from "./TransactionTable";
-import { Transaction as CompanyTransaction } from "@/contexts/CompanyContext";
+import { Transaction } from "@/contexts/CompanyContext";
 
-// Define a component-specific Transaction that includes all required fields
-interface Transaction extends CompanyTransaction {
+// Define a component-specific Transaction interface that extends the base Transaction
+interface ExtendedTransaction extends Transaction {
   account: string;
 }
 
 interface TransactionHistoryTabProps {
-  transactions: CompanyTransaction[];
+  transactions: Transaction[];
 }
 
 export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
   transactions: inputTransactions = []
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: "asc" | "desc" } | null>(null);
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof ExtendedTransaction; direction: "asc" | "desc" } | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<ExtendedTransaction | null>(null);
 
-  // Convert CompanyTransaction to the Transaction format required by this component
-  // Add safety checks to ensure we don't have undefined values
-  const transactions: Transaction[] = (inputTransactions || []).map(t => ({
+  // Convert the base Transaction to ExtendedTransaction format
+  const transactions: ExtendedTransaction[] = (inputTransactions || []).map(t => ({
     ...t,
-    account: t.account || t.bankAccount || "" // Make sure account is always defined
+    account: t.bankAccount || "" // Make sure account is always defined
   }));
 
   // Filter transactions based on search term
@@ -60,7 +59,7 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     return sortableTransactions;
   }, [filteredTransactions, sortConfig]);
 
-  const requestSort = (key: keyof Transaction) => {
+  const requestSort = (key: keyof ExtendedTransaction) => {
     let direction: "asc" | "desc" = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
@@ -68,13 +67,13 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     setSortConfig({ key, direction });
   };
 
-  const handleShareTransaction = (transaction: Transaction) => {
+  const handleShareTransaction = (transaction: ExtendedTransaction) => {
     toast.success(`Sharing transaction details for: ${transaction.description}`, {
       description: "Transaction details have been copied to clipboard"
     });
   };
 
-  const handleViewDetails = (transaction: Transaction) => {
+  const handleViewDetails = (transaction: ExtendedTransaction) => {
     setEditingTransaction(transaction);
     
     toast.info(`Viewing transaction: ${transaction.description}`, {

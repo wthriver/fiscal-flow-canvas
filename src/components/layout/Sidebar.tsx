@@ -91,7 +91,6 @@ const Sidebar: React.FC = () => {
     { to: "/", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
     { to: "/invoices", icon: <Receipt size={20} />, label: "Invoices" },
     { to: "/expenses", icon: <CreditCard size={20} />, label: "Expenses" },
-    { to: "/receipts", icon: <Camera size={20} />, label: "Digital Receipts" },
     { to: "/banking", icon: <Landmark size={20} />, label: "Banking" },
     { to: "/reports", icon: <BarChart3 size={20} />, label: "Reports" },
     { to: "/journal", icon: <FileText size={20} />, label: "Journal" },

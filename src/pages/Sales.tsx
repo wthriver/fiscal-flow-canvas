@@ -2,23 +2,63 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, ShoppingCart, FileText, CalendarIcon, Tag } from "lucide-react";
+import { PlusCircle, Search, ShoppingCart, FileText, CalendarIcon, Tag, Edit, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FilterButton, ExportButton } from "@/components/common/ActionButtons";
 import { toast } from "sonner";
 import { handleDateRange } from "@/utils/navigationUtils";
 import { useCompany } from "@/contexts/CompanyContext";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Sale } from "@/contexts/CompanyContext";
+
+// New interfaces for sales management
+interface SaleFormData {
+  id?: string;
+  date: string;
+  customer: string;
+  items: {
+    id: string;
+    product: string;
+    quantity: number;
+    price: string;
+    total: string;
+  }[];
+  amount: string;
+  status: string;
+  paymentStatus?: string;
+}
 
 const Sales: React.FC = () => {
-  const { currentCompany } = useCompany();
+  const { currentCompany, updateCompany } = useCompany();
   const [searchTerm, setSearchTerm] = useState("");
+  const [newSaleDialogOpen, setNewSaleDialogOpen] = useState(false);
+  const [editSaleDialogOpen, setEditSaleDialogOpen] = useState(false);
+  const [viewSaleDialogOpen, setViewSaleDialogOpen] = useState(false);
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [newSale, setNewSale] = useState<SaleFormData>({
+    date: new Date().toISOString().split('T')[0],
+    customer: "",
+    items: [
+      {
+        id: `item-${Date.now()}`,
+        product: "",
+        quantity: 1,
+        price: "$0.00",
+        total: "$0.00"
+      }
+    ],
+    amount: "$0.00",
+    status: "Processing",
+  });
   
   // Filter sales based on search term
-  const filteredSales = currentCompany.sales?.filter(sale => 
+  const filteredSales = (currentCompany.sales || []).filter(sale => 
     sale.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     sale.customer.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
 
   // Calculate total sales for the week
   const salesThisWeek = filteredSales.reduce((total, sale) => {
@@ -29,7 +69,7 @@ const Sales: React.FC = () => {
     
     if (saleDate >= weekAgo && saleDate <= today) {
       // Extract numeric value from formatted string (e.g., "$1,250.00" to 1250.00)
-      const amount = parseFloat(sale.total?.replace(/[^0-9.-]+/g, "") || sale.amount.replace(/[^0-9.-]+/g, "") || "0");
+      const amount = parseFloat(sale.amount.replace(/[^0-9.-]+/g, "") || "0");
       return total + amount;
     }
     return total;
@@ -41,19 +81,175 @@ const Sales: React.FC = () => {
   ).length;
 
   const handleCreateEstimate = () => {
-    toast.info("Create estimate modal would open here");
+    toast.info("Create estimate feature will be implemented soon");
+  };
+
+  const handleAddItem = () => {
+    setNewSale({
+      ...newSale,
+      items: [
+        ...newSale.items,
+        {
+          id: `item-${Date.now()}`,
+          product: "",
+          quantity: 1,
+          price: "$0.00",
+          total: "$0.00"
+        }
+      ]
+    });
+  };
+
+  const handleRemoveItem = (index: number) => {
+    const updatedItems = [...newSale.items];
+    updatedItems.splice(index, 1);
+    
+    // Recalculate total
+    const newTotal = updatedItems.reduce((total, item) => {
+      const itemTotal = parseFloat(item.total.replace(/[^0-9.-]+/g, "") || "0");
+      return total + itemTotal;
+    }, 0);
+    
+    setNewSale({
+      ...newSale,
+      items: updatedItems,
+      amount: `$${newTotal.toFixed(2)}`
+    });
+  };
+
+  const handleItemChange = (index: number, field: string, value: string | number) => {
+    const updatedItems = [...newSale.items];
+    updatedItems[index] = {
+      ...updatedItems[index],
+      [field]: value
+    };
+    
+    // If price or quantity changed, recalculate total
+    if (field === "price" || field === "quantity") {
+      const price = field === "price" 
+        ? parseFloat(value.toString().replace(/[^0-9.-]+/g, "") || "0") 
+        : parseFloat(updatedItems[index].price.replace(/[^0-9.-]+/g, "") || "0");
+      
+      const quantity = field === "quantity" 
+        ? Number(value) 
+        : updatedItems[index].quantity;
+      
+      const itemTotal = price * quantity;
+      updatedItems[index].total = `$${itemTotal.toFixed(2)}`;
+      
+      // Update sale total
+      const newTotal = updatedItems.reduce((total, item) => {
+        const subTotal = parseFloat(item.total.replace(/[^0-9.-]+/g, "") || "0");
+        return total + subTotal;
+      }, 0);
+      
+      setNewSale({
+        ...newSale,
+        items: updatedItems,
+        amount: `$${newTotal.toFixed(2)}`
+      });
+    } else {
+      setNewSale({
+        ...newSale,
+        items: updatedItems
+      });
+    }
   };
 
   const handleCreateSale = () => {
-    toast.info("Create sale modal would open here");
+    setNewSaleDialogOpen(true);
+  };
+
+  const handleSaveNewSale = () => {
+    if (!newSale.customer || newSale.items.some(item => !item.product)) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    
+    const saleToAdd: Sale = {
+      id: `sale-${Date.now()}`,
+      ...newSale,
+      paymentStatus: "Pending"
+    };
+    
+    const updatedSales = [...(currentCompany.sales || []), saleToAdd];
+    updateCompany(currentCompany.id, { sales: updatedSales });
+    
+    toast.success("Sale created successfully!");
+    setNewSaleDialogOpen(false);
+    setNewSale({
+      date: new Date().toISOString().split('T')[0],
+      customer: "",
+      items: [
+        {
+          id: `item-${Date.now()}`,
+          product: "",
+          quantity: 1,
+          price: "$0.00",
+          total: "$0.00"
+        }
+      ],
+      amount: "$0.00",
+      status: "Processing",
+    });
   };
 
   const handleViewSale = (id: string) => {
-    toast.info(`Viewing sale ${id}`);
+    const sale = currentCompany.sales?.find(s => s.id === id);
+    if (sale) {
+      setSelectedSale(sale);
+      setViewSaleDialogOpen(true);
+    }
+  };
+
+  const handleEditSale = (id: string) => {
+    const sale = currentCompany.sales?.find(s => s.id === id);
+    if (sale) {
+      setSelectedSale(sale);
+      setEditSaleDialogOpen(true);
+    }
+  };
+
+  const handleUpdateSale = () => {
+    if (!selectedSale) return;
+    
+    const updatedSales = (currentCompany.sales || []).map(sale => 
+      sale.id === selectedSale.id ? selectedSale : sale
+    );
+    
+    updateCompany(currentCompany.id, { sales: updatedSales });
+    
+    toast.success("Sale updated successfully");
+    setEditSaleDialogOpen(false);
+    setSelectedSale(null);
+  };
+
+  const handleDeleteSale = (id: string) => {
+    const updatedSales = (currentCompany.sales || []).filter(
+      sale => sale.id !== id
+    );
+    
+    updateCompany(currentCompany.id, { sales: updatedSales });
+    
+    toast.success("Sale deleted successfully");
+  };
+
+  const handleMarkAsPaid = (id: string) => {
+    const updatedSales = (currentCompany.sales || []).map(sale => 
+      sale.id === id 
+        ? { ...sale, paymentStatus: "Paid", status: "Completed" } 
+        : sale
+    );
+    
+    updateCompany(currentCompany.id, { sales: updatedSales });
+    
+    toast.success("Sale marked as paid");
   };
 
   const handleViewInvoice = (id: string) => {
-    toast.info(`Viewing invoice for sale ${id}`);
+    toast.info(`Viewing invoice for sale ${id}`, {
+      description: "Invoice details would be displayed here"
+    });
   };
 
   return (
@@ -203,6 +399,30 @@ const Sales: React.FC = () => {
                           <FileText size={16} />
                           <span className="sr-only">Invoice</span>
                         </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Edit size={16} />
+                              <span className="sr-only">More Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditSale(sale.id)}>
+                              Edit Sale
+                            </DropdownMenuItem>
+                            {sale.paymentStatus !== "Paid" && (
+                              <DropdownMenuItem onClick={() => handleMarkAsPaid(sale.id)}>
+                                Mark as Paid
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteSale(sale.id)}
+                              className="text-red-600"
+                            >
+                              Delete Sale
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -218,6 +438,336 @@ const Sales: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Create New Sale Dialog */}
+      <Dialog open={newSaleDialogOpen} onOpenChange={setNewSaleDialogOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Create New Sale</DialogTitle>
+            <DialogDescription>
+              Add a new sale to your records.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="date" className="text-right">
+                Date*
+              </label>
+              <Input 
+                id="date" 
+                className="col-span-3" 
+                type="date"
+                value={newSale.date}
+                onChange={(e) => setNewSale({...newSale, date: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="customer" className="text-right">
+                Customer*
+              </label>
+              <select
+                id="customer"
+                className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                value={newSale.customer}
+                onChange={(e) => setNewSale({...newSale, customer: e.target.value})}
+              >
+                <option value="">Select Customer</option>
+                {currentCompany.customers?.map(customer => (
+                  <option key={customer.id} value={customer.name}>
+                    {customer.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="status" className="text-right">
+                Status
+              </label>
+              <select
+                id="status"
+                className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                value={newSale.status}
+                onChange={(e) => setNewSale({...newSale, status: e.target.value})}
+              >
+                <option value="Processing">Processing</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+            
+            <div className="border rounded-md p-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium">Items</h3>
+                <Button size="sm" variant="outline" onClick={handleAddItem}>Add Item</Button>
+              </div>
+              <div className="space-y-4">
+                {newSale.items.map((item, index) => (
+                  <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
+                    <div className="col-span-4">
+                      <label htmlFor={`product-${index}`} className="text-xs mb-1 block">
+                        Product*
+                      </label>
+                      <Input 
+                        id={`product-${index}`} 
+                        value={item.product}
+                        onChange={(e) => handleItemChange(index, 'product', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label htmlFor={`qty-${index}`} className="text-xs mb-1 block">
+                        Qty
+                      </label>
+                      <Input 
+                        id={`qty-${index}`} 
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label htmlFor={`price-${index}`} className="text-xs mb-1 block">
+                        Price
+                      </label>
+                      <Input 
+                        id={`price-${index}`} 
+                        value={item.price}
+                        onChange={(e) => handleItemChange(index, 'price', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <label htmlFor={`total-${index}`} className="text-xs mb-1 block">
+                        Total
+                      </label>
+                      <Input 
+                        id={`total-${index}`} 
+                        value={item.total}
+                        readOnly
+                      />
+                    </div>
+                    <div className="col-span-1 flex items-end justify-center">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-9 px-2 text-red-500"
+                        onClick={() => handleRemoveItem(index)}
+                        disabled={newSale.items.length === 1}
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end mt-4">
+                <div className="text-right">
+                  <div className="text-sm text-muted-foreground">Total Amount</div>
+                  <div className="text-xl font-bold">{newSale.amount}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewSaleDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveNewSale}>Create Sale</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Sale Dialog */}
+      <Dialog open={viewSaleDialogOpen} onOpenChange={setViewSaleDialogOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>View Sale Details</DialogTitle>
+            <DialogDescription>
+              Sale information and item details
+            </DialogDescription>
+          </DialogHeader>
+          {selectedSale && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Order #</p>
+                  <p>{selectedSale.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Date</p>
+                  <p>{selectedSale.date}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Customer</p>
+                  <p>{selectedSale.customer}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Status</p>
+                  <Badge className={
+                    selectedSale.status === "Completed" 
+                      ? "bg-green-100 text-green-800" 
+                      : selectedSale.status === "Processing" 
+                        ? "bg-blue-100 text-blue-800" 
+                        : "bg-yellow-100 text-yellow-800"
+                  }>
+                    {selectedSale.status}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Payment Status</p>
+                  <Badge className={
+                    selectedSale.paymentStatus === "Paid" 
+                      ? "bg-green-100 text-green-800" 
+                      : "bg-yellow-100 text-yellow-800"
+                  }>
+                    {selectedSale.paymentStatus || "Pending"}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
+                  <p className="text-lg font-bold">{selectedSale.amount}</p>
+                </div>
+              </div>
+              
+              <div className="border-t pt-4 mt-4">
+                <h3 className="font-medium mb-2">Items</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedSale.items && selectedSale.items.map(item => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.product}</TableCell>
+                        <TableCell>{item.quantity}</TableCell>
+                        <TableCell>{item.price}</TableCell>
+                        <TableCell className="text-right">{item.total}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              <div className="flex justify-between pt-4">
+                <Button variant="outline" onClick={() => setViewSaleDialogOpen(false)}>Close</Button>
+                <div className="space-x-2">
+                  {selectedSale.paymentStatus !== "Paid" && (
+                    <Button 
+                      onClick={() => {
+                        handleMarkAsPaid(selectedSale.id);
+                        setViewSaleDialogOpen(false);
+                      }}
+                    >
+                      Mark as Paid
+                    </Button>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      handleViewInvoice(selectedSale.id);
+                    }}
+                  >
+                    View Invoice
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Sale Dialog */}
+      <Dialog open={editSaleDialogOpen} onOpenChange={setEditSaleDialogOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Edit Sale</DialogTitle>
+            <DialogDescription>
+              Update sale information and items
+            </DialogDescription>
+          </DialogHeader>
+          {selectedSale && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="edit-date" className="text-right">
+                  Date
+                </label>
+                <Input 
+                  id="edit-date" 
+                  className="col-span-3" 
+                  type="date"
+                  value={selectedSale.date}
+                  onChange={(e) => setSelectedSale({...selectedSale, date: e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="edit-customer" className="text-right">
+                  Customer
+                </label>
+                <select
+                  id="edit-customer"
+                  className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                  value={selectedSale.customer}
+                  onChange={(e) => setSelectedSale({...selectedSale, customer: e.target.value})}
+                >
+                  <option value="">Select Customer</option>
+                  {currentCompany.customers?.map(customer => (
+                    <option key={customer.id} value={customer.name}>
+                      {customer.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="edit-status" className="text-right">
+                  Status
+                </label>
+                <select
+                  id="edit-status"
+                  className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                  value={selectedSale.status}
+                  onChange={(e) => setSelectedSale({...selectedSale, status: e.target.value})}
+                >
+                  <option value="Processing">Processing</option>
+                  <option value="On Hold">On Hold</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="edit-payment" className="text-right">
+                  Payment Status
+                </label>
+                <select
+                  id="edit-payment"
+                  className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                  value={selectedSale.paymentStatus || "Pending"}
+                  onChange={(e) => setSelectedSale({...selectedSale, paymentStatus: e.target.value})}
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Refunded">Refunded</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="edit-amount" className="text-right">
+                  Total Amount
+                </label>
+                <Input 
+                  id="edit-amount" 
+                  className="col-span-3"
+                  value={selectedSale.amount}
+                  onChange={(e) => setSelectedSale({...selectedSale, amount: e.target.value})}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditSaleDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdateSale}>Update Sale</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

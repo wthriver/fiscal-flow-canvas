@@ -10,18 +10,42 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from "@/components/ui/badge";
 import { useCompany } from "@/contexts/CompanyContext";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogTrigger } from "@radix-ui/react-dialog";
+
+// New Project Interface for cleaner typing
+interface ProjectFormData {
+  id?: string;
+  name: string;
+  client: string;
+  startDate: string;
+  dueDate: string;
+  description?: string;
+  budget: number;
+}
 
 const Projects: React.FC = () => {
-  const { currentCompany } = useCompany();
+  const { currentCompany, updateCompany } = useCompany();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
+  const [editProjectDialogOpen, setEditProjectDialogOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [newProject, setNewProject] = useState<ProjectFormData>({
+    name: "",
+    client: "",
+    startDate: new Date().toISOString().split('T')[0],
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    budget: 0,
+  });
   
   // Filter projects based on search term
-  const filteredProjects = currentCompany.projects?.filter(project => 
+  const filteredProjects = (currentCompany.projects || []).filter(project => 
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     project.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.id.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
 
   // Calculate the number of active projects
   const activeProjects = filteredProjects.filter(project => project.status === "In Progress").length;
@@ -44,25 +68,92 @@ const Projects: React.FC = () => {
     .length;
 
   const handleCreateProject = () => {
-    toast.info("Create new project modal would open here");
+    setNewProjectDialogOpen(true);
+  };
+
+  const handleSaveNewProject = () => {
+    if (!newProject.name || !newProject.client) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    const projectToAdd = {
+      id: `proj-${Date.now()}`,
+      ...newProject,
+      status: "In Progress",
+      spent: 0,
+      progress: 0
+    };
+
+    const updatedProjects = [...(currentCompany.projects || []), projectToAdd];
+    
+    updateCompany(currentCompany.id, { projects: updatedProjects });
+    
+    toast.success("Project created successfully!");
+    setNewProjectDialogOpen(false);
+    setNewProject({
+      name: "",
+      client: "",
+      startDate: new Date().toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      budget: 0,
+    });
   };
 
   const handleEditProject = (projectId: string) => {
-    toast.info(`Editing project ${projectId}`);
+    const project = currentCompany.projects?.find(p => p.id === projectId);
+    if (project) {
+      setSelectedProject(project);
+      setEditProjectDialogOpen(true);
+    }
+  };
+
+  const handleUpdateProject = () => {
+    if (!selectedProject) return;
+
+    const updatedProjects = (currentCompany.projects || []).map(project => 
+      project.id === selectedProject.id ? selectedProject : project
+    );
+    
+    updateCompany(currentCompany.id, { projects: updatedProjects });
+    
+    toast.success(`Project "${selectedProject.name}" updated successfully!`);
+    setEditProjectDialogOpen(false);
+    setSelectedProject(null);
   };
 
   const handleDeleteProject = (projectId: string) => {
-    toast.info(`Deleting project ${projectId}`);
+    const updatedProjects = (currentCompany.projects || []).filter(
+      project => project.id !== projectId
+    );
+    
+    updateCompany(currentCompany.id, { projects: updatedProjects });
+    
+    toast.success("Project deleted successfully");
   };
 
   const handleArchiveProject = (projectId: string) => {
-    toast.info(`Archiving project ${projectId}`);
+    const updatedProjects = (currentCompany.projects || []).map(project => 
+      project.id === projectId ? { ...project, status: "Archived" } : project
+    );
+    
+    updateCompany(currentCompany.id, { projects: updatedProjects });
+    
+    toast.success("Project archived successfully");
+  };
+
+  const handleMarkComplete = (projectId: string) => {
+    const updatedProjects = (currentCompany.projects || []).map(project => 
+      project.id === projectId ? { ...project, status: "Completed", progress: 100 } : project
+    );
+    
+    updateCompany(currentCompany.id, { projects: updatedProjects });
+    
+    toast.success("Project marked as complete");
   };
 
   const handleTrackTime = (projectId: string) => {
-    toast.info(`Tracking time for project ${projectId}`);
-    // Navigate to time tracking for this project
-    window.location.href = `/time-tracking?project=${projectId}`;
+    navigate(`/time-tracking?projectId=${projectId}`);
   };
 
   return (
@@ -195,7 +286,7 @@ const Projects: React.FC = () => {
                         ${project.budget.toLocaleString()}
                         <div className="text-xs text-muted-foreground mt-1">
                           <span className={project.remaining && project.remaining.includes("-") ? "text-red-500" : ""}>
-                            {project.remaining || "$0.00"} remaining
+                            ${(project.budget - project.spent).toLocaleString()} remaining
                           </span>
                         </div>
                       </div>
@@ -226,6 +317,9 @@ const Projects: React.FC = () => {
                           <DropdownMenuItem onClick={() => handleEditProject(project.id)}>
                             Edit Project
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleMarkComplete(project.id)}>
+                            Mark as Complete
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleArchiveProject(project.id)}>
                             Archive Project
                           </DropdownMenuItem>
@@ -251,6 +345,201 @@ const Projects: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Create New Project Dialog */}
+      <Dialog open={newProjectDialogOpen} onOpenChange={setNewProjectDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Create New Project</DialogTitle>
+            <DialogDescription>
+              Add a new project to your portfolio.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="name" className="text-right">
+                Project Name*
+              </label>
+              <Input 
+                id="name" 
+                className="col-span-3" 
+                value={newProject.name}
+                onChange={(e) => setNewProject({...newProject, name: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="client" className="text-right">
+                Client*
+              </label>
+              <Input 
+                id="client" 
+                className="col-span-3"
+                value={newProject.client}
+                onChange={(e) => setNewProject({...newProject, client: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="start-date" className="text-right">
+                Start Date
+              </label>
+              <Input 
+                id="start-date" 
+                className="col-span-3" 
+                type="date"
+                value={newProject.startDate}
+                onChange={(e) => setNewProject({...newProject, startDate: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="due-date" className="text-right">
+                Due Date
+              </label>
+              <Input 
+                id="due-date" 
+                className="col-span-3" 
+                type="date"
+                value={newProject.dueDate}
+                onChange={(e) => setNewProject({...newProject, dueDate: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="budget" className="text-right">
+                Budget ($)
+              </label>
+              <Input 
+                id="budget" 
+                className="col-span-3" 
+                type="number"
+                value={newProject.budget}
+                onChange={(e) => setNewProject({...newProject, budget: Number(e.target.value)})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="description" className="text-right">
+                Description
+              </label>
+              <Input 
+                id="description" 
+                className="col-span-3"
+                value={newProject.description || ''}
+                onChange={(e) => setNewProject({...newProject, description: e.target.value})}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewProjectDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveNewProject}>Create Project</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Project Dialog */}
+      <Dialog open={editProjectDialogOpen} onOpenChange={setEditProjectDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Project</DialogTitle>
+            <DialogDescription>
+              Update project details.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedProject && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="edit-name" className="text-right">
+                  Project Name
+                </label>
+                <Input 
+                  id="edit-name" 
+                  className="col-span-3" 
+                  value={selectedProject.name}
+                  onChange={(e) => setSelectedProject({...selectedProject, name: e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="edit-client" className="text-right">
+                  Client
+                </label>
+                <Input 
+                  id="edit-client" 
+                  className="col-span-3"
+                  value={selectedProject.client}
+                  onChange={(e) => setSelectedProject({...selectedProject, client: e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="edit-start-date" className="text-right">
+                  Start Date
+                </label>
+                <Input 
+                  id="edit-start-date" 
+                  className="col-span-3" 
+                  type="date"
+                  value={selectedProject.startDate}
+                  onChange={(e) => setSelectedProject({...selectedProject, startDate: e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="edit-due-date" className="text-right">
+                  Due Date
+                </label>
+                <Input 
+                  id="edit-due-date" 
+                  className="col-span-3" 
+                  type="date"
+                  value={selectedProject.dueDate}
+                  onChange={(e) => setSelectedProject({...selectedProject, dueDate: e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="edit-budget" className="text-right">
+                  Budget ($)
+                </label>
+                <Input 
+                  id="edit-budget" 
+                  className="col-span-3" 
+                  type="number"
+                  value={selectedProject.budget}
+                  onChange={(e) => setSelectedProject({...selectedProject, budget: Number(e.target.value)})}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="edit-progress" className="text-right">
+                  Progress (%)
+                </label>
+                <Input 
+                  id="edit-progress" 
+                  className="col-span-3" 
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={selectedProject.progress}
+                  onChange={(e) => setSelectedProject({...selectedProject, progress: Math.min(100, Math.max(0, Number(e.target.value)))})}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="edit-status" className="text-right">
+                  Status
+                </label>
+                <select 
+                  id="edit-status"
+                  className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
+                  value={selectedProject.status}
+                  onChange={(e) => setSelectedProject({...selectedProject, status: e.target.value})}
+                >
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                  <option value="On Hold">On Hold</option>
+                  <option value="Archived">Archived</option>
+                </select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditProjectDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdateProject}>Update Project</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {filteredProjects.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
