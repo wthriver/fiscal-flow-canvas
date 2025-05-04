@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { TransactionEditModal } from "./TransactionEditModal";
@@ -7,7 +8,9 @@ import { useCompany, Transaction } from "@/contexts/CompanyContext";
 
 // Define a component-specific Transaction interface that extends the base Transaction
 interface ExtendedTransaction extends Transaction {
-  account: string;
+  account?: string;
+  type?: string;
+  bankAccount?: string;
 }
 
 interface TransactionHistoryTabProps {
@@ -18,17 +21,11 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
   transactions: inputTransactions = []
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState<{ key: keyof ExtendedTransaction; direction: "asc" | "desc" } | null>(null);
-  const [editingTransaction, setEditingTransaction] = useState<ExtendedTransaction | null>(null);
-
-  // Convert the base Transaction to ExtendedTransaction format
-  const transactions: ExtendedTransaction[] = (inputTransactions || []).map(t => ({
-    ...t,
-    account: t.bankAccount || "" // Make sure account is always defined
-  }));
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: "asc" | "desc" } | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   // Filter transactions based on search term
-  const filteredTransactions = transactions.filter(transaction => 
+  const filteredTransactions = inputTransactions.filter(transaction => 
     transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     transaction.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     transaction.amount?.includes(searchTerm)
@@ -58,7 +55,7 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     return sortableTransactions;
   }, [filteredTransactions, sortConfig]);
 
-  const requestSort = (key: keyof ExtendedTransaction) => {
+  const requestSort = (key: keyof Transaction) => {
     let direction: "asc" | "desc" = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
@@ -66,13 +63,13 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     setSortConfig({ key, direction });
   };
 
-  const handleShareTransaction = (transaction: ExtendedTransaction) => {
+  const handleShareTransaction = (transaction: Transaction) => {
     toast.success(`Sharing transaction details for: ${transaction.description}`, {
       description: "Transaction details have been copied to clipboard"
     });
   };
 
-  const handleViewDetails = (transaction: ExtendedTransaction) => {
+  const handleViewDetails = (transaction: Transaction) => {
     setEditingTransaction(transaction);
     
     toast.info(`Viewing transaction: ${transaction.description}`, {

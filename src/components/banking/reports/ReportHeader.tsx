@@ -1,77 +1,44 @@
 
 import React from "react";
-import { Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
+import { FileText, Download } from "lucide-react";
+import { useCompany } from "@/contexts/CompanyContext";
 
-interface ReportHeaderProps {
-  title: string;
-  description: string;
-  dateRange: {
-    from: Date | undefined;
-    to: Date | undefined;
-  };
-  onDateRangeClick: () => void;
-  onPrint: () => void;
-  onDownloadCSV: () => void;
-  onExportPDF: () => void;
+export interface ReportHeaderProps {
+  accountId: string;
 }
 
-export const ReportHeader: React.FC<ReportHeaderProps> = ({
-  title,
-  description,
-  dateRange,
-  onDateRangeClick,
-  onPrint,
-  onDownloadCSV,
-  onExportPDF
-}) => {
+export const ReportHeader: React.FC<ReportHeaderProps> = ({ accountId }) => {
+  const { currentCompany } = useCompany();
+  const account = accountId ? currentCompany.bankAccounts.find(acc => acc.id === accountId) : null;
+
+  const handleGenerateReport = () => {
+    console.log("Generating report for", account?.name || "all accounts");
+  };
+
+  const handleExportData = () => {
+    console.log("Exporting data for", account?.name || "all accounts");
+  };
+
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap justify-between items-center gap-2 pb-2">
-        <Button 
-          size="sm" 
-          variant="outline" 
-          className="flex items-center gap-1"
-          onClick={onDateRangeClick}
-        >
-          <Calendar className="h-4 w-4" />
-          <span>
-            {dateRange.from || dateRange.to ? (
-              <>
-                {dateRange.from ? format(dateRange.from, "MMM d, yyyy") : "Any"} - {dateRange.to ? format(dateRange.to, "MMM d, yyyy") : "Any"}
-              </>
-            ) : (
-              "Date Range"
-            )}
-          </span>
+    <div className="flex justify-between items-center mb-4">
+      <div>
+        <h3 className="text-lg font-medium">
+          {account ? account.name : "All Accounts"} Reports
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Generate and download financial reports
+        </p>
+      </div>
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={handleGenerateReport}>
+          <FileText className="mr-2 h-4 w-4" />
+          Generate Report
         </Button>
-        <div className="flex flex-wrap gap-2">
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="flex items-center gap-1"
-            onClick={onPrint}
-          >
-            Print
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="flex items-center gap-1"
-            onClick={onDownloadCSV}
-          >
-            <span>Export CSV</span>
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="flex items-center gap-1"
-            onClick={onExportPDF}
-          >
-            <span>Export PDF</span>
-          </Button>
-        </div>
+        <Button variant="outline" onClick={handleExportData}>
+          <Download className="mr-2 h-4 w-4" />
+          Export Data
+        </Button>
       </div>
     </div>
   );

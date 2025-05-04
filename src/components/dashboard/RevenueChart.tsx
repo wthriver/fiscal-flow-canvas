@@ -33,8 +33,11 @@ const RevenueChart = () => {
   ];
 
   // Current year revenue (use actual data or default)
-  const currentRevenue = currentCompany.revenue?.current || 0;
-  const profitMargin = currentCompany.profitMargin?.value || 0;
+  const currentRevenue = currentCompany.revenue && Array.isArray(currentCompany.revenue) ? 0 : 
+    currentCompany.revenue?.current || 0;
+  
+  const profitMargin = currentCompany.profitMargin && Array.isArray(currentCompany.profitMargin) ? 30 : 
+    currentCompany.profitMargin?.value || 30;
 
   // Calculate profit based on revenue and profit margin
   const currentYearData = defaultData.map(item => ({

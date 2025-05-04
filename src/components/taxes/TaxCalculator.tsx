@@ -6,11 +6,18 @@ import { Input } from "@/components/ui/input";
 import { useCompany } from "@/contexts/CompanyContext";
 
 export const TaxCalculator: React.FC = () => {
-  const { currentCompany, calculateTax } = useCompany();
+  const { currentCompany } = useCompany();
   const [amount, setAmount] = useState<string>("0");
   const [selectedTaxRate, setSelectedTaxRate] = useState<string>("");
   const [calculatedTax, setCalculatedTax] = useState<number | null>(null);
   const [total, setTotal] = useState<number | null>(null);
+
+  const calculateTax = (amount: number, taxRateId: string) => {
+    const taxRate = currentCompany.taxRates.find(rate => rate.id === taxRateId);
+    if (!taxRate) return 0;
+    
+    return (amount * taxRate.rate) / 100;
+  };
 
   const handleCalculate = () => {
     if (!selectedTaxRate) {

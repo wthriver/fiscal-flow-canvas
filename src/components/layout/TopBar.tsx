@@ -64,7 +64,25 @@ const TopBar: React.FC = () => {
     }
 
     // Add the new company with default data
-    addCompany(newCompanyData);
+    const newCompany = {
+      id: `company-${Date.now()}`,
+      ...newCompanyData,
+      customers: [],
+      invoices: [],
+      products: [],
+      estimates: [],
+      expenses: [],
+      transactions: [],
+      bankAccounts: [],
+      employees: [],
+      projects: [],
+      timeEntries: [],
+      taxRates: [],
+      revenue: { current: 0, previous: 0 },
+      profitMargin: { value: 30, trend: 0 }
+    };
+    
+    addCompany(newCompany);
 
     // Reset form and close dialog
     setNewCompanyData({

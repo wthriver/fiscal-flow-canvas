@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,15 @@ import { useLocation } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
 import { TimeTrackingControls } from "./TimeTrackingControls";
 import { TimeEntry } from "@/contexts/CompanyContext";
+import { 
+  durationStringToHours, 
+  formatCurrency, 
+  formatHoursDisplay, 
+  hoursToDurationString,
+  parseCurrency,
+  normalizeProject,
+  ensureISODateString
+} from "./utils/timeTrackingUtils";
 
 export const TimeTracking: React.FC = () => {
   const { currentCompany, updateCompany } = useCompany();
@@ -31,16 +39,12 @@ export const TimeTracking: React.FC = () => {
   const getTotalHoursForDay = (date: string): string => {
     const entries = currentCompany.timeEntries.filter(entry => entry.date === date);
     
-    let totalSeconds = 0;
+    let totalHours = 0;
     entries.forEach(entry => {
-      const [hours, minutes] = entry.duration.split(':').map(Number);
-      totalSeconds += (hours * 3600) + (minutes * 60);
+      totalHours += durationStringToHours(entry.duration);
     });
     
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    
-    return `${hours}h ${minutes}m`;
+    return formatHoursDisplay(totalHours);
   };
   
   // Filter time entries based on search term, project, employee, and date
@@ -90,11 +94,10 @@ export const TimeTracking: React.FC = () => {
   const calculateBillableAmount = (duration: string, billable: boolean): string => {
     if (!billable) return "$0.00";
     
-    const [hours, minutes] = duration.split(':').map(Number);
-    const totalHours = hours + (minutes / 60);
+    const totalHours = durationStringToHours(duration);
     const amount = totalHours * 75; // Assume $75/hour rate
     
-    return `$${amount.toFixed(2)}`;
+    return formatCurrency(amount);
   };
   
   // Add a new time entry from the modal
@@ -106,8 +109,7 @@ export const TimeTracking: React.FC = () => {
       const project = currentCompany.projects.find(p => p.id === entry.projectId);
       if (project) {
         // Calculate hours from duration
-        const [hours, minutes] = entry.duration.split(':').map(Number);
-        const durationInHours = hours + (minutes / 60);
+        const durationInHours = durationStringToHours(entry.duration);
         
         // Calculate billable amount if entry is billable
         const billableAmount = entry.billable ? durationInHours * 75 : 0;
@@ -115,17 +117,25 @@ export const TimeTracking: React.FC = () => {
         const updatedProjects = currentCompany.projects.map(p => {
           if (p.id === entry.projectId) {
             // Update tracked time
-            const currentTracked = p.tracked ? parseFloat(p.tracked) : 0;
+            const currentTracked = typeof p.tracked === 'string' 
+              ? parseFloat(p.tracked) || 0
+              : p.tracked || 0;
+              
             const newTracked = (currentTracked + durationInHours).toFixed(1);
             
             // Update billed amount if billable
-            const currentBilled = p.billed ? parseFloat(p.billed.replace(/[^0-9.-]+/g, '')) : 0;
-            const newBilled = entry.billable ? `$${(currentBilled + billableAmount).toFixed(2)}` : p.billed;
+            const currentBilled = typeof p.billed === 'string'
+              ? parseCurrency(p.billed)
+              : p.billed || 0;
+              
+            const newBilled = entry.billable 
+              ? formatCurrency(currentBilled + billableAmount) 
+              : formatCurrency(currentBilled);
             
             return {
               ...p,
               tracked: newTracked,
-              billed: newBilled || "$0.00"
+              billed: newBilled
             };
           }
           return p;
@@ -133,7 +143,7 @@ export const TimeTracking: React.FC = () => {
         
         updateCompany(currentCompany.id, { 
           timeEntries: updatedEntries,
-          projects: updatedProjects
+          projects: updatedProjects as any
         });
       } else {
         updateCompany(currentCompany.id, { timeEntries: updatedEntries });
@@ -152,19 +162,24 @@ export const TimeTracking: React.FC = () => {
     
     // If entry was associated with a project, update project tracking
     if (entryToDelete.projectId && entryToDelete.billable) {
-      const [hours, minutes] = entryToDelete.duration.split(':').map(Number);
-      const durationInHours = hours + (minutes / 60);
+      const durationInHours = durationStringToHours(entryToDelete.duration);
       const billableAmount = durationInHours * 75;
       
       const updatedProjects = currentCompany.projects.map(p => {
         if (p.id === entryToDelete.projectId) {
           // Update tracked time
-          const currentTracked = p.tracked ? parseFloat(p.tracked) : 0;
+          const currentTracked = typeof p.tracked === 'string' 
+            ? parseFloat(p.tracked) || 0
+            : p.tracked || 0;
+            
           const newTracked = Math.max(0, currentTracked - durationInHours).toFixed(1);
           
           // Update billed amount
-          const currentBilled = p.billed ? parseFloat(p.billed.replace(/[^0-9.-]+/g, '')) : 0;
-          const newBilled = `$${Math.max(0, currentBilled - billableAmount).toFixed(2)}`;
+          const currentBilled = typeof p.billed === 'string'
+            ? parseCurrency(p.billed)
+            : p.billed || 0;
+            
+          const newBilled = formatCurrency(Math.max(0, currentBilled - billableAmount));
           
           return {
             ...p,
@@ -177,7 +192,7 @@ export const TimeTracking: React.FC = () => {
       
       updateCompany(currentCompany.id, { 
         timeEntries: updatedEntries,
-        projects: updatedProjects
+        projects: updatedProjects as any
       });
     } else {
       updateCompany(currentCompany.id, { timeEntries: updatedEntries });
@@ -191,8 +206,7 @@ export const TimeTracking: React.FC = () => {
     const entry = currentCompany.timeEntries.find(e => e.id === entryId);
     if (!entry) return;
     
-    const [hours, minutes] = entry.duration.split(':').map(Number);
-    const durationInHours = hours + (minutes / 60);
+    const durationInHours = durationStringToHours(entry.duration);
     const billableAmount = durationInHours * 75;
     
     // Update the time entry
@@ -204,10 +218,13 @@ export const TimeTracking: React.FC = () => {
     if (entry.projectId) {
       const updatedProjects = currentCompany.projects.map(p => {
         if (p.id === entry.projectId) {
-          const currentBilled = p.billed ? parseFloat(p.billed.replace(/[^0-9.-]+/g, '')) : 0;
+          const currentBilled = typeof p.billed === 'string'
+            ? parseCurrency(p.billed)
+            : p.billed || 0;
+            
           const newBilled = entry.billable
-            ? `$${Math.max(0, currentBilled - billableAmount).toFixed(2)}`
-            : `$${(currentBilled + billableAmount).toFixed(2)}`;
+            ? formatCurrency(Math.max(0, currentBilled - billableAmount))
+            : formatCurrency(currentBilled + billableAmount);
           
           return {
             ...p,
@@ -219,7 +236,7 @@ export const TimeTracking: React.FC = () => {
       
       updateCompany(currentCompany.id, {
         timeEntries: updatedEntries,
-        projects: updatedProjects
+        projects: updatedProjects as any
       });
     } else {
       updateCompany(currentCompany.id, { timeEntries: updatedEntries });
@@ -414,15 +431,12 @@ export const TimeTracking: React.FC = () => {
                       const dayStr = day.toISOString().slice(0, 10);
                       const dayEntries = currentCompany.timeEntries.filter(entry => entry.date === dayStr);
                       
-                      let totalSeconds = 0;
+                      let totalHours = 0;
                       dayEntries.forEach(entry => {
-                        const [hours, minutes] = entry.duration.split(':').map(Number);
-                        totalSeconds += (hours * 3600) + (minutes * 60);
+                        totalHours += durationStringToHours(entry.duration);
                       });
                       
-                      const hours = Math.floor(totalSeconds / 3600);
-                      const minutes = Math.floor((totalSeconds % 3600) / 60);
-                      const formattedDuration = `${hours}h ${minutes}m`;
+                      const formattedDuration = formatHoursDisplay(totalHours);
                       
                       return (
                         <div 
