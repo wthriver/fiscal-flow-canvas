@@ -1,577 +1,683 @@
 
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { BarChart3, Download, FileSpreadsheet, PlusCircle, BarChart, Printer, ArrowUpDown } from "lucide-react";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, Download, BarChart3, FileText, Calendar, Filter, ArrowRight, ArrowDown, ArrowUp } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import { useCompany } from "@/contexts/CompanyContext";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Budget, BudgetCategory } from "@/contexts/CompanyContext";
+import { BarChart } from "@/components/ui/chart";
 
 export const BudgetingDashboard: React.FC = () => {
-  const [selectedBudget, setSelectedBudget] = useState("fy2025");
-  const [activeTab, setActiveTab] = useState("overview");
-  
-  const handleExportBudget = () => {
-    toast.success("Budget exported successfully", {
-      description: "Your budget data has been downloaded"
+  const { currentCompany, updateCompany, updateBudget } = useCompany();
+  const [newBudgetDialogOpen, setNewBudgetDialogOpen] = useState(false);
+  const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
+  const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<BudgetCategory | null>(null);
+  const [newBudget, setNewBudget] = useState({
+    name: "",
+    period: "Monthly",
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
+    categories: [] as BudgetCategory[],
+    totalBudgeted: "$0.00",
+    totalActual: "$0.00"
+  });
+  const [newCategory, setNewCategory] = useState({
+    name: "",
+    budgetedAmount: "$0.00"
+  });
+
+  // Calculate budget actuals and variance
+  const calculateBudgetActuals = (budget: Budget) => {
+    let totalBudgeted = 0;
+    let totalActual = 0;
+    
+    budget.categories.forEach(category => {
+      totalBudgeted += parseFloat(category.budgetedAmount.replace(/[^0-9.-]+/g, "") || "0");
+      totalActual += parseFloat(category.actualAmount.replace(/[^0-9.-]+/g, "") || "0");
+    });
+    
+    const variance = totalBudgeted - totalActual;
+    const variancePercent = totalBudgeted > 0 ? (variance / totalBudgeted) * 100 : 0;
+    
+    return {
+      totalBudgeted: `$${totalBudgeted.toFixed(2)}`,
+      totalActual: `$${totalActual.toFixed(2)}`,
+      variance: `$${variance.toFixed(2)}`,
+      variancePercent: variancePercent.toFixed(1)
+    };
+  };
+
+  const handleCreateBudget = () => {
+    setNewBudgetDialogOpen(true);
+  };
+
+  const handleSaveNewBudget = () => {
+    if (!newBudget.name) {
+      toast.error("Please provide a budget name");
+      return;
+    }
+
+    const calculatedBudget = calculateBudgetActuals({
+      ...newBudget,
+      id: `budget-${Date.now()}`,
+      categories: newBudget.categories.map(cat => ({
+        ...cat,
+        actualAmount: "$0.00",
+        variance: cat.budgetedAmount
+      }))
+    });
+    
+    const budgetToAdd: Budget = {
+      id: `budget-${Date.now()}`,
+      name: newBudget.name,
+      period: newBudget.period,
+      startDate: newBudget.startDate,
+      endDate: newBudget.endDate,
+      categories: newBudget.categories.map(cat => ({
+        id: `cat-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        name: cat.name,
+        budgetedAmount: cat.budgetedAmount,
+        actualAmount: "$0.00",
+        variance: cat.budgetedAmount
+      })),
+      totalBudgeted: calculatedBudget.totalBudgeted,
+      totalActual: calculatedBudget.totalActual,
+      variance: calculatedBudget.variance
+    };
+    
+    updateCompany(currentCompany.id, {
+      budgets: [...currentCompany.budgets, budgetToAdd]
+    });
+    
+    toast.success("Budget created successfully");
+    setNewBudgetDialogOpen(false);
+    setNewBudget({
+      name: "",
+      period: "Monthly",
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
+      categories: [],
+      totalBudgeted: "$0.00",
+      totalActual: "$0.00"
     });
   };
-  
-  const handleCreateBudget = () => {
-    toast.success("New budget created", {
-      description: "Budget for FY 2026 has been created"
+
+  const handleAddCategory = () => {
+    if (!newCategory.name || !newCategory.budgetedAmount) {
+      toast.error("Please provide a category name and budgeted amount");
+      return;
+    }
+    
+    setNewBudget({
+      ...newBudget,
+      categories: [
+        ...newBudget.categories,
+        {
+          id: `temp-${Date.now()}`,
+          name: newCategory.name,
+          budgetedAmount: newCategory.budgetedAmount,
+          actualAmount: "$0.00",
+          variance: newCategory.budgetedAmount
+        }
+      ]
     });
+    
+    setNewCategory({
+      name: "",
+      budgetedAmount: "$0.00"
+    });
+  };
+
+  const handleRemoveCategory = (index: number) => {
+    const updatedCategories = [...newBudget.categories];
+    updatedCategories.splice(index, 1);
+    setNewBudget({
+      ...newBudget,
+      categories: updatedCategories
+    });
+  };
+
+  const handleUpdateActual = (budgetId: string, categoryId: string, actualAmount: string) => {
+    const budget = currentCompany.budgets.find(b => b.id === budgetId);
+    if (!budget) return;
+    
+    const numericActual = parseFloat(actualAmount.replace(/[^0-9.-]+/g, "") || "0");
+    const formattedActual = `$${numericActual.toFixed(2)}`;
+    
+    const updatedCategories = budget.categories.map(category => {
+      if (category.id === categoryId) {
+        const budgetedAmount = parseFloat(category.budgetedAmount.replace(/[^0-9.-]+/g, "") || "0");
+        const variance = `$${(budgetedAmount - numericActual).toFixed(2)}`;
+        
+        return {
+          ...category,
+          actualAmount: formattedActual,
+          variance
+        };
+      }
+      return category;
+    });
+    
+    const calculatedBudget = calculateBudgetActuals({
+      ...budget,
+      categories: updatedCategories
+    });
+    
+    updateBudget(budgetId, {
+      categories: updatedCategories,
+      totalActual: calculatedBudget.totalActual,
+      variance: calculatedBudget.variance
+    });
+    
+    toast.success("Budget updated");
+  };
+
+  const handleEditCategory = (budget: Budget, categoryId: string) => {
+    const category = budget.categories.find(cat => cat.id === categoryId);
+    if (!category) return;
+    
+    setSelectedBudget(budget);
+    setSelectedCategory(category);
+    setEditCategoryDialogOpen(true);
+  };
+
+  const handleUpdateCategory = () => {
+    if (!selectedBudget || !selectedCategory) return;
+    
+    const updatedCategories = selectedBudget.categories.map(category => 
+      category.id === selectedCategory.id ? selectedCategory : category
+    );
+    
+    const calculatedBudget = calculateBudgetActuals({
+      ...selectedBudget,
+      categories: updatedCategories
+    });
+    
+    updateBudget(selectedBudget.id, {
+      categories: updatedCategories,
+      totalBudgeted: calculatedBudget.totalBudgeted,
+      totalActual: calculatedBudget.totalActual,
+      variance: calculatedBudget.variance
+    });
+    
+    toast.success("Category updated successfully");
+    setEditCategoryDialogOpen(false);
+  };
+
+  // Format currency numbers
+  const formatCurrency = (value: string): string => {
+    if (!value) return "$0.00";
+    
+    const numericValue = parseFloat(value.replace(/[^0-9.-]+/g, "") || "0");
+    return `$${numericValue.toFixed(2)}`;
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <BarChart3 className="h-6 w-6" />
-          Budgeting
-        </h1>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={handleCreateBudget}
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Budgeting</h1>
+          <p className="text-muted-foreground">Manage and track {currentCompany.name}'s financial budgets</p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
             className="flex items-center gap-2"
+            onClick={() => toast.info("Downloading budget report...")}
           >
-            <PlusCircle className="h-4 w-4" />
-            <span>Create Budget</span>
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleExportBudget}
-            className="flex items-center gap-2"
-          >
-            <FileSpreadsheet className="h-4 w-4" />
+            <Download size={16} />
             <span>Export</span>
           </Button>
+          <Button 
+            className="flex items-center gap-2"
+            onClick={handleCreateBudget}
+          >
+            <PlusCircle size={16} />
+            <span>New Budget</span>
+          </Button>
         </div>
       </div>
-
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-        <div className="w-full sm:w-64">
-          <Select value={selectedBudget} onValueChange={setSelectedBudget}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select budget" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="fy2025">FY 2025 Annual Budget</SelectItem>
-              <SelectItem value="fy2025-q2">FY 2025 Q2 Budget</SelectItem>
-              <SelectItem value="marketing">2025 Marketing Budget</SelectItem>
-              <SelectItem value="operations">2025 Operations Budget</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-medium">
-            <span className="text-muted-foreground">Status:</span> Active
-          </p>
-          <p className="text-sm font-medium">
-            <span className="text-muted-foreground">Period:</span> Jan 2025 - Dec 2025
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Budget</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">$420,000.00</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">YTD Spent</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">$135,250.75</p>
-            <p className="text-sm text-muted-foreground">32.2% of budget</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Remaining</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">$284,749.25</p>
-            <p className="text-sm text-muted-foreground">67.8% of budget</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Variance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-green-600">+$12,450.25</p>
-            <p className="text-sm text-muted-foreground">Under budget by 3.0%</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-1 sm:grid-cols-4 mb-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="details">Budget Details</TabsTrigger>
-          <TabsTrigger value="vs-actual">Budget vs. Actual</TabsTrigger>
-          <TabsTrigger value="forecasting">Forecasting</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Department Budgets</CardTitle>
-              <CardDescription>Budget allocation by department</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="font-medium">Marketing</p>
-                      <div className="text-xs text-muted-foreground">
-                        $45,250.25 of $120,000.00
-                      </div>
+      
+      {currentCompany.budgets.length > 0 ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {currentCompany.budgets.slice(0, 3).map(budget => {
+              const budgetCalculations = calculateBudgetActuals(budget);
+              const actualPercent = parseFloat(budgetCalculations.totalBudgeted.replace(/[^0-9.-]+/g, "")) > 0 
+                ? (parseFloat(budgetCalculations.totalActual.replace(/[^0-9.-]+/g, "")) / parseFloat(budgetCalculations.totalBudgeted.replace(/[^0-9.-]+/g, ""))) * 100
+                : 0;
+              
+              return (
+                <Card key={budget.id}>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{budget.name}</CardTitle>
+                    <CardDescription>
+                      {budget.period} ({budget.startDate} to {budget.endDate})
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between text-sm">
+                      <span>Budget: {budgetCalculations.totalBudgeted}</span>
+                      <span>Actual: {budgetCalculations.totalActual}</span>
                     </div>
-                    <div className="text-sm font-medium">37.7%</div>
-                  </div>
-                  <Progress value={37.7} />
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="font-medium">Operations</p>
-                      <div className="text-xs text-muted-foreground">
-                        $32,500.00 of $80,000.00
-                      </div>
+                    <Progress value={actualPercent} className="h-2" />
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">
+                        <span className={parseFloat(budgetCalculations.variance) >= 0 ? "text-green-600" : "text-red-600"}>
+                          {parseFloat(budgetCalculations.variance) >= 0 ? "Under" : "Over"} by {budgetCalculations.variance}
+                        </span>
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {parseFloat(budgetCalculations.variancePercent) >= 0 ? "+" : ""}{budgetCalculations.variancePercent}%
+                      </span>
                     </div>
-                    <div className="text-sm font-medium">40.6%</div>
-                  </div>
-                  <Progress value={40.6} />
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="font-medium">Product Development</p>
-                      <div className="text-xs text-muted-foreground">
-                        $38,750.50 of $150,000.00
-                      </div>
-                    </div>
-                    <div className="text-sm font-medium">25.8%</div>
-                  </div>
-                  <Progress value={25.8} />
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="font-medium">Administration</p>
-                      <div className="text-xs text-muted-foreground">
-                        $18,750.00 of $70,000.00
-                      </div>
-                    </div>
-                    <div className="text-sm font-medium">26.8%</div>
-                  </div>
-                  <Progress value={26.8} />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" className="flex items-center gap-1">
-                <BarChart className="h-4 w-4" />
-                <span>View Charts</span>
-              </Button>
-              <Button variant="outline" className="flex items-center gap-1">
-                <Printer className="h-4 w-4" />
-                <span>Print Report</span>
-              </Button>
-            </CardFooter>
-          </Card>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
           
           <Card>
-            <CardHeader>
-              <CardTitle>Monthly Budget Tracking</CardTitle>
-              <CardDescription>Budget vs. actual spending by month</CardDescription>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <CardTitle>Budget Details</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-1"
+                  >
+                    <Calendar size={16} />
+                    <span>Select Period</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-1"
+                  >
+                    <Filter size={16} />
+                    <span>Filter</span>
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Month</TableHead>
-                      <TableHead>Budget</TableHead>
-                      <TableHead>Actual</TableHead>
-                      <TableHead>Variance</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>January</TableCell>
-                      <TableCell>$35,000.00</TableCell>
-                      <TableCell>$33,250.75</TableCell>
-                      <TableCell className="text-green-600">+$1,749.25</TableCell>
-                      <TableCell>
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Under Budget
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>February</TableCell>
-                      <TableCell>$35,000.00</TableCell>
-                      <TableCell>$34,500.00</TableCell>
-                      <TableCell className="text-green-600">+$500.00</TableCell>
-                      <TableCell>
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Under Budget
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>March</TableCell>
-                      <TableCell>$35,000.00</TableCell>
-                      <TableCell>$36,250.00</TableCell>
-                      <TableCell className="text-red-600">-$1,250.00</TableCell>
-                      <TableCell>
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          Over Budget
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>April</TableCell>
-                      <TableCell>$35,000.00</TableCell>
-                      <TableCell>$31,250.00</TableCell>
-                      <TableCell className="text-green-600">+$3,750.00</TableCell>
-                      <TableCell>
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Under Budget
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
+              <Tabs defaultValue={currentCompany.budgets[0]?.id}>
+                <TabsList className="mb-4">
+                  {currentCompany.budgets.map(budget => (
+                    <TabsTrigger key={budget.id} value={budget.id}>
+                      {budget.name}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                
+                {currentCompany.budgets.map(budget => {
+                  const calculatedBudget = calculateBudgetActuals(budget);
+                  
+                  // Prepare chart data
+                  const chartData = budget.categories.map(category => ({
+                    name: category.name,
+                    budgeted: parseFloat(category.budgetedAmount.replace(/[^0-9.-]+/g, "") || "0"),
+                    actual: parseFloat(category.actualAmount.replace(/[^0-9.-]+/g, "") || "0")
+                  }));
+                  
+                  return (
+                    <TabsContent key={budget.id} value={budget.id}>
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                          <div className="lg:col-span-3">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Category</TableHead>
+                                  <TableHead>Budgeted</TableHead>
+                                  <TableHead>Actual</TableHead>
+                                  <TableHead>Variance</TableHead>
+                                  <TableHead>Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {budget.categories.map((category) => {
+                                  const budgetedAmount = parseFloat(category.budgetedAmount.replace(/[^0-9.-]+/g, "") || "0");
+                                  const actualAmount = parseFloat(category.actualAmount.replace(/[^0-9.-]+/g, "") || "0");
+                                  const variance = budgetedAmount - actualAmount;
+                                  const percentUsed = budgetedAmount > 0 ? (actualAmount / budgetedAmount) * 100 : 0;
+                                  
+                                  return (
+                                    <TableRow key={category.id}>
+                                      <TableCell className="font-medium">{category.name}</TableCell>
+                                      <TableCell>{category.budgetedAmount}</TableCell>
+                                      <TableCell>
+                                        <div className="flex items-center gap-2">
+                                          <Input
+                                            className="w-24"
+                                            value={category.actualAmount}
+                                            onChange={(e) => handleUpdateActual(budget.id, category.id, e.target.value)}
+                                          />
+                                          <div className="w-16 text-xs">
+                                            {percentUsed.toFixed(1)}%
+                                          </div>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="flex items-center gap-1">
+                                          {variance >= 0 ? (
+                                            <ArrowDown className="h-4 w-4 text-green-500" />
+                                          ) : (
+                                            <ArrowUp className="h-4 w-4 text-red-500" />
+                                          )}
+                                          <span className={variance >= 0 ? "text-green-600" : "text-red-600"}>
+                                            {`$${Math.abs(variance).toFixed(2)}`}
+                                          </span>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm"
+                                          onClick={() => handleEditCategory(budget, category.id)}
+                                        >
+                                          Edit
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                            
+                            <div className="mt-4 p-4 border rounded-lg">
+                              <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                  <div className="text-sm text-muted-foreground">Total Budgeted</div>
+                                  <div className="text-lg font-bold">{calculatedBudget.totalBudgeted}</div>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-muted-foreground">Total Actual</div>
+                                  <div className="text-lg font-bold">{calculatedBudget.totalActual}</div>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-muted-foreground">Variance</div>
+                                  <div className={`text-lg font-bold ${parseFloat(calculatedBudget.variance) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                    {calculatedBudget.variance} ({calculatedBudget.variancePercent}%)
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="lg:col-span-2">
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="text-lg">Budget Analysis</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="h-80">
+                                  <BarChart 
+                                    data={chartData}
+                                    xField="name"
+                                    yField={["budgeted", "actual"]}
+                                    colors={["#94a3b8", "#3b82f6"]}
+                                    category="name"
+                                  />
+                                </div>
+                                <div className="flex justify-center gap-8 mt-4">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-slate-400"></div>
+                                    <span className="text-sm">Budgeted</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                                    <span className="text-sm">Actual</span>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                            
+                            <div className="mt-4">
+                              <Button 
+                                className="w-full flex items-center justify-center gap-2"
+                                variant="outline"
+                                onClick={() => toast.info("Generating detailed report...")}
+                              >
+                                <FileText size={16} />
+                                <span>Generate Detailed Report</span>
+                                <ArrowRight size={16} />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+                  );
+                })}
+              </Tabs>
             </CardContent>
-            <CardFooter className="flex justify-end">
-              <Button variant="outline" className="flex items-center gap-1">
-                <Download className="h-4 w-4" />
-                <span>Export Data</span>
-              </Button>
-            </CardFooter>
           </Card>
-        </TabsContent>
-        
-        <TabsContent value="details" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Budget Line Items</CardTitle>
-                <CardDescription>Detailed breakdown of all budget categories</CardDescription>
+        </>
+      ) : (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <BarChart3 size={48} className="text-muted-foreground mb-4" />
+            <h2 className="text-xl font-medium mb-2">No Budgets Created</h2>
+            <p className="text-muted-foreground mb-6 text-center max-w-md">
+              Create your first budget to start tracking your finances against your goals.
+            </p>
+            <Button onClick={handleCreateBudget}>Create Your First Budget</Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Create New Budget Dialog */}
+      <Dialog open={newBudgetDialogOpen} onOpenChange={setNewBudgetDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Create New Budget</DialogTitle>
+            <DialogDescription>
+              Set up a new budget to track income and expenses.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="budget-name" className="text-right">
+                Budget Name*
+              </label>
+              <Input 
+                id="budget-name" 
+                placeholder="Q2 2025 Operating Budget"
+                value={newBudget.name}
+                onChange={(e) => setNewBudget({...newBudget, name: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="budget-period" className="text-right">
+                Period*
+              </label>
+              <select
+                id="budget-period"
+                value={newBudget.period}
+                onChange={(e) => setNewBudget({...newBudget, period: e.target.value})}
+                className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+              >
+                <option value="Monthly">Monthly</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="Annual">Annual</option>
+              </select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="start-date" className="text-right">
+                Start Date*
+              </label>
+              <Input 
+                id="start-date" 
+                type="date"
+                value={newBudget.startDate}
+                onChange={(e) => setNewBudget({...newBudget, startDate: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="end-date" className="text-right">
+                End Date*
+              </label>
+              <Input 
+                id="end-date" 
+                type="date"
+                value={newBudget.endDate}
+                onChange={(e) => setNewBudget({...newBudget, endDate: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            
+            <div className="border-t pt-4 mt-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-medium">Budget Categories</h3>
+                <div className="flex items-end gap-2">
+                  <div>
+                    <label htmlFor="category-name" className="text-xs mb-1 block">
+                      Category Name
+                    </label>
+                    <Input 
+                      id="category-name" 
+                      placeholder="Rent"
+                      value={newCategory.name}
+                      onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="category-amount" className="text-xs mb-1 block">
+                      Budget Amount
+                    </label>
+                    <Input 
+                      id="category-amount" 
+                      placeholder="$0.00"
+                      value={newCategory.budgetedAmount}
+                      onChange={(e) => setNewCategory({
+                        ...newCategory, 
+                        budgetedAmount: formatCurrency(e.target.value)
+                      })}
+                    />
+                  </div>
+                  <Button size="sm" onClick={handleAddCategory}>Add</Button>
+                </div>
               </div>
-              <Button size="sm" className="flex items-center gap-1">
-                <PlusCircle className="h-4 w-4" />
-                <span>Add Line Item</span>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
+              
+              {newBudget.categories.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Category</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Annual Budget</TableHead>
-                      <TableHead>YTD Actual</TableHead>
-                      <TableHead>Remaining</TableHead>
-                      <TableHead>% Used</TableHead>
+                      <TableHead>Budgeted Amount</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    <TableRow>
-                      <TableCell className="font-medium">Salaries & Wages</TableCell>
-                      <TableCell>Administration</TableCell>
-                      <TableCell>$250,000.00</TableCell>
-                      <TableCell>$83,333.33</TableCell>
-                      <TableCell>$166,666.67</TableCell>
-                      <TableCell>33.3%</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Digital Advertising</TableCell>
-                      <TableCell>Marketing</TableCell>
-                      <TableCell>$50,000.00</TableCell>
-                      <TableCell>$18,750.25</TableCell>
-                      <TableCell>$31,249.75</TableCell>
-                      <TableCell>37.5%</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Office Rent</TableCell>
-                      <TableCell>Operations</TableCell>
-                      <TableCell>$36,000.00</TableCell>
-                      <TableCell>$12,000.00</TableCell>
-                      <TableCell>$24,000.00</TableCell>
-                      <TableCell>33.3%</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Software Subscriptions</TableCell>
-                      <TableCell>Product Development</TableCell>
-                      <TableCell>$24,000.00</TableCell>
-                      <TableCell>$8,500.00</TableCell>
-                      <TableCell>$15,500.00</TableCell>
-                      <TableCell>35.4%</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Events & Conferences</TableCell>
-                      <TableCell>Marketing</TableCell>
-                      <TableCell>$15,000.00</TableCell>
-                      <TableCell>$2,500.00</TableCell>
-                      <TableCell>$12,500.00</TableCell>
-                      <TableCell>16.7%</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Research & Development</TableCell>
-                      <TableCell>Product Development</TableCell>
-                      <TableCell>$45,000.00</TableCell>
-                      <TableCell>$10,167.17</TableCell>
-                      <TableCell>$34,832.83</TableCell>
-                      <TableCell>22.6%</TableCell>
-                    </TableRow>
+                    {newBudget.categories.map((category, index) => (
+                      <TableRow key={category.id}>
+                        <TableCell>{category.name}</TableCell>
+                        <TableCell>{category.budgetedAmount}</TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleRemoveCategory(index)}
+                          >
+                            Remove
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
+              ) : (
+                <div className="text-center p-4 border rounded-md text-muted-foreground">
+                  No categories added yet. Add categories to complete your budget.
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewBudgetDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveNewBudget}>Create Budget</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Category Dialog */}
+      <Dialog open={editCategoryDialogOpen} onOpenChange={setEditCategoryDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+            <DialogDescription>
+              Update budget category details.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedCategory && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="category-name" className="text-right">
+                  Category Name
+                </label>
+                <Input 
+                  id="category-name" 
+                  value={selectedCategory.name}
+                  onChange={(e) => setSelectedCategory({...selectedCategory, name: e.target.value})}
+                  className="col-span-3" 
+                />
               </div>
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-              <Button variant="outline">Edit Budget</Button>
-              <Button variant="outline" className="flex items-center gap-1">
-                <Download className="h-4 w-4" />
-                <span>Export</span>
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="vs-actual" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Budget vs. Actual Comparison</CardTitle>
-              <CardDescription>Track your spending against budget allocations</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-8">
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Marketing Department</h3>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <p className="font-medium">Digital Advertising</p>
-                          <div className="text-xs text-muted-foreground">
-                            $18,750.25 of $50,000.00
-                          </div>
-                        </div>
-                        <div className="text-sm font-medium">37.5%</div>
-                      </div>
-                      <div className="relative pt-1">
-                        <div className="overflow-hidden h-2 text-xs flex rounded bg-blue-100">
-                          <div style={{ width: "37.5%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-600"></div>
-                        </div>
-                        <div className="overflow-hidden h-2 mt-1 text-xs flex rounded bg-green-100">
-                          <div style={{ width: "33.3%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-600"></div>
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                          <div>Actual (37.5%)</div>
-                          <div>Target (33.3%)</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <p className="font-medium">Events & Conferences</p>
-                          <div className="text-xs text-muted-foreground">
-                            $2,500.00 of $15,000.00
-                          </div>
-                        </div>
-                        <div className="text-sm font-medium">16.7%</div>
-                      </div>
-                      <div className="relative pt-1">
-                        <div className="overflow-hidden h-2 text-xs flex rounded bg-blue-100">
-                          <div style={{ width: "16.7%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-600"></div>
-                        </div>
-                        <div className="overflow-hidden h-2 mt-1 text-xs flex rounded bg-green-100">
-                          <div style={{ width: "33.3%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-600"></div>
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                          <div>Actual (16.7%)</div>
-                          <div>Target (33.3%)</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Operations Department</h3>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <p className="font-medium">Office Rent</p>
-                          <div className="text-xs text-muted-foreground">
-                            $12,000.00 of $36,000.00
-                          </div>
-                        </div>
-                        <div className="text-sm font-medium">33.3%</div>
-                      </div>
-                      <div className="relative pt-1">
-                        <div className="overflow-hidden h-2 text-xs flex rounded bg-blue-100">
-                          <div style={{ width: "33.3%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-600"></div>
-                        </div>
-                        <div className="overflow-hidden h-2 mt-1 text-xs flex rounded bg-green-100">
-                          <div style={{ width: "33.3%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-600"></div>
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                          <div>Actual (33.3%)</div>
-                          <div>Target (33.3%)</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="budgeted-amount" className="text-right">
+                  Budgeted Amount
+                </label>
+                <Input 
+                  id="budgeted-amount" 
+                  value={selectedCategory.budgetedAmount}
+                  onChange={(e) => setSelectedCategory({
+                    ...selectedCategory, 
+                    budgetedAmount: formatCurrency(e.target.value)
+                  })}
+                  className="col-span-3" 
+                />
               </div>
-            </CardContent>
-            <CardFooter className="flex justify-end">
-              <Button variant="outline">
-                View All Categories
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="forecasting" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Budget Forecasting</CardTitle>
-              <CardDescription>Project future spending and budget needs</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="w-full md:w-1/3">
-                    <label className="block text-sm font-medium mb-2">Forecast Period</label>
-                    <Select defaultValue="next-quarter">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select period" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="next-month">Next Month</SelectItem>
-                        <SelectItem value="next-quarter">Next Quarter</SelectItem>
-                        <SelectItem value="next-year">Next Year</SelectItem>
-                        <SelectItem value="custom">Custom Period</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="w-full md:w-1/3">
-                    <label className="block text-sm font-medium mb-2">Forecast Method</label>
-                    <Select defaultValue="trend-based">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="linear">Linear Projection</SelectItem>
-                        <SelectItem value="trend-based">Trend-based</SelectItem>
-                        <SelectItem value="seasonal">Seasonal Adjustment</SelectItem>
-                        <SelectItem value="manual">Manual Entry</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="w-full md:w-1/3">
-                    <label className="block text-sm font-medium mb-2">Growth Assumption</label>
-                    <Select defaultValue="moderate">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select growth" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="conservative">Conservative (3%)</SelectItem>
-                        <SelectItem value="moderate">Moderate (5%)</SelectItem>
-                        <SelectItem value="aggressive">Aggressive (10%)</SelectItem>
-                        <SelectItem value="custom">Custom</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div>
-                  <Button className="mb-4">Generate Forecast</Button>
-                  
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Month</TableHead>
-                          <TableHead>Projected Expenses</TableHead>
-                          <TableHead>Projected Revenue</TableHead>
-                          <TableHead>Net Impact</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        <TableRow>
-                          <TableCell>May 2025</TableCell>
-                          <TableCell>$35,750.00</TableCell>
-                          <TableCell>$48,500.00</TableCell>
-                          <TableCell className="text-green-600">+$12,750.00</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell>June 2025</TableCell>
-                          <TableCell>$36,250.00</TableCell>
-                          <TableCell>$49,150.00</TableCell>
-                          <TableCell className="text-green-600">+$12,900.00</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell>July 2025</TableCell>
-                          <TableCell>$36,850.00</TableCell>
-                          <TableCell>$49,750.00</TableCell>
-                          <TableCell className="text-green-600">+$12,900.00</TableCell>
-                        </TableRow>
-                        <TableRow className="bg-muted/50 font-medium">
-                          <TableCell>Q2 Total (Projected)</TableCell>
-                          <TableCell>$108,850.00</TableCell>
-                          <TableCell>$147,400.00</TableCell>
-                          <TableCell className="text-green-600">+$38,550.00</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="actual-amount" className="text-right">
+                  Actual Amount
+                </label>
+                <Input 
+                  id="actual-amount" 
+                  value={selectedCategory.actualAmount}
+                  onChange={(e) => setSelectedCategory({
+                    ...selectedCategory, 
+                    actualAmount: formatCurrency(e.target.value)
+                  })}
+                  className="col-span-3" 
+                />
               </div>
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-              <Button variant="outline" className="flex items-center gap-1">
-                <BarChart className="h-4 w-4" />
-                <span>View Charts</span>
-              </Button>
-              <Button variant="outline" className="flex items-center gap-1">
-                <Download className="h-4 w-4" />
-                <span>Export Forecast</span>
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditCategoryDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdateCategory}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

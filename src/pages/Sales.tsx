@@ -1,8 +1,7 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, ShoppingCart, FileText, CalendarIcon, Tag, Edit, Trash2 } from "lucide-react";
+import { PlusCircle, Search, ShoppingCart, FileText, CalendarIcon, Tag, Edit, Trash2, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FilterButton, ExportButton } from "@/components/common/ActionButtons";
@@ -12,7 +11,9 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sale } from "@/contexts/CompanyContext";
+import { Sale, Estimate } from "@/contexts/CompanyContext";
+import { EstimateDialog } from "@/components/sales/EstimateDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // New interfaces for sales management
 interface SaleFormData {
@@ -34,10 +35,14 @@ interface SaleFormData {
 const Sales: React.FC = () => {
   const { currentCompany, updateCompany } = useCompany();
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("sales");
   const [newSaleDialogOpen, setNewSaleDialogOpen] = useState(false);
   const [editSaleDialogOpen, setEditSaleDialogOpen] = useState(false);
   const [viewSaleDialogOpen, setViewSaleDialogOpen] = useState(false);
+  const [estimateDialogOpen, setEstimateDialogOpen] = useState(false);
+  const [viewEstimateDialogOpen, setViewEstimateDialogOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [selectedEstimate, setSelectedEstimate] = useState<Estimate | null>(null);
   const [newSale, setNewSale] = useState<SaleFormData>({
     date: new Date().toISOString().split('T')[0],
     customer: "",
@@ -58,6 +63,12 @@ const Sales: React.FC = () => {
   const filteredSales = (currentCompany.sales || []).filter(sale => 
     sale.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     sale.customer.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Filter estimates based on search term
+  const filteredEstimates = (currentCompany.estimates || []).filter(estimate => 
+    estimate.estimateNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    estimate.customer.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Calculate total sales for the week
@@ -81,7 +92,52 @@ const Sales: React.FC = () => {
   ).length;
 
   const handleCreateEstimate = () => {
-    toast.info("Create estimate feature will be implemented soon");
+    setEstimateDialogOpen(true);
+  };
+
+  const handleViewEstimate = (id: string) => {
+    const estimate = currentCompany.estimates?.find(e => e.id === id);
+    if (estimate) {
+      setSelectedEstimate(estimate);
+      setViewEstimateDialogOpen(true);
+    }
+  };
+
+  const handleConvertToSale = (estimateId: string) => {
+    const estimate = currentCompany.estimates?.find(e => e.id === estimateId);
+    if (!estimate) return;
+    
+    // Create a new sale from the estimate
+    const newSale: Sale = {
+      id: `sale-${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      customer: estimate.customer,
+      amount: estimate.amount,
+      items: estimate.items.map(item => ({
+        id: `item-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        product: item.description,
+        quantity: item.quantity,
+        price: item.unitPrice,
+        total: item.amount
+      })),
+      status: "Processing",
+      paymentStatus: "Pending"
+    };
+    
+    // Update the estimate status
+    const updatedEstimates = (currentCompany.estimates || []).map(est => 
+      est.id === estimateId ? { ...est, status: "Converted" } : est
+    );
+    
+    // Add the new sale and update estimates
+    const updatedSales = [...(currentCompany.sales || []), newSale];
+    updateCompany(currentCompany.id, { 
+      sales: updatedSales,
+      estimates: updatedEstimates
+    });
+    
+    toast.success("Estimate converted to sale successfully!");
+    setViewEstimateDialogOpen(false);
   };
 
   const handleAddItem = () => {
@@ -270,7 +326,7 @@ const Sales: React.FC = () => {
           </Button>
           <Button 
             className="flex items-center gap-2"
-            onClick={handleCreateSale}
+            onClick={() => setNewSaleDialogOpen(true)}
           >
             <PlusCircle size={16} />
             <span>New Sale</span>
@@ -299,8 +355,8 @@ const Sales: React.FC = () => {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-primary">+12.5%</CardTitle>
-            <CardDescription>vs. Last Week</CardDescription>
+            <CardTitle className="text-2xl text-primary">{filteredEstimates.length}</CardTitle>
+            <CardDescription>Active Estimates</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -310,7 +366,7 @@ const Sales: React.FC = () => {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search sales..."
+            placeholder="Search sales and estimates..."
             className="w-full sm:w-[300px] pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -331,113 +387,404 @@ const Sales: React.FC = () => {
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle>Recent Sales</CardTitle>
-          <CardDescription>View and manage {currentCompany.name}'s recent sales orders</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order #</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSales.length > 0 ? (
-                filteredSales.map((sale) => (
-                  <TableRow key={sale.id}>
-                    <TableCell className="font-medium">{sale.id}</TableCell>
-                    <TableCell>{sale.date}</TableCell>
-                    <TableCell>{sale.customer}</TableCell>
-                    <TableCell>{sale.items?.length || 0}</TableCell>
-                    <TableCell>{sale.total || sale.amount}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        sale.status === "Completed" 
-                          ? "bg-green-100 text-green-800" 
-                          : sale.status === "Processing" 
-                            ? "bg-blue-100 text-blue-800" 
-                            : "bg-yellow-100 text-yellow-800"
-                      }`}>
-                        {sale.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        sale.paymentStatus === "Paid" 
-                          ? "bg-green-100 text-green-800" 
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}>
-                        {sale.paymentStatus || "Pending"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8"
-                          onClick={() => handleViewSale(sale.id)}
-                        >
-                          <ShoppingCart size={16} />
-                          <span className="sr-only">View Order</span>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8"
-                          onClick={() => handleViewInvoice(sale.id)}
-                        >
-                          <FileText size={16} />
-                          <span className="sr-only">Invoice</span>
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <Edit size={16} />
-                              <span className="sr-only">More Actions</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditSale(sale.id)}>
-                              Edit Sale
-                            </DropdownMenuItem>
-                            {sale.paymentStatus !== "Paid" && (
-                              <DropdownMenuItem onClick={() => handleMarkAsPaid(sale.id)}>
-                                Mark as Paid
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem 
-                              onClick={() => handleDeleteSale(sale.id)}
-                              className="text-red-600"
-                            >
-                              Delete Sale
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
+      <Tabs defaultValue="sales" className="w-full" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="sales">Sales Orders</TabsTrigger>
+          <TabsTrigger value="estimates">Estimates</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="sales" className="mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle>Recent Sales</CardTitle>
+              <CardDescription>View and manage {currentCompany.name}'s recent sales orders</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order #</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Items</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-4 text-muted-foreground">
-                    No sales found for {currentCompany.name}
-                  </TableCell>
-                </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredSales.length > 0 ? (
+                    filteredSales.map((sale) => (
+                      <TableRow key={sale.id}>
+                        <TableCell className="font-medium">{sale.id}</TableCell>
+                        <TableCell>{sale.date}</TableCell>
+                        <TableCell>{sale.customer}</TableCell>
+                        <TableCell>{sale.items?.length || 0}</TableCell>
+                        <TableCell>{sale.total || sale.amount}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            sale.status === "Completed" 
+                              ? "bg-green-100 text-green-800" 
+                              : sale.status === "Processing" 
+                                ? "bg-blue-100 text-blue-800" 
+                                : "bg-yellow-100 text-yellow-800"
+                          }`}>
+                            {sale.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            sale.paymentStatus === "Paid" 
+                              ? "bg-green-100 text-green-800" 
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}>
+                            {sale.paymentStatus || "Pending"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setSelectedSale(sale);
+                                setViewSaleDialogOpen(true);
+                              }}
+                            >
+                              <ShoppingCart size={16} />
+                              <span className="sr-only">View Order</span>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => {
+                                toast.info(`Viewing invoice for ${sale.id}`, {
+                                  description: "Invoice details would be displayed here"
+                                });
+                              }}
+                            >
+                              <FileText size={16} />
+                              <span className="sr-only">Invoice</span>
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <Edit size={16} />
+                                  <span className="sr-only">More Actions</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    setSelectedSale(sale);
+                                    setEditSaleDialogOpen(true);
+                                  }}
+                                >
+                                  Edit Sale
+                                </DropdownMenuItem>
+                                {sale.paymentStatus !== "Paid" && (
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      const updatedSales = (currentCompany.sales || []).map(s => 
+                                        s.id === sale.id 
+                                          ? { ...s, paymentStatus: "Paid", status: "Completed" } 
+                                          : s
+                                      );
+                                      
+                                      updateCompany(currentCompany.id, { sales: updatedSales });
+                                      toast.success("Sale marked as paid");
+                                    }}
+                                  >
+                                    Mark as Paid
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    const updatedSales = (currentCompany.sales || []).filter(
+                                      s => s.id !== sale.id
+                                    );
+                                    
+                                    updateCompany(currentCompany.id, { sales: updatedSales });
+                                    toast.success("Sale deleted successfully");
+                                  }}
+                                  className="text-red-600"
+                                >
+                                  Delete Sale
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-4 text-muted-foreground">
+                        No sales found for {currentCompany.name}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="estimates" className="mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle>Estimates</CardTitle>
+              <CardDescription>View and manage sales estimates</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Estimate #</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Expiry Date</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredEstimates && filteredEstimates.length > 0 ? (
+                    filteredEstimates.map((estimate) => (
+                      <TableRow key={estimate.id}>
+                        <TableCell className="font-medium">{estimate.estimateNumber}</TableCell>
+                        <TableCell>{estimate.date}</TableCell>
+                        <TableCell>{estimate.customer}</TableCell>
+                        <TableCell>{estimate.amount}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            estimate.status === "Accepted" 
+                              ? "bg-green-100 text-green-800" 
+                              : estimate.status === "Draft" 
+                                ? "bg-blue-100 text-blue-800"
+                                : estimate.status === "Converted"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : estimate.status === "Declined" 
+                                    ? "bg-red-100 text-red-800" 
+                                    : "bg-yellow-100 text-yellow-800"
+                          }`}>
+                            {estimate.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>{estimate.expiryDate}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => handleViewEstimate(estimate.id)}
+                            >
+                              <FileText size={16} />
+                              <span className="sr-only">View Estimate</span>
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <Edit size={16} />
+                                  <span className="sr-only">More Actions</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  onClick={() => handleConvertToSale(estimate.id)}
+                                  disabled={estimate.status === "Converted"}
+                                >
+                                  Convert to Sale
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    const updatedEstimates = (currentCompany.estimates || []).map(e => 
+                                      e.id === estimate.id 
+                                        ? { ...e, status: "Accepted" } 
+                                        : e
+                                    );
+                                    
+                                    updateCompany(currentCompany.id, { estimates: updatedEstimates });
+                                    toast.success("Estimate marked as accepted");
+                                  }}
+                                  disabled={estimate.status === "Converted" || estimate.status === "Accepted"}
+                                >
+                                  Mark as Accepted
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    const updatedEstimates = (currentCompany.estimates || []).map(e => 
+                                      e.id === estimate.id 
+                                        ? { ...e, status: "Declined" } 
+                                        : e
+                                    );
+                                    
+                                    updateCompany(currentCompany.id, { estimates: updatedEstimates });
+                                    toast.success("Estimate marked as declined");
+                                  }}
+                                  disabled={estimate.status === "Converted" || estimate.status === "Declined"}
+                                >
+                                  Mark as Declined
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    const updatedEstimates = (currentCompany.estimates || []).filter(
+                                      e => e.id !== estimate.id
+                                    );
+                                    
+                                    updateCompany(currentCompany.id, { estimates: updatedEstimates });
+                                    toast.success("Estimate deleted successfully");
+                                  }}
+                                  className="text-red-600"
+                                >
+                                  Delete Estimate
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                        No estimates found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Create estimate dialog */}
+      {estimateDialogOpen && (
+        <EstimateDialog 
+          isOpen={estimateDialogOpen}
+          onClose={() => setEstimateDialogOpen(false)}
+        />
+      )}
+
+      {/* View Estimate Dialog */}
+      <Dialog open={viewEstimateDialogOpen} onOpenChange={setViewEstimateDialogOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>View Estimate</DialogTitle>
+            <DialogDescription>
+              Estimate details
+            </DialogDescription>
+          </DialogHeader>
+          {selectedEstimate && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Estimate #</p>
+                  <p>{selectedEstimate.estimateNumber}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Date</p>
+                  <p>{selectedEstimate.date}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Customer</p>
+                  <p>{selectedEstimate.customer}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Status</p>
+                  <Badge className={
+                    selectedEstimate.status === "Accepted" 
+                      ? "bg-green-100 text-green-800" 
+                      : selectedEstimate.status === "Draft" 
+                        ? "bg-blue-100 text-blue-800"
+                        : selectedEstimate.status === "Converted"
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-yellow-100 text-yellow-800"
+                  }>
+                    {selectedEstimate.status}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Expiry Date</p>
+                  <p>{selectedEstimate.expiryDate}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
+                  <p className="text-lg font-bold">{selectedEstimate.amount}</p>
+                </div>
+              </div>
+              
+              <div className="border-t pt-4 mt-4">
+                <h3 className="font-medium mb-2">Items</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Unit Price</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedEstimate.items && selectedEstimate.items.map(item => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.description}</TableCell>
+                        <TableCell>{item.quantity}</TableCell>
+                        <TableCell>{item.unitPrice}</TableCell>
+                        <TableCell className="text-right">{item.amount}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {selectedEstimate.notes && (
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="font-medium mb-2">Notes</h3>
+                  <p className="text-sm">{selectedEstimate.notes}</p>
+                </div>
               )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              
+              {selectedEstimate.termsAndConditions && (
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="font-medium mb-2">Terms & Conditions</h3>
+                  <p className="text-sm">{selectedEstimate.termsAndConditions}</p>
+                </div>
+              )}
+              
+              <div className="flex justify-between pt-4">
+                <Button variant="outline" onClick={() => setViewEstimateDialogOpen(false)}>Close</Button>
+                <div className="space-x-2">
+                  {selectedEstimate.status !== "Converted" && selectedEstimate.status !== "Declined" && (
+                    <Button 
+                      onClick={() => handleConvertToSale(selectedEstimate.id)}
+                      className="gap-2"
+                    >
+                      <span>Convert to Sale</span>
+                      <ArrowRight size={16} />
+                    </Button>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      // Send PDF to email
+                      toast.success("Estimate PDF sent to customer email");
+                    }}
+                  >
+                    Email Estimate
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Create New Sale Dialog */}
       <Dialog open={newSaleDialogOpen} onOpenChange={setNewSaleDialogOpen}>
