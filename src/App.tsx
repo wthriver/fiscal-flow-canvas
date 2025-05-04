@@ -20,13 +20,16 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { CompanyProvider } from "./contexts/CompanyContext";
 
-// Import new feature pages
+// Import feature pages
 import Payroll from "./pages/Payroll";
 import TimeTrackingPage from "./pages/TimeTracking";
 import Budgeting from "./pages/Budgeting";
-import MultiCurrency from "./pages/MultiCurrency";
-import AuditTrail from "./pages/AuditTrail";
 import Receipts from "./pages/Receipts";
+
+// Settings related pages are now accessed through the Settings page
+// These routes remain for direct access
+import AuditTrail from "./pages/AuditTrail";
+import MultiCurrency from "./pages/MultiCurrency";
 import Integrations from "./pages/Integrations";
 
 const queryClient = new QueryClient();
@@ -43,6 +46,7 @@ const App = () => (
               <Route path="/" element={<Dashboard />} />
               <Route path="/invoices" element={<Invoices />} />
               <Route path="/expenses" element={<Expenses />} />
+              <Route path="/receipts" element={<Receipts />} />
               <Route path="/banking" element={<Banking />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/journal" element={<Journal />} />
@@ -50,16 +54,17 @@ const App = () => (
               <Route path="/customers" element={<Customers />} />
               <Route path="/sales" element={<Sales />} />
               <Route path="/projects" element={<Projects />} />
+              <Route path="/time-tracking" element={<TimeTrackingPage />} />
               <Route path="/taxes" element={<Taxes />} />
               <Route path="/settings" element={<Settings />} />
               
-              {/* New feature routes */}
+              {/* Advanced feature routes */}
               <Route path="/payroll" element={<Payroll />} />
-              <Route path="/time-tracking" element={<TimeTrackingPage />} />
               <Route path="/budgeting" element={<Budgeting />} />
-              <Route path="/multi-currency" element={<MultiCurrency />} />
+              
+              {/* Settings-related pages for direct access */}
               <Route path="/audit-trail" element={<AuditTrail />} />
-              <Route path="/receipts" element={<Receipts />} />
+              <Route path="/multi-currency" element={<MultiCurrency />} />
               <Route path="/integrations" element={<Integrations />} />
               
               <Route path="*" element={<NotFound />} />

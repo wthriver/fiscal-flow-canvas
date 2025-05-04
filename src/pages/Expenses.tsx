@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { NewExpenseDialog } from "@/components/expenses/NewExpenseDialog";
-import { FilterDialog } from "@/components/expenses/FilterDialog";
+import { FilterDialog, FilterCriteria } from "@/components/expenses/FilterDialog";
 import { ExportDialog } from "@/components/expenses/ExportDialog";
 import { DigitalReceiptCapture } from "@/components/expenses/DigitalReceiptCapture";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,13 @@ const Expenses = () => {
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("expenses");
+  const [currentFilter, setCurrentFilter] = useState<FilterCriteria>({});
+
+  const handleApplyFilter = (filters: FilterCriteria) => {
+    setCurrentFilter(filters);
+    // Apply filters to the expenses list
+    console.log("Applied filters:", filters);
+  };
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -154,6 +161,8 @@ const Expenses = () => {
       <FilterDialog
         open={isFilterDialogOpen}
         onOpenChange={setIsFilterDialogOpen}
+        onApplyFilter={handleApplyFilter}
+        currentFilter={currentFilter}
       />
       
       <ExportDialog

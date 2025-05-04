@@ -91,6 +91,7 @@ const Sidebar: React.FC = () => {
     { to: "/", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
     { to: "/invoices", icon: <Receipt size={20} />, label: "Invoices" },
     { to: "/expenses", icon: <CreditCard size={20} />, label: "Expenses" },
+    { to: "/receipts", icon: <Camera size={20} />, label: "Digital Receipts" },
     { to: "/banking", icon: <Landmark size={20} />, label: "Banking" },
     { to: "/reports", icon: <BarChart3 size={20} />, label: "Reports" },
     { to: "/journal", icon: <FileText size={20} />, label: "Journal" },
@@ -101,17 +102,13 @@ const Sidebar: React.FC = () => {
     { to: "/customers", icon: <Users size={20} />, label: "Customers" },
     { to: "/sales", icon: <ShoppingCart size={20} />, label: "Sales" },
     { to: "/projects", icon: <Clock size={20} />, label: "Projects" },
+    { to: "/time-tracking", icon: <Timer size={20} />, label: "Time Tracking" },
     { to: "/taxes", icon: <Calculator size={20} />, label: "Taxes" },
   ];
   
   const advancedItems: NavItemProps[] = [
     { to: "/payroll", icon: <Banknote size={20} />, label: "Payroll", badge: "New" },
-    { to: "/time-tracking", icon: <Timer size={20} />, label: "Time Tracking", badge: "New" },
     { to: "/budgeting", icon: <Wallet size={20} />, label: "Budgeting", badge: "New" },
-    { to: "/multi-currency", icon: <Globe size={20} />, label: "Multi-Currency", badge: "New" },
-    { to: "/audit-trail", icon: <FileSearch size={20} />, label: "Audit Trail", badge: "New" },
-    { to: "/receipts", icon: <Camera size={20} />, label: "Digital Receipts", badge: "New" },
-    { to: "/integrations", icon: <HardDrive size={20} />, label: "Integrations", badge: "New" },
   ];
 
   return (

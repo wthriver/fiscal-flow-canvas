@@ -5,17 +5,37 @@ import React, { createContext, useContext, useState } from "react";
 export interface TimeEntry {
   id: string;
   employeeId: string;
-  projectId?: string;  // Made optional with proper TypeScript syntax
+  projectId?: string;
   date: string;
   startTime: string;
   endTime: string;
   duration: string;
-  description?: string;  // Made optional with proper TypeScript syntax
+  description?: string;
   billable: boolean;
   billing?: {
     rate: string;
     amount: string;
   };
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  sku?: string;
+  category: string;
+  quantity: number;
+  reorderPoint: number;
+  costPrice: string;
+  sellPrice: string;
+  status: string;
+}
+
+export interface InvoiceItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: string;
+  amount: string;
 }
 
 export interface Invoice {
@@ -24,13 +44,7 @@ export interface Invoice {
   customer: string;
   date: string;
   dueDate: string;
-  items: {
-    id: string;
-    description: string;
-    quantity: number;
-    unitPrice: string;
-    amount: string;
-  }[];
+  items: InvoiceItem[];
   amount: string;
   status: string;
 }
@@ -47,26 +61,21 @@ export interface Expense {
   receiptImageUrl?: string;
 }
 
-export interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: string;
-  type: string;
-  category: string;
-  bankAccount: string;
-  account: string;
-  reconciled: boolean;
-}
-
 export interface Customer {
   id: string;
   name: string;
+  contactName?: string;
   email: string;
   phone: string;
   address: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
   balance: string;
   dateAdded: string;
+  type?: string;
+  status?: string;
 }
 
 export interface Vendor {
@@ -106,28 +115,53 @@ export interface BankAccount {
   accountType: string;
   institution: string;
   lastReconciled: string;
+  lastSync?: string;
+}
+
+export interface Transaction {
+  id: string;
+  date: string;
+  description: string;
+  amount: string;
+  type: string;
+  category: string;
+  bankAccount: string;
+  account: string;
+  reconciled: boolean;
+}
+
+export interface PayrollEmployee {
+  employeeId: string;
+  hoursWorked: number;
+  grossPay: string;
+  taxes: string;
+  deductions: string;
+  netPay: string;
+}
+
+export interface PayPeriod {
+  id: string;
+  startDate: string;
+  endDate: string;
+  payDate: string;
+  status: string;
+  employees: PayrollEmployee[];
+  totalGross: string;
+  totalNet: string;
+  totalTaxes: string;
+  totalDeductions: string;
+}
+
+export interface Benefit {
+  id: string;
+  name: string;
+  type: string;
+  employerContribution: string;
+  employeeContribution: string;
 }
 
 export interface PayrollData {
-  payPeriods: {
-    id: string;
-    startDate: string;
-    endDate: string;
-    payDate: string;
-    status: string;
-    employees: {
-      employeeId: string;
-      hoursWorked: number;
-      grossPay: string;
-      taxes: string;
-      deductions: string;
-      netPay: string;
-    }[];
-    totalGross: string;
-    totalNet: string;
-    totalTaxes: string;
-    totalDeductions: string;
-  }[];
+  payPeriods: PayPeriod[];
   taxSettings: {
     federalEin: string;
     stateId: string;
@@ -143,13 +177,7 @@ export interface PayrollData {
       suta: number;
     };
   };
-  benefits: {
-    id: string;
-    name: string;
-    type: string;
-    employerContribution: string;
-    employeeContribution: string;
-  }[];
+  benefits: Benefit[];
 }
 
 export interface AuditEntry {
@@ -163,19 +191,21 @@ export interface AuditEntry {
   ipAddress: string;
 }
 
+export interface BudgetCategory {
+  id: string;
+  name: string;
+  budgetedAmount: string;
+  actualAmount: string;
+  variance: string;
+}
+
 export interface Budget {
   id: string;
   name: string;
   period: string;
   startDate: string;
   endDate: string;
-  categories: {
-    id: string;
-    name: string;
-    budgetedAmount: string;
-    actualAmount: string;
-    variance: string;
-  }[];
+  categories: BudgetCategory[];
   totalBudgeted: string;
   totalActual: string;
 }
@@ -188,20 +218,11 @@ export interface Integration {
   lastSync: string;
   syncFrequency: string;
   connectionDetails: {
-    [key: string]: string;
+    institution?: string;
+    accountsConnected?: string;
+    account?: string;
+    apiVersion?: string;
   };
-}
-
-export interface InventoryItem {
-  id: string;
-  name: string;
-  sku?: string;
-  category: string;
-  quantity: number;
-  reorderPoint: number;
-  costPrice: string;
-  sellPrice: string;
-  status: string;
 }
 
 export interface Project {
@@ -210,19 +231,15 @@ export interface Project {
   client: string;
   startDate: string;
   dueDate: string;
+  endDate?: string;
   status: string;
   budget: number;
   spent: number;
   progress: number;
-}
-
-export interface Sale {
-  id: string;
-  date: string;
-  customer: string;
-  amount: string;
-  items: SaleItem[];
-  status: string;
+  description?: string;
+  remaining?: string;
+  tracked?: string;
+  billed?: string;
 }
 
 export interface SaleItem {
@@ -233,6 +250,17 @@ export interface SaleItem {
   total: string;
 }
 
+export interface Sale {
+  id: string;
+  date: string;
+  customer: string;
+  amount: string;
+  items: SaleItem[];
+  status: string;
+  total?: string;
+  paymentStatus?: string;
+}
+
 export interface TaxReport {
   id: string;
   name: string;
@@ -240,6 +268,7 @@ export interface TaxReport {
   dueDate: string;
   status: string;
   amount: string;
+  paymentStatus?: string;
 }
 
 export interface TaxRate {
@@ -248,8 +277,10 @@ export interface TaxRate {
   rate: number;
   type: string;
   effectiveDate: string;
+  jurisdiction?: string;
 }
 
+// Define types for Company and all related data
 export interface Company {
   id: string;
   name: string;
@@ -276,7 +307,7 @@ export interface Company {
   auditTrail: AuditEntry[];
   budgets: Budget[];
   integrations: Integration[];
-  accounts: BankAccount[]; 
+  accounts: BankAccount[]; // Adding accounts
   projects: Project[];
   sales: Sale[];
   taxReports: TaxReport[];
@@ -420,20 +451,34 @@ const sampleCompany: Company = {
     {
       id: "cust1",
       name: "XYZ Corp",
+      contactName: "John Smith",
       email: "contact@xyzcorp.com",
       phone: "(555) 987-6543",
       address: "456 Business Ave, Enterprise City, USA",
+      city: "Enterprise City",
+      state: "CA",
+      postalCode: "90210",
+      country: "USA",
       balance: "$199.98",
-      dateAdded: "2023-01-15"
+      dateAdded: "2023-01-15",
+      type: "Business",
+      status: "Active"
     },
     {
       id: "cust2",
       name: "ABC Ltd",
+      contactName: "Jane Doe",
       email: "info@abcltd.com",
       phone: "(555) 234-5678",
       address: "789 Corporate Blvd, Commerce Town, USA",
+      city: "Commerce Town",
+      state: "NY",
+      postalCode: "10001",
+      country: "USA",
       balance: "$0.00",
-      dateAdded: "2023-03-22"
+      dateAdded: "2023-03-22",
+      type: "Business",
+      status: "Active"
     }
   ],
   vendors: [
@@ -502,7 +547,8 @@ const sampleCompany: Company = {
       balance: "$15,243.89",
       accountType: "Checking",
       institution: "First National Bank",
-      lastReconciled: "2025-03-31"
+      lastReconciled: "2025-03-31",
+      lastSync: "2025-04-04"
     },
     {
       id: "bank2",
@@ -511,7 +557,8 @@ const sampleCompany: Company = {
       balance: "$42,876.54",
       accountType: "Savings",
       institution: "First National Bank",
-      lastReconciled: "2025-03-31"
+      lastReconciled: "2025-03-31",
+      lastSync: "2025-04-04"
     },
     {
       id: "bank3",
@@ -520,7 +567,8 @@ const sampleCompany: Company = {
       balance: "-$4,567.23",
       accountType: "Credit Card",
       institution: "Finance Card Services",
-      lastReconciled: "2025-03-25"
+      lastReconciled: "2025-03-25",
+      lastSync: "2025-04-04"
     }
   ],
   transactions: [
@@ -567,7 +615,7 @@ const sampleCompany: Company = {
       startTime: "09:00",
       endTime: "17:00",
       duration: "8:00",
-      description: "Development work",
+      description: "Software development",
       billable: true,
       billing: {
         rate: "$45.00",
@@ -739,7 +787,8 @@ const sampleCompany: Company = {
       balance: "$15,243.89",
       accountType: "Checking",
       institution: "First National Bank",
-      lastReconciled: "2025-03-31"
+      lastReconciled: "2025-03-31",
+      lastSync: "2025-04-04"
     },
     {
       id: "bank2",
@@ -748,7 +797,8 @@ const sampleCompany: Company = {
       balance: "$42,876.54",
       accountType: "Savings",
       institution: "First National Bank",
-      lastReconciled: "2025-03-31"
+      lastReconciled: "2025-03-31",
+      lastSync: "2025-04-04"
     },
     {
       id: "bank3",
@@ -757,7 +807,8 @@ const sampleCompany: Company = {
       balance: "-$4,567.23",
       accountType: "Credit Card",
       institution: "Finance Card Services",
-      lastReconciled: "2025-03-25"
+      lastReconciled: "2025-03-25",
+      lastSync: "2025-04-04"
     }
   ],
   projects: [
@@ -765,23 +816,33 @@ const sampleCompany: Company = {
       id: "proj1",
       name: "Website Redesign",
       client: "XYZ Corp",
+      description: "Complete website overhaul with new branding and features",
       startDate: "2025-01-15",
       dueDate: "2025-05-30",
+      endDate: "",
       status: "In Progress",
       budget: 10000,
       spent: 4500,
-      progress: 45
+      progress: 45,
+      remaining: "$5,500.00",
+      tracked: "45 hours",
+      billed: "40 hours"
     },
     {
       id: "proj2",
       name: "Marketing Campaign",
       client: "ABC Ltd",
+      description: "Q2 digital marketing campaign for product launch",
       startDate: "2025-03-01",
       dueDate: "2025-04-15",
+      endDate: "2025-04-12",
       status: "Completed",
       budget: 5000,
       spent: 4800,
-      progress: 100
+      progress: 100,
+      remaining: "$200.00",
+      tracked: "32 hours",
+      billed: "32 hours"
     }
   ],
   sales: [
@@ -790,6 +851,7 @@ const sampleCompany: Company = {
       date: "2025-04-01",
       customer: "XYZ Corp",
       amount: "$499.98",
+      total: "$499.98",
       items: [
         {
           id: "item1",
@@ -799,7 +861,33 @@ const sampleCompany: Company = {
           total: "$499.95"
         }
       ],
-      status: "Completed"
+      status: "Completed",
+      paymentStatus: "Paid"
+    },
+    {
+      id: "sale2",
+      date: "2025-04-03",
+      customer: "ABC Ltd",
+      amount: "$299.97",
+      total: "$299.97",
+      items: [
+        {
+          id: "item2",
+          product: "Product B",
+          quantity: 3,
+          price: "$79.99",
+          total: "$239.97"
+        },
+        {
+          id: "item3",
+          product: "Service A",
+          quantity: 0.4,
+          price: "$150.00",
+          total: "$60.00"
+        }
+      ],
+      status: "Processing",
+      paymentStatus: "Pending"
     }
   ],
   taxReports: [
@@ -809,7 +897,8 @@ const sampleCompany: Company = {
       period: "Q1 2025",
       dueDate: "2025-04-30",
       status: "Pending",
-      amount: "$1,245.67"
+      amount: "$1,245.67",
+      paymentStatus: "Not Paid"
     }
   ],
   taxRates: [
@@ -818,7 +907,8 @@ const sampleCompany: Company = {
       name: "Standard Sales Tax",
       rate: 7.5,
       type: "Sales",
-      effectiveDate: "2025-01-01"
+      effectiveDate: "2025-01-01",
+      jurisdiction: "State"
     }
   ],
   revenue: {
@@ -841,6 +931,7 @@ const sampleCompany: Company = {
   }
 };
 
+// Second sample company
 const sampleCompany2: Company = {
   id: "2",
   name: "Globex Corporation",

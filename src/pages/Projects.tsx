@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, MoreHorizontal, Check, X, Clock, CalendarIcon, FileText, AlertCircle } from "lucide-react";
+import { PlusCircle, Search, MoreHorizontal, Check, X, Clock, CalendarIcon, FileText, AlertCircle, Timer } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from "@/components/ui/badge";
 import { useCompany } from "@/contexts/CompanyContext";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 const Projects: React.FC = () => {
   const { currentCompany } = useCompany();
@@ -56,6 +57,12 @@ const Projects: React.FC = () => {
 
   const handleArchiveProject = (projectId: string) => {
     toast.info(`Archiving project ${projectId}`);
+  };
+
+  const handleTrackTime = (projectId: string) => {
+    toast.info(`Tracking time for project ${projectId}`);
+    // Navigate to time tracking for this project
+    window.location.href = `/time-tracking?project=${projectId}`;
   };
 
   return (
@@ -117,6 +124,12 @@ const Projects: React.FC = () => {
             <CalendarIcon size={16} />
             <span>Filter by Date</span>
           </Button>
+          <Link to="/time-tracking">
+            <Button variant="outline" size="sm" className="flex items-center gap-1">
+              <Timer size={16} />
+              <span>Time Tracking</span>
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -150,7 +163,9 @@ const Projects: React.FC = () => {
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        {project.description.substring(0, 50)}...
+                        {project.description && project.description.length > 50 
+                          ? `${project.description.substring(0, 50)}...` 
+                          : project.description || "No description available"}
                       </div>
                     </TableCell>
                     <TableCell>{project.client}</TableCell>
@@ -177,11 +192,11 @@ const Projects: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <div>
-                        {project.budget}
+                        ${project.budget.toLocaleString()}
                         <div className="text-xs text-muted-foreground mt-1">
-                          <span className={project.remaining.includes("-") ? "text-red-500" : ""}>
-                            {project.remaining}
-                          </span> remaining
+                          <span className={project.remaining && project.remaining.includes("-") ? "text-red-500" : ""}>
+                            {project.remaining || "$0.00"} remaining
+                          </span>
                         </div>
                       </div>
                     </TableCell>
@@ -190,7 +205,7 @@ const Projects: React.FC = () => {
                         <div className="flex justify-between text-xs mb-1">
                           <span>{project.progress}% complete</span>
                           <span>
-                            {project.tracked} tracked / {project.billed} billed
+                            {project.tracked || "0"} tracked / {project.billed || "0"} billed
                           </span>
                         </div>
                         <Progress value={project.progress} className="h-2" />
@@ -205,6 +220,9 @@ const Projects: React.FC = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleTrackTime(project.id)}>
+                            Track Time
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEditProject(project.id)}>
                             Edit Project
                           </DropdownMenuItem>
@@ -270,7 +288,8 @@ const Projects: React.FC = () => {
                       </p>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {new Date(project.status === "Completed" ? project.endDate : project.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {new Date(project.status === "Completed" && project.endDate ? project.endDate : project.dueDate)
+                        .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </div>
                   </div>
                 ))}
