@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+
+import React from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { DialogFooter } from "@/components/ui/dialog";
 import { ReportHeader } from "./reports/ReportHeader";
 import { ReportTabs } from "./reports/ReportTabs";
 import { useCompany } from "@/contexts/CompanyContext";
-import { Button } from "@/components/ui/button";
-import { DialogFooter } from "@/components/ui/dialog";
 
 interface ReportsDialogProps {
   isOpen: boolean;
@@ -27,8 +27,8 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({ isOpen, onClose, a
           </DialogDescription>
         </DialogHeader>
 
-        <ReportHeader accountId={accountId} />
-        <ReportTabs accountId={accountId} />
+        <ReportHeader accountId={accountId || ""} />
+        <ReportTabs accountId={accountId || ""} />
 
         <DialogFooter>
           <Button onClick={onClose}>Close</Button>
