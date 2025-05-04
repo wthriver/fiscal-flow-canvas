@@ -1,10 +1,9 @@
-
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { TransactionEditModal } from "./TransactionEditModal";
 import { TransactionSearchBar } from "./TransactionSearchBar";
 import { TransactionTable } from "./TransactionTable";
-import { Transaction } from "@/contexts/CompanyContext";
+import { useCompany, Transaction } from "@/contexts/CompanyContext";
 
 // Define a component-specific Transaction interface that extends the base Transaction
 interface ExtendedTransaction extends Transaction {

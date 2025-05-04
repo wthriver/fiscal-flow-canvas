@@ -1,19 +1,15 @@
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, ShoppingCart, FileText, CalendarIcon, Tag, Edit, Trash2, ArrowRight } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FilterButton, ExportButton } from "@/components/common/ActionButtons";
-import { toast } from "sonner";
-import { handleDateRange } from "@/utils/navigationUtils";
 import { useCompany } from "@/contexts/CompanyContext";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sale, Estimate } from "@/contexts/CompanyContext";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { EstimateDialog } from "@/components/sales/EstimateDialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { PlusCircle, FileText, Clock, Check, X, ArrowRight, Search, Filter, Download, MoreHorizontal } from "lucide-react";
 
 // New interfaces for sales management
 interface SaleFormData {

@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Budget, BudgetCategory } from "@/contexts/CompanyContext";
-import { BarChart } from "@/components/ui/chart";
+import { BarChart } from "@/components/ui/bar-chart";
 
 export const BudgetingDashboard: React.FC = () => {
   const { currentCompany, updateCompany, updateBudget } = useCompany();
