@@ -14,8 +14,9 @@ import { useCompany } from "@/contexts/CompanyContext";
 const RecentTransactions = () => {
   const { currentCompany } = useCompany();
 
-  // Get the 5 most recent transactions
-  const recentTransactions = [...currentCompany.transactions]
+  // Get the 5 most recent transactions with safety checks
+  const transactions = currentCompany?.transactions || [];
+  const recentTransactions = [...transactions]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
 

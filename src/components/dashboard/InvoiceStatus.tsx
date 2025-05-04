@@ -13,11 +13,13 @@ import { useCompany } from "@/contexts/CompanyContext";
 const InvoiceStatus = () => {
   const { currentCompany } = useCompany();
   
-  // Calculate counts for different invoice statuses
+  // Calculate counts for different invoice statuses with safety checks
+  const invoices = currentCompany?.invoices || [];
+  
   const invoiceStatusCounts = {
-    paid: currentCompany.invoices.filter(inv => inv.status === "Paid").length,
-    pending: currentCompany.invoices.filter(inv => ["Draft", "Sent", "Viewed"].includes(inv.status)).length,
-    overdue: currentCompany.invoices.filter(inv => inv.status === "Overdue").length,
+    paid: invoices.filter(inv => inv.status === "Paid").length,
+    pending: invoices.filter(inv => ["Draft", "Sent", "Viewed"].includes(inv.status)).length,
+    overdue: invoices.filter(inv => inv.status === "Overdue").length,
   };
   
   const total = Object.values(invoiceStatusCounts).reduce((a, b) => a + b, 0);

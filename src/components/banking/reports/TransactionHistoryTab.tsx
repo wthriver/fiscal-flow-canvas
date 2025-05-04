@@ -16,23 +16,24 @@ interface TransactionHistoryTabProps {
 }
 
 export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
-  transactions: inputTransactions
+  transactions: inputTransactions = []
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: "asc" | "desc" } | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   // Convert CompanyTransaction to the Transaction format required by this component
-  const transactions: Transaction[] = inputTransactions.map(t => ({
+  // Add safety checks to ensure we don't have undefined values
+  const transactions: Transaction[] = (inputTransactions || []).map(t => ({
     ...t,
-    account: t.account || t.bankAccount // Make sure account is defined
+    account: t.account || t.bankAccount || "" // Make sure account is always defined
   }));
 
   // Filter transactions based on search term
   const filteredTransactions = transactions.filter(transaction => 
-    transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.amount.includes(searchTerm)
+    transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transaction.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transaction.amount?.includes(searchTerm)
   );
 
   // Sort transactions
@@ -40,10 +41,17 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     let sortableTransactions = [...filteredTransactions];
     if (sortConfig !== null) {
       sortableTransactions.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+        
+        if (!aValue && !bValue) return 0;
+        if (!aValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (!bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        
+        if (aValue < bValue) {
           return sortConfig.direction === 'asc' ? -1 : 1;
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
+        if (aValue > bValue) {
           return sortConfig.direction === 'asc' ? 1 : -1;
         }
         return 0;
@@ -97,8 +105,8 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     sortedTransactions.forEach(transaction => {
       const row = [
         transaction.date,
-        `"${transaction.description.replace(/"/g, '""')}"`,
-        `"${transaction.category.replace(/"/g, '""')}"`,
+        `"${(transaction.description || '').replace(/"/g, '""')}"`,
+        `"${(transaction.category || '').replace(/"/g, '""')}"`,
         transaction.amount,
         transaction.reconciled ? "Reconciled" : "Pending"
       ];

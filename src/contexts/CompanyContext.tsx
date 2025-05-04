@@ -1,56 +1,207 @@
+
 import React, { createContext, useContext, useState } from "react";
 
 // Define types for Company and all related data
-export interface Company {
+export interface TimeEntry {
+  id: string;
+  employeeId: string;
+  projectId?: string;  // Made optional with proper TypeScript syntax
+  date: string;
+  startTime: string;
+  endTime: string;
+  duration: string;
+  description?: string;  // Made optional with proper TypeScript syntax
+  billable: boolean;
+  billing?: {
+    rate: string;
+    amount: string;
+  };
+}
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  customer: string;
+  date: string;
+  dueDate: string;
+  items: {
+    id: string;
+    description: string;
+    quantity: number;
+    unitPrice: string;
+    amount: string;
+  }[];
+  amount: string;
+  status: string;
+}
+
+export interface Expense {
+  id: string;
+  date: string;
+  vendor: string;
+  category: string;
+  description?: string;
+  amount: string;
+  status: string;
+  paymentMethod: string;
+  receiptImageUrl?: string;
+}
+
+export interface Transaction {
+  id: string;
+  date: string;
+  description: string;
+  amount: string;
+  type: string;
+  category: string;
+  bankAccount: string;
+  account: string;
+  reconciled: boolean;
+}
+
+export interface Customer {
   id: string;
   name: string;
-  logo?: string;
-  address: string;
-  phone: string;
   email: string;
-  website?: string;
-  taxId?: string;
-  currency: string;
-  fiscalYear: string;
-  fiscalYearStart?: string;
-  industry?: string;
-  inventory: InventoryItem[];
-  invoices: Invoice[];
-  expenses: Expense[];
-  customers: Customer[];
-  vendors: Vendor[];
-  employees: Employee[];
-  bankAccounts: BankAccount[];
-  transactions: Transaction[];
-  timeEntries: TimeEntry[];
-  payrollData: PayrollData;
-  auditTrail: AuditEntry[];
-  budgets: Budget[];
-  integrations: Integration[];
-  accounts: BankAccount[]; // Adding accounts
-  projects: Project[];
-  sales: Sale[];
-  taxReports: TaxReport[];
-  taxRates: TaxRate[];
-  // Dashboard metrics
-  revenue: {
-    current: number;
-    lastMonth: number;
-    percentChange: number;
+  phone: string;
+  address: string;
+  balance: string;
+  dateAdded: string;
+}
+
+export interface Vendor {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
+export interface Employee {
+  id: string;
+  name: string;
+  position: string;
+  department: string;
+  payRate: string;
+  payType: string;
+  startDate: string;
+  status: string;
+  taxInfo: {
+    ssn: string;
+    withholdings: number;
+    filingStatus: string;
   };
-  outstandingInvoices: {
-    amount: number;
-    count: number;
-    percentChange: number;
+  bankInfo: {
+    accountNumber: string;
+    routingNumber: string;
+    accountType: string;
   };
-  profitMargin: {
-    value: number;
-    percentChange: number;
+}
+
+export interface BankAccount {
+  id: string;
+  name: string;
+  accountNumber: string;
+  balance: string;
+  accountType: string;
+  institution: string;
+  lastReconciled: string;
+}
+
+export interface PayrollData {
+  payPeriods: {
+    id: string;
+    startDate: string;
+    endDate: string;
+    payDate: string;
+    status: string;
+    employees: {
+      employeeId: string;
+      hoursWorked: number;
+      grossPay: string;
+      taxes: string;
+      deductions: string;
+      netPay: string;
+    }[];
+    totalGross: string;
+    totalNet: string;
+    totalTaxes: string;
+    totalDeductions: string;
+  }[];
+  taxSettings: {
+    federalEin: string;
+    stateId: string;
+    filingFrequency: string;
+    taxRates: {
+      federal: number;
+      state: number;
+      fica: {
+        social: number;
+        medicare: number;
+      };
+      futa: number;
+      suta: number;
+    };
   };
-  activeCustomers: {
-    count: number;
-    percentChange: number;
+  benefits: {
+    id: string;
+    name: string;
+    type: string;
+    employerContribution: string;
+    employeeContribution: string;
+  }[];
+}
+
+export interface AuditEntry {
+  id: string;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  action: string;
+  module: string;
+  details: string;
+  ipAddress: string;
+}
+
+export interface Budget {
+  id: string;
+  name: string;
+  period: string;
+  startDate: string;
+  endDate: string;
+  categories: {
+    id: string;
+    name: string;
+    budgetedAmount: string;
+    actualAmount: string;
+    variance: string;
+  }[];
+  totalBudgeted: string;
+  totalActual: string;
+}
+
+export interface Integration {
+  id: string;
+  name: string;
+  provider: string;
+  status: string;
+  lastSync: string;
+  syncFrequency: string;
+  connectionDetails: {
+    [key: string]: string;
   };
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  sku?: string;
+  category: string;
+  quantity: number;
+  reorderPoint: number;
+  costPrice: string;
+  sellPrice: string;
+  status: string;
 }
 
 export interface Project {
@@ -97,6 +248,58 @@ export interface TaxRate {
   rate: number;
   type: string;
   effectiveDate: string;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  logo?: string;
+  address: string;
+  phone: string;
+  email: string;
+  website?: string;
+  taxId?: string;
+  currency: string;
+  fiscalYear: string;
+  fiscalYearStart?: string;
+  industry?: string;
+  inventory: InventoryItem[];
+  invoices: Invoice[];
+  expenses: Expense[];
+  customers: Customer[];
+  vendors: Vendor[];
+  employees: Employee[];
+  bankAccounts: BankAccount[];
+  transactions: Transaction[];
+  timeEntries: TimeEntry[];
+  payrollData: PayrollData;
+  auditTrail: AuditEntry[];
+  budgets: Budget[];
+  integrations: Integration[];
+  accounts: BankAccount[]; 
+  projects: Project[];
+  sales: Sale[];
+  taxReports: TaxReport[];
+  taxRates: TaxRate[];
+  // Dashboard metrics
+  revenue: {
+    current: number;
+    lastMonth: number;
+    percentChange: number;
+  };
+  outstandingInvoices: {
+    amount: number;
+    count: number;
+    percentChange: number;
+  };
+  profitMargin: {
+    value: number;
+    percentChange: number;
+  };
+  activeCustomers: {
+    count: number;
+    percentChange: number;
+  };
 }
 
 // Sample data
@@ -359,22 +562,21 @@ const sampleCompany: Company = {
     {
       id: "time1",
       employeeId: "emp1",
-      projectId?: string;
+      projectId: "proj1",
       date: "2025-04-01",
       startTime: "09:00",
       endTime: "17:00",
       duration: "8:00",
-      description?: string;
+      description: "Development work",
       billable: true,
-      billing?: {
-        rate: string;
-        amount: string;
-      };
+      billing: {
+        rate: "$45.00",
+        amount: "$360.00"
+      }
     },
     {
       id: "time2",
       employeeId: "emp2",
-      projectId?: string;
       date: "2025-04-01",
       startTime: "10:00",
       endTime: "16:00",
@@ -1158,8 +1360,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       description: expense.description || "",
       amount: expense.amount || "$0.00",
       status: expense.status || "Pending",
-      paymentMethod: expense.paymentMethod || "Cash",
-      receiptImageUrl: expense.receiptImageUrl
+      paymentMethod: expense.paymentMethod || "Cash"
     };
     
     updateCompany(currentCompany.id, {
