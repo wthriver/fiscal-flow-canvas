@@ -11,14 +11,27 @@ interface ReportsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   accountId?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  accountName?: string;
 }
 
-export const ReportsDialog: React.FC<ReportsDialogProps> = ({ isOpen, onClose, accountId }) => {
+export const ReportsDialog: React.FC<ReportsDialogProps> = ({ 
+  isOpen, 
+  onClose, 
+  accountId = "",
+  open,
+  onOpenChange
+}) => {
   const { currentCompany } = useCompany();
   const account = currentCompany.bankAccounts.find(acc => acc.id === accountId);
 
+  // Use open/onOpenChange if provided, otherwise use isOpen/onClose
+  const dialogOpen = open !== undefined ? open : isOpen;
+  const handleOpenChange = onOpenChange || (() => onClose());
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>Reports</DialogTitle>
@@ -27,8 +40,8 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({ isOpen, onClose, a
           </DialogDescription>
         </DialogHeader>
 
-        <ReportHeader accountId={accountId || ""} />
-        <ReportTabs accountId={accountId || ""} />
+        <ReportHeader accountId={accountId} />
+        <ReportTabs accountId={accountId} />
 
         <DialogFooter>
           <Button onClick={onClose}>Close</Button>

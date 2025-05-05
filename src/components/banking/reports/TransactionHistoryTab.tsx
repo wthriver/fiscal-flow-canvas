@@ -6,13 +6,6 @@ import { TransactionSearchBar } from "./TransactionSearchBar";
 import { TransactionTable } from "./TransactionTable";
 import { useCompany, Transaction } from "@/contexts/CompanyContext";
 
-// Define a component-specific Transaction interface that extends the base Transaction
-interface ExtendedTransaction extends Transaction {
-  account?: string;
-  type?: string;
-  bankAccount?: string;
-}
-
 interface TransactionHistoryTabProps {
   transactions: Transaction[];
 }
@@ -26,9 +19,9 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
 
   // Filter transactions based on search term
   const filteredTransactions = inputTransactions.filter(transaction => 
-    transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.amount?.includes(searchTerm)
+    (transaction.description?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+    (transaction.category?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+    (transaction.amount || "").includes(searchTerm)
   );
 
   // Sort transactions

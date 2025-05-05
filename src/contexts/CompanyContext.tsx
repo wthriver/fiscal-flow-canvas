@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Define types for our domain
@@ -23,6 +24,7 @@ export interface Invoice {
   status: string;
   date: string;
   dueDate: string;
+  customer?: string; // Added for compatibility
 }
 
 export interface Transaction {
@@ -61,6 +63,7 @@ export interface ProjectDocument {
   size: string;
   uploadDate: string;
   lastModified?: string;
+  url?: string; // Added for compatibility
 }
 
 export interface ProjectTask {
@@ -83,8 +86,13 @@ export interface Project {
   team: string[];
   documents: ProjectDocument[];
   tasks: ProjectTask[];
-  tracked?: number;
-  billed?: number;
+  tracked?: number | string;
+  billed?: number | string;
+  description?: string; // Added for compatibility
+  startDate?: string; // Added for compatibility
+  endDate?: string; // Added for compatibility
+  progress?: number; // Added for compatibility
+  remaining?: string; // Added for compatibility
 }
 
 export interface Employee {
@@ -134,7 +142,7 @@ export interface TimeEntry {
   description: string;
   billable: boolean;
   status: string;
-  duration?: number;
+  duration?: number | string;
   startTime?: string;
   endTime?: string;
 }
@@ -177,6 +185,66 @@ export interface Estimate {
   items: EstimateItem[];
   notes: string;
   termsAndConditions?: string;
+  customer?: string; // Added for compatibility
+  estimateNumber?: string; // Added for compatibility
+}
+
+// Additional interfaces for components
+export interface OutstandingInvoice {
+  amount: number;
+  percentChange: number;
+}
+
+export interface ActiveCustomers {
+  count: number;
+  percentChange: number;
+}
+
+export interface RevenueData {
+  current: number;
+  previous: number;
+  percentChange: number;
+}
+
+export interface ProfitMarginData {
+  value: number;
+  trend: number;
+  percentChange: number;
+}
+
+export interface Expense {
+  id: string;
+  date: string;
+  vendor: string;
+  category: string;
+  amount: string;
+  status: string;
+  receipt?: string;
+}
+
+export interface Inventory {
+  items: any[];
+  categories: any[];
+  locations: any[];
+  bundles: any[];
+  serialNumbers: any[];
+  lotTracking: any[];
+}
+
+export interface Integration {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  lastSync?: string;
+}
+
+export interface AuditTrailEntry {
+  id: string;
+  date: string;
+  user: string;
+  action: string;
+  details: string;
 }
 
 // Additional needed properties for various components
@@ -204,10 +272,16 @@ export interface Company {
   industry?: string;
   fiscalYearStart?: string;
   fiscalYear?: string;
-  revenue?: any[];
-  profitMargin?: any[];
+  revenue?: RevenueData | any[];
+  profitMargin?: ProfitMarginData | any[];
   taxRates?: any[];
   accounts?: any[];
+  expenses?: Expense[];
+  inventory?: Inventory;
+  outstandingInvoices?: OutstandingInvoice;
+  activeCustomers?: ActiveCustomers;
+  integrations?: Integration[];
+  auditTrail?: AuditTrailEntry[];
 }
 
 // Context interface
@@ -238,7 +312,7 @@ interface CompanyContextType {
   addEstimate: (estimate: Estimate) => void;
   updateEstimate: (id: string, updatedFields: Partial<Estimate>) => void;
   deleteEstimate: (id: string) => void;
-  companies?: any[];
+  companies?: Company[];
   switchCompany?: (id: string) => void;
   addCompany?: (company: Company) => void;
   addExpense?: (expense: any) => void;
@@ -582,7 +656,37 @@ const initialCompany: Company = {
       ],
       notes: "Payment due within 30 days of project completion"
     }
-  ]
+  ],
+  // Added missing properties
+  revenue: {
+    current: 150000,
+    previous: 125000,
+    percentChange: 20
+  },
+  profitMargin: {
+    value: 30,
+    trend: 5,
+    percentChange: 10
+  },
+  outstandingInvoices: {
+    amount: 25000,
+    percentChange: -15
+  },
+  activeCustomers: {
+    count: 24,
+    percentChange: 33
+  },
+  expenses: [],
+  inventory: {
+    items: [],
+    categories: [],
+    locations: [],
+    bundles: [],
+    serialNumbers: [],
+    lotTracking: []
+  },
+  integrations: [],
+  auditTrail: []
 };
 
 // Provider component
@@ -809,42 +913,208 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
   const addExpense = (expense: any) => {
     // Simple implementation to satisfy type requirements
     console.log("Adding expense:", expense);
+    
+    setCurrentCompany(prevCompany => ({
+      ...prevCompany,
+      expenses: [...(prevCompany.expenses || []), expense]
+    }));
   };
 
   return (
     <CompanyContext.Provider value={{ 
       currentCompany, 
-      updateCompany,
-      addCustomer,
-      updateCustomer,
-      deleteCustomer,
-      addInvoice,
-      updateInvoice,
-      deleteInvoice,
-      addProduct,
-      addBankAccount,
-      addTransaction,
-      updateTransaction,
-      deleteTransaction,
-      addProject,
-      updateProject,
-      deleteProject,
-      addProjectDocument,
-      deleteProjectDocument,
-      addTimeEntry,
-      updateTimeEntry,
-      deleteTimeEntry,
-      processPayroll,
-      updateBudget,
-      addEstimate,
-      updateEstimate,
-      deleteEstimate,
+      updateCompany: (id: string, updatedFields: Partial<Company>) => {
+        setCurrentCompany(prevCompany => {
+          if (prevCompany.id !== id) return prevCompany;
+          return { ...prevCompany, ...updatedFields };
+        });
+      },
+      addCustomer: (customer: Customer) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          customers: [...prevCompany.customers, customer]
+        }));
+      },
+      updateCustomer: (id: string, updatedFields: Partial<Customer>) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          customers: prevCompany.customers.map(customer => 
+            customer.id === id ? { ...customer, ...updatedFields } : customer
+          )
+        }));
+      },
+      deleteCustomer: (id: string) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          customers: prevCompany.customers.filter(customer => customer.id !== id)
+        }));
+      },
+      addInvoice: (invoice: Invoice) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          invoices: [...prevCompany.invoices, invoice]
+        }));
+      },
+      updateInvoice: (id: string, updatedFields: Partial<Invoice>) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          invoices: prevCompany.invoices.map(invoice => 
+            invoice.id === id ? { ...invoice, ...updatedFields } : invoice
+          )
+        }));
+      },
+      deleteInvoice: (id: string) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          invoices: prevCompany.invoices.filter(invoice => invoice.id !== id)
+        }));
+      },
+      addProduct: (product: Product) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          products: [...prevCompany.products, product]
+        }));
+      },
+      addBankAccount: (account: BankAccount) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          bankAccounts: [...prevCompany.bankAccounts, account]
+        }));
+      },
+      addTransaction: (transaction: Transaction) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          transactions: [...prevCompany.transactions, transaction]
+        }));
+      },
+      updateTransaction: (id: string, updatedFields: Partial<Transaction>) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          transactions: prevCompany.transactions.map(transaction => 
+            transaction.id === id ? { ...transaction, ...updatedFields } : transaction
+          )
+        }));
+      },
+      deleteTransaction: (id: string) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          transactions: prevCompany.transactions.filter(transaction => transaction.id !== id)
+        }));
+      },
+      addProject: (project: Project) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          projects: [...prevCompany.projects, project]
+        }));
+      },
+      updateProject: (id: string, updatedFields: Partial<Project>) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          projects: prevCompany.projects.map(project => 
+            project.id === id ? { ...project, ...updatedFields } : project
+          )
+        }));
+      },
+      deleteProject: (id: string) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          projects: prevCompany.projects.filter(project => project.id !== id)
+        }));
+      },
+      addProjectDocument: (projectId: string, document: ProjectDocument) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          projects: prevCompany.projects.map(project => 
+            project.id === projectId 
+              ? { ...project, documents: [...project.documents, document] } 
+              : project
+          )
+        }));
+      },
+      deleteProjectDocument: (projectId: string, documentId: string) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          projects: prevCompany.projects.map(project => 
+            project.id === projectId 
+              ? { 
+                  ...project, 
+                  documents: project.documents.filter(doc => doc.id !== documentId) 
+                } 
+              : project
+          )
+        }));
+      },
+      addTimeEntry: (entry: TimeEntry) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          timeEntries: [...prevCompany.timeEntries, entry]
+        }));
+      },
+      updateTimeEntry: (id: string, updatedFields: Partial<TimeEntry>) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          timeEntries: prevCompany.timeEntries.map(entry => 
+            entry.id === id ? { ...entry, ...updatedFields } : entry
+          )
+        }));
+      },
+      deleteTimeEntry: (id: string) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          timeEntries: prevCompany.timeEntries.filter(entry => entry.id !== id)
+        }));
+      },
+      processPayroll: (payrollId: string) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          payrollData: {
+            ...prevCompany.payrollData,
+            payPeriods: prevCompany.payrollData.payPeriods.map(period => 
+              period.id === payrollId 
+                ? { ...period, status: "Completed" } 
+                : period
+            )
+          }
+        }));
+      },
+      updateBudget: (id: string, updatedFields: Partial<Budget>) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          budgets: prevCompany.budgets.map(budget => 
+            budget.id === id ? { ...budget, ...updatedFields } : budget
+          )
+        }));
+      },
+      addEstimate: (estimate: Estimate) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          estimates: [...prevCompany.estimates, estimate]
+        }));
+      },
+      updateEstimate: (id: string, updatedFields: Partial<Estimate>) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          estimates: prevCompany.estimates.map(estimate => 
+            estimate.id === id ? { ...estimate, ...updatedFields } : estimate
+          )
+        }));
+      },
+      deleteEstimate: (id: string) => {
+        setCurrentCompany(prevCompany => ({
+          ...prevCompany,
+          estimates: prevCompany.estimates.filter(estimate => estimate.id !== id)
+        }));
+      },
       // Add missing methods to fix build errors
       calculateTax,
       addExpense,
       companies: [currentCompany],
       switchCompany: (id: string) => console.log(`Switch to company ${id}`),
-      addCompany: (company: Company) => console.log(`Add company ${company.name}`)
+      addCompany: (company: Company) => {
+        console.log(`Add company ${company.name}`);
+        // Actually implement addCompany for TopBar
+        setCurrentCompany(company);
+      }
     }}>
       {children}
     </CompanyContext.Provider>

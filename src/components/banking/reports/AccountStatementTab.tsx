@@ -1,8 +1,10 @@
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { useCompany } from "@/contexts/CompanyContext";
+import { prepareTransactionData } from "@/utils/reportUtils";
 
 interface BalanceHistory {
   date: string;
@@ -17,16 +19,29 @@ interface Transaction {
 }
 
 interface AccountStatementTabProps {
-  balanceHistory: BalanceHistory[];
-  accountName: string;
-  transactions: Transaction[];
+  accountId: string;
 }
 
 export const AccountStatementTab: React.FC<AccountStatementTabProps> = ({
-  balanceHistory,
-  accountName,
-  transactions
+  accountId
 }) => {
+  const { currentCompany } = useCompany();
+  
+  const account = accountId ? 
+    currentCompany.bankAccounts.find(acc => acc.id === accountId) : 
+    null;
+  
+  const accountName = account ? account.name : "All Accounts";
+  
+  // Use the utility function to prepare data
+  const { balanceHistory, filteredTransactions } = useMemo(() => {
+    return prepareTransactionData(
+      currentCompany.transactions,
+      accountName,
+      { from: undefined, to: undefined }
+    );
+  }, [currentCompany.transactions, accountName]);
+
   return (
     <div className="space-y-4">
       <Card>
@@ -65,9 +80,9 @@ export const AccountStatementTab: React.FC<AccountStatementTabProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {balanceHistory.length > 0 ? (
+          {balanceHistory && balanceHistory.length > 0 ? (
             balanceHistory.map((entry, index) => {
-              const transaction = transactions.find(t => t.date === entry.date);
+              const transaction = filteredTransactions.find(t => t.date === entry.date);
               return (
                 <TableRow key={index}>
                   <TableCell>{entry.date}</TableCell>

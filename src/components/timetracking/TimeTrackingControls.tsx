@@ -84,17 +84,20 @@ export const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
     const formattedStartTime = startTime.toTimeString().slice(0, 5); // HH:MM
     const formattedEndTime = now.toTimeString().slice(0, 5); // HH:MM
     const duration = formatDuration(elapsedTime);
+    const hours = elapsedTime / 3600; // Convert seconds to hours
     
     const newTimeEntry: TimeEntry = {
       id: `time-${Date.now()}`,
-      employeeId: "emp1", // Assuming current user is first employee
-      projectId: projectId,
+      employeeId: "emp-1", // Assuming current user is first employee
+      projectId: projectId || "",
       date: new Date().toISOString().split('T')[0],
+      hours: hours,
+      description: description,
+      billable: true,
+      status: "Pending",
       startTime: formattedStartTime,
       endTime: formattedEndTime,
-      duration: duration,
-      description: description,
-      billable: true
+      duration: duration
     };
     
     addTimeEntry(newTimeEntry);

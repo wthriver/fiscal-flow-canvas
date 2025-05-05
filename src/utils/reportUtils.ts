@@ -1,13 +1,5 @@
 
-interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  account: string;
-  category: string;
-  amount: string;
-  reconciled: boolean;
-}
+import { Transaction } from "@/contexts/CompanyContext";
 
 interface DateRange {
   from: Date | undefined;
@@ -21,7 +13,10 @@ export function prepareTransactionData(
 ) {
   // Filter transactions for the specific account
   const accountTransactions = transactions.filter(
-    (transaction) => transaction.account === accountName
+    (transaction) => {
+      if (accountName === "All Accounts") return true;
+      return transaction.account === accountName || transaction.bankAccount === accountName;
+    }
   );
 
   // Filter transactions by date range if it's set
@@ -46,10 +41,10 @@ export function prepareTransactionData(
   });
 
   // Calculate income and expenses data for chart
-  const incomeExpenseData = accountTransactions.reduce((acc: any[], transaction) => {
+  const incomeExpenseData = filteredTransactions.reduce((acc: any[], transaction) => {
     const date = transaction.date.substring(0, 7); // Get YYYY-MM format
     const amount = parseFloat(transaction.amount.replace(/[^0-9.-]+/g, ""));
-    const isIncome = transaction.amount.startsWith("+");
+    const isIncome = transaction.amount.startsWith("+") || transaction.type === "Credit";
     
     const existingEntry = acc.find((entry) => entry.month === date);
     
@@ -74,18 +69,18 @@ export function prepareTransactionData(
 
   // Create reconciliation status data
   const reconciliationData = {
-    reconciled: accountTransactions.filter(t => t.reconciled).length,
-    unreconciled: accountTransactions.filter(t => !t.reconciled).length
+    reconciled: filteredTransactions.filter(t => t.reconciled).length,
+    unreconciled: filteredTransactions.filter(t => !t.reconciled).length
   };
 
   // Calculate account balance over time
-  const balanceHistory = accountTransactions
+  const balanceHistory = filteredTransactions
     .slice()
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .reduce((acc: any[], transaction) => {
       const date = transaction.date;
       const amount = parseFloat(transaction.amount.replace(/[^0-9.-]+/g, ""));
-      const isIncome = transaction.amount.startsWith("+");
+      const isIncome = transaction.amount.startsWith("+") || transaction.type === "Credit";
       
       const lastBalance = acc.length > 0 ? acc[acc.length - 1].balance : 0;
       const newBalance = isIncome ? lastBalance + amount : lastBalance - amount;

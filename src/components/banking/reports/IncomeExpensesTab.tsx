@@ -1,8 +1,10 @@
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { useCompany } from "@/contexts/CompanyContext";
+import { prepareTransactionData } from "@/utils/reportUtils";
 
 interface IncomeExpenseData {
   month: string;
@@ -12,12 +14,29 @@ interface IncomeExpenseData {
 }
 
 interface IncomeExpensesTabProps {
-  incomeExpenseData: IncomeExpenseData[];
+  accountId: string;
 }
 
 export const IncomeExpensesTab: React.FC<IncomeExpensesTabProps> = ({
-  incomeExpenseData
+  accountId
 }) => {
+  const { currentCompany } = useCompany();
+  
+  const account = accountId ? 
+    currentCompany.bankAccounts.find(acc => acc.id === accountId) : 
+    null;
+  
+  const accountName = account ? account.name : "All Accounts";
+  
+  // Use the utility function to prepare data
+  const { incomeExpenseData } = useMemo(() => {
+    return prepareTransactionData(
+      currentCompany.transactions,
+      accountName,
+      { from: undefined, to: undefined }
+    );
+  }, [currentCompany.transactions, accountName]);
+
   return (
     <div className="space-y-4">
       <Card>
@@ -54,7 +73,7 @@ export const IncomeExpensesTab: React.FC<IncomeExpensesTabProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {incomeExpenseData.length > 0 ? (
+          {incomeExpenseData && incomeExpenseData.length > 0 ? (
             incomeExpenseData.map((entry, index) => (
               <TableRow key={index}>
                 <TableCell>{entry.month}</TableCell>
