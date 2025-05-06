@@ -185,8 +185,8 @@ export interface Estimate {
   items: EstimateItem[];
   notes: string;
   termsAndConditions?: string;
-  customer?: string; // Added for compatibility
-  estimateNumber?: string; // Added for compatibility
+  customer?: string; // For compatibility
+  estimateNumber?: string; // For compatibility
 }
 
 // Additional interfaces for components
@@ -220,12 +220,35 @@ export interface Expense {
   amount: string;
   status: string;
   receipt?: string;
+  paymentMethod?: string;
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  cost: string;
+  location: string;
+}
+
+export interface InventoryCategory {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface InventoryLocation {
+  id: string;
+  name: string;
+  address: string;
 }
 
 export interface Inventory {
-  items: any[];
-  categories: any[];
-  locations: any[];
+  items: InventoryItem[];
+  categories: InventoryCategory[];
+  locations: InventoryLocation[];
   bundles: any[];
   serialNumbers: any[];
   lotTracking: any[];
@@ -237,6 +260,8 @@ export interface Integration {
   type: string;
   status: string;
   lastSync?: string;
+  provider?: string;
+  syncFrequency?: string;
 }
 
 export interface AuditTrailEntry {
@@ -245,6 +270,20 @@ export interface AuditTrailEntry {
   user: string;
   action: string;
   details: string;
+  timestamp?: string;
+  userName?: string;
+  module?: string;
+  ipAddress?: string;
+}
+
+export interface Sale {
+  id: string;
+  customerId: string;
+  amount: string;
+  date: string;
+  items: any[];
+  status: string;
+  customer?: string;
 }
 
 // Additional needed properties for various components
@@ -282,6 +321,7 @@ export interface Company {
   activeCustomers?: ActiveCustomers;
   integrations?: Integration[];
   auditTrail?: AuditTrailEntry[];
+  sales?: Sale[];
 }
 
 // Context interface
@@ -317,6 +357,9 @@ interface CompanyContextType {
   addCompany?: (company: Company) => void;
   addExpense?: (expense: any) => void;
   calculateTax?: (data: any) => any;
+  addSale?: (sale: Sale) => void;
+  updateSale?: (id: string, updatedFields: Partial<Sale>) => void;
+  deleteSale?: (id: string) => void;
 }
 
 // Create context with default value
@@ -363,7 +406,8 @@ const initialCompany: Company = {
       amount: "$1,200.00",
       status: "Paid",
       date: "2023-09-15",
-      dueDate: "2023-10-15"
+      dueDate: "2023-10-15",
+      customer: "ABC Corp" // Added for compatibility
     },
     {
       id: "invoice-2",
@@ -371,7 +415,8 @@ const initialCompany: Company = {
       amount: "$2,500.00",
       status: "Pending",
       date: "2023-09-20",
-      dueDate: "2023-10-20"
+      dueDate: "2023-10-20",
+      customer: "XYZ Industries" // Added for compatibility
     }
   ],
   products: [
@@ -416,7 +461,8 @@ const initialCompany: Company = {
       description: "Payment from ABC Corp",
       category: "Income",
       type: "Credit",
-      bankAccount: "Operating Account"
+      bankAccount: "Operating Account",
+      reconciled: true
     },
     {
       id: "transaction-2",
@@ -425,7 +471,8 @@ const initialCompany: Company = {
       description: "Office Supplies",
       category: "Expenses",
       type: "Debit",
-      bankAccount: "Operating Account"
+      bankAccount: "Operating Account",
+      reconciled: false
     }
   ],
   projects: [
@@ -470,7 +517,10 @@ const initialCompany: Company = {
           assignee: "Alice Johnson",
           dueDate: "2023-10-15"
         }
-      ]
+      ],
+      description: "Complete website redesign for ABC Corp",
+      startDate: "2023-08-01",
+      progress: 60
     },
     {
       id: "project-2",
@@ -499,7 +549,10 @@ const initialCompany: Company = {
           assignee: "Lisa Wang",
           dueDate: "2023-10-05"
         }
-      ]
+      ],
+      description: "Native mobile app for iOS and Android",
+      startDate: "2023-09-01",
+      progress: 15
     }
   ],
   employees: [
@@ -654,7 +707,9 @@ const initialCompany: Company = {
           amount: "$10,000.00"
         }
       ],
-      notes: "Payment due within 30 days of project completion"
+      notes: "Payment due within 30 days of project completion",
+      customer: "ABC Corp", // Added for compatibility
+      estimateNumber: "EST-001" // Added for compatibility
     }
   ],
   // Added missing properties
@@ -676,17 +731,132 @@ const initialCompany: Company = {
     count: 24,
     percentChange: 33
   },
-  expenses: [],
+  expenses: [
+    {
+      id: "expense-1",
+      date: "2023-09-15",
+      vendor: "Office Supply Co",
+      category: "Office Supplies",
+      amount: "$250.00",
+      status: "Paid",
+      paymentMethod: "Credit Card"
+    },
+    {
+      id: "expense-2",
+      date: "2023-09-20",
+      vendor: "Travel Agency",
+      category: "Travel",
+      amount: "$850.00",
+      status: "Pending",
+      paymentMethod: "Company Card"
+    }
+  ],
   inventory: {
-    items: [],
-    categories: [],
-    locations: [],
+    items: [
+      {
+        id: "inv-1",
+        name: "Premium Widget",
+        sku: "WDG-001",
+        category: "Widgets",
+        quantity: 50,
+        cost: "$80.00",
+        location: "Main Warehouse"
+      },
+      {
+        id: "inv-2",
+        name: "Deluxe Gadget",
+        sku: "GDG-001",
+        category: "Gadgets",
+        quantity: 25,
+        cost: "$150.00",
+        location: "Main Warehouse"
+      }
+    ],
+    categories: [
+      {
+        id: "cat-1",
+        name: "Widgets",
+        description: "All widget products"
+      },
+      {
+        id: "cat-2",
+        name: "Gadgets",
+        description: "All gadget products"
+      }
+    ],
+    locations: [
+      {
+        id: "loc-1",
+        name: "Main Warehouse",
+        address: "123 Storage Ln, Warehouse District"
+      }
+    ],
     bundles: [],
     serialNumbers: [],
     lotTracking: []
   },
-  integrations: [],
-  auditTrail: []
+  integrations: [
+    {
+      id: "int-1",
+      name: "Payment Processor",
+      type: "Payment",
+      status: "Active",
+      lastSync: "2023-09-25",
+      provider: "Stripe",
+      syncFrequency: "Daily"
+    },
+    {
+      id: "int-2",
+      name: "CRM System",
+      type: "CRM",
+      status: "Pending",
+      provider: "Salesforce",
+      syncFrequency: "Hourly"
+    }
+  ],
+  auditTrail: [
+    {
+      id: "audit-1",
+      date: "2023-09-25",
+      user: "admin",
+      action: "Login",
+      details: "User logged in from 192.168.1.1",
+      timestamp: "2023-09-25T09:30:00",
+      userName: "Administrator",
+      module: "Authentication",
+      ipAddress: "192.168.1.1"
+    },
+    {
+      id: "audit-2",
+      date: "2023-09-25",
+      user: "john",
+      action: "Create Invoice",
+      details: "Created invoice #INV-001",
+      timestamp: "2023-09-25T10:15:00",
+      userName: "John Doe",
+      module: "Invoicing",
+      ipAddress: "192.168.1.2"
+    }
+  ],
+  sales: [
+    {
+      id: "sale-1",
+      customerId: "customer-1",
+      amount: "$1,200.00",
+      date: "2023-09-15",
+      items: [
+        {
+          id: "item-1",
+          name: "Premium Widget",
+          quantity: 10,
+          unitPrice: "$120.00",
+          amount: "$1,200.00"
+        }
+      ],
+      status: "Completed",
+      customer: "ABC Corp"
+    }
+  ]
 };
 
 // Provider component
@@ -904,6 +1074,30 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     }));
   };
 
+  // Add sales management functions
+  const addSale = (sale: Sale) => {
+    setCurrentCompany(prevCompany => ({
+      ...prevCompany,
+      sales: [...(prevCompany.sales || []), sale]
+    }));
+  };
+
+  const updateSale = (id: string, updatedFields: Partial<Sale>) => {
+    setCurrentCompany(prevCompany => ({
+      ...prevCompany,
+      sales: (prevCompany.sales || []).map(sale => 
+        sale.id === id ? { ...sale, ...updatedFields } : sale
+      )
+    }));
+  };
+
+  const deleteSale = (id: string) => {
+    setCurrentCompany(prevCompany => ({
+      ...prevCompany,
+      sales: (prevCompany.sales || []).filter(sale => sale.id !== id)
+    }));
+  };
+
   // Mock implementation for the missing methods to fix build errors
   const calculateTax = (data: any) => {
     // Simple implementation to satisfy type requirements
@@ -920,201 +1114,49 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     }));
   };
 
+  const addCompany = (company: Company) => {
+    // Actually implement addCompany for TopBar
+    console.log(`Adding company ${company.name}`);
+    setCurrentCompany(company);
+  };
+
   return (
     <CompanyContext.Provider value={{ 
       currentCompany, 
-      updateCompany: (id: string, updatedFields: Partial<Company>) => {
-        setCurrentCompany(prevCompany => {
-          if (prevCompany.id !== id) return prevCompany;
-          return { ...prevCompany, ...updatedFields };
-        });
-      },
-      addCustomer: (customer: Customer) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          customers: [...prevCompany.customers, customer]
-        }));
-      },
-      updateCustomer: (id: string, updatedFields: Partial<Customer>) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          customers: prevCompany.customers.map(customer => 
-            customer.id === id ? { ...customer, ...updatedFields } : customer
-          )
-        }));
-      },
-      deleteCustomer: (id: string) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          customers: prevCompany.customers.filter(customer => customer.id !== id)
-        }));
-      },
-      addInvoice: (invoice: Invoice) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          invoices: [...prevCompany.invoices, invoice]
-        }));
-      },
-      updateInvoice: (id: string, updatedFields: Partial<Invoice>) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          invoices: prevCompany.invoices.map(invoice => 
-            invoice.id === id ? { ...invoice, ...updatedFields } : invoice
-          )
-        }));
-      },
-      deleteInvoice: (id: string) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          invoices: prevCompany.invoices.filter(invoice => invoice.id !== id)
-        }));
-      },
-      addProduct: (product: Product) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          products: [...prevCompany.products, product]
-        }));
-      },
-      addBankAccount: (account: BankAccount) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          bankAccounts: [...prevCompany.bankAccounts, account]
-        }));
-      },
-      addTransaction: (transaction: Transaction) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          transactions: [...prevCompany.transactions, transaction]
-        }));
-      },
-      updateTransaction: (id: string, updatedFields: Partial<Transaction>) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          transactions: prevCompany.transactions.map(transaction => 
-            transaction.id === id ? { ...transaction, ...updatedFields } : transaction
-          )
-        }));
-      },
-      deleteTransaction: (id: string) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          transactions: prevCompany.transactions.filter(transaction => transaction.id !== id)
-        }));
-      },
-      addProject: (project: Project) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          projects: [...prevCompany.projects, project]
-        }));
-      },
-      updateProject: (id: string, updatedFields: Partial<Project>) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          projects: prevCompany.projects.map(project => 
-            project.id === id ? { ...project, ...updatedFields } : project
-          )
-        }));
-      },
-      deleteProject: (id: string) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          projects: prevCompany.projects.filter(project => project.id !== id)
-        }));
-      },
-      addProjectDocument: (projectId: string, document: ProjectDocument) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          projects: prevCompany.projects.map(project => 
-            project.id === projectId 
-              ? { ...project, documents: [...project.documents, document] } 
-              : project
-          )
-        }));
-      },
-      deleteProjectDocument: (projectId: string, documentId: string) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          projects: prevCompany.projects.map(project => 
-            project.id === projectId 
-              ? { 
-                  ...project, 
-                  documents: project.documents.filter(doc => doc.id !== documentId) 
-                } 
-              : project
-          )
-        }));
-      },
-      addTimeEntry: (entry: TimeEntry) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          timeEntries: [...prevCompany.timeEntries, entry]
-        }));
-      },
-      updateTimeEntry: (id: string, updatedFields: Partial<TimeEntry>) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          timeEntries: prevCompany.timeEntries.map(entry => 
-            entry.id === id ? { ...entry, ...updatedFields } : entry
-          )
-        }));
-      },
-      deleteTimeEntry: (id: string) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          timeEntries: prevCompany.timeEntries.filter(entry => entry.id !== id)
-        }));
-      },
-      processPayroll: (payrollId: string) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          payrollData: {
-            ...prevCompany.payrollData,
-            payPeriods: prevCompany.payrollData.payPeriods.map(period => 
-              period.id === payrollId 
-                ? { ...period, status: "Completed" } 
-                : period
-            )
-          }
-        }));
-      },
-      updateBudget: (id: string, updatedFields: Partial<Budget>) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          budgets: prevCompany.budgets.map(budget => 
-            budget.id === id ? { ...budget, ...updatedFields } : budget
-          )
-        }));
-      },
-      addEstimate: (estimate: Estimate) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          estimates: [...prevCompany.estimates, estimate]
-        }));
-      },
-      updateEstimate: (id: string, updatedFields: Partial<Estimate>) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          estimates: prevCompany.estimates.map(estimate => 
-            estimate.id === id ? { ...estimate, ...updatedFields } : estimate
-          )
-        }));
-      },
-      deleteEstimate: (id: string) => {
-        setCurrentCompany(prevCompany => ({
-          ...prevCompany,
-          estimates: prevCompany.estimates.filter(estimate => estimate.id !== id)
-        }));
-      },
+      updateCompany,
+      addCustomer,
+      updateCustomer,
+      deleteCustomer,
+      addInvoice,
+      updateInvoice,
+      deleteInvoice,
+      addProduct,
+      addBankAccount,
+      addTransaction,
+      updateTransaction,
+      deleteTransaction,
+      addProject,
+      updateProject,
+      deleteProject,
+      addProjectDocument,
+      deleteProjectDocument,
+      addTimeEntry,
+      updateTimeEntry,
+      deleteTimeEntry,
+      processPayroll,
+      updateBudget,
+      addEstimate,
+      updateEstimate,
+      deleteEstimate,
       // Add missing methods to fix build errors
       calculateTax,
       addExpense,
-      companies: [currentCompany],
+      companies: [initialCompany],
       switchCompany: (id: string) => console.log(`Switch to company ${id}`),
-      addCompany: (company: Company) => {
-        console.log(`Add company ${company.name}`);
-        // Actually implement addCompany for TopBar
-        setCurrentCompany(company);
-      }
+      addCompany,
+      addSale,
+      updateSale,
+      deleteSale
     }}>
       {children}
     </CompanyContext.Provider>

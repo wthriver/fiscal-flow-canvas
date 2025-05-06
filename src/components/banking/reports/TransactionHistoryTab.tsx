@@ -4,18 +4,19 @@ import { toast } from "sonner";
 import { TransactionEditModal } from "./TransactionEditModal";
 import { TransactionSearchBar } from "./TransactionSearchBar";
 import { TransactionTable } from "./TransactionTable";
-import { useCompany, Transaction } from "@/contexts/CompanyContext";
+import { useCompany, Transaction as CompanyTransaction } from "@/contexts/CompanyContext";
 
+// Use the Transaction type from CompanyContext to avoid conflicts
 interface TransactionHistoryTabProps {
-  transactions: Transaction[];
+  transactions: CompanyTransaction[];
 }
 
 export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
   transactions: inputTransactions = []
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: "asc" | "desc" } | null>(null);
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof CompanyTransaction; direction: "asc" | "desc" } | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<CompanyTransaction | null>(null);
 
   // Filter transactions based on search term
   const filteredTransactions = inputTransactions.filter(transaction => 
@@ -48,7 +49,7 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     return sortableTransactions;
   }, [filteredTransactions, sortConfig]);
 
-  const requestSort = (key: keyof Transaction) => {
+  const requestSort = (key: keyof CompanyTransaction) => {
     let direction: "asc" | "desc" = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
@@ -56,13 +57,13 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     setSortConfig({ key, direction });
   };
 
-  const handleShareTransaction = (transaction: Transaction) => {
+  const handleShareTransaction = (transaction: CompanyTransaction) => {
     toast.success(`Sharing transaction details for: ${transaction.description}`, {
       description: "Transaction details have been copied to clipboard"
     });
   };
 
-  const handleViewDetails = (transaction: Transaction) => {
+  const handleViewDetails = (transaction: CompanyTransaction) => {
     setEditingTransaction(transaction);
     
     toast.info(`Viewing transaction: ${transaction.description}`, {

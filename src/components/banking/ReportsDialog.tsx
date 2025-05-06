@@ -21,10 +21,12 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
   onClose, 
   accountId = "",
   open,
-  onOpenChange
+  onOpenChange,
+  accountName
 }) => {
   const { currentCompany } = useCompany();
   const account = currentCompany.bankAccounts.find(acc => acc.id === accountId);
+  const displayName = accountName || account?.name || "all accounts";
 
   // Use open/onOpenChange if provided, otherwise use isOpen/onClose
   const dialogOpen = open !== undefined ? open : isOpen;
@@ -36,7 +38,7 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Reports</DialogTitle>
           <DialogDescription>
-            Generate financial reports for {account?.name || "all accounts"}.
+            Generate financial reports for {displayName}.
           </DialogDescription>
         </DialogHeader>
 
