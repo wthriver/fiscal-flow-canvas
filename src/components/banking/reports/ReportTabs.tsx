@@ -33,18 +33,15 @@ export const ReportTabs: React.FC<ReportTabsProps> = ({ accountId }) => {
       </TabsContent>
 
       <TabsContent value="income-expenses" className="mt-4">
-        {/* Pass accountId as a prop to IncomeExpensesTab */}
-        <IncomeExpensesTab accountId={accountId} />
+        <IncomeExpensesTab />
       </TabsContent>
 
       <TabsContent value="statement" className="mt-4">
-        {/* Pass accountId as a prop to AccountStatementTab */}
-        <AccountStatementTab accountId={accountId} />
+        <AccountStatementTab />
       </TabsContent>
 
       <TabsContent value="reconciliation" className="mt-4">
-        {/* Pass accountId as a prop to ReconciliationTab */}
-        <ReconciliationTab accountId={accountId} />
+        <ReconciliationTab />
       </TabsContent>
     </Tabs>
   );

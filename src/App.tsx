@@ -1,84 +1,71 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AppLayout from "./components/layout/AppLayout";
-import Dashboard from "./pages/Dashboard";
-import Invoices from "./pages/Invoices";
-import Expenses from "./pages/Expenses";
-import Banking from "./pages/Banking";
-import Reports from "./pages/Reports";
-import Journal from "./pages/Journal";
-import Inventory from "./pages/Inventory";
-import Customers from "./pages/Customers";
-import Sales from "./pages/Sales";
-import Projects from "./pages/Projects";
-import Taxes from "./pages/Taxes";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
-import { CompanyProvider } from "./contexts/CompanyContext";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import AppLayout from './components/layout/AppLayout';
+import Dashboard from './pages/Dashboard';
+import Customers from './pages/Customers';
+import Invoices from './pages/Invoices';
+import Banking from './pages/Banking';
+import Accounting from './pages/Accounting';
+import Projects from './pages/Projects';
+import Reports from './pages/Reports';
+import Sales from './pages/Sales';
+import Settings from './pages/Settings';
+import TimeTracking from './pages/TimeTracking';
+import Expenses from './pages/Expenses';
+import Taxes from './pages/Taxes';
+import Payroll from './pages/Payroll';
+import Inventory from './pages/Inventory';
+import Journal from './pages/Journal';
+import Budgeting from './pages/Budgeting';
+import AuditTrail from './pages/AuditTrail';
+import MultiCurrency from './pages/MultiCurrency';
+import Integrations from './pages/Integrations';
+import NotFound from './pages/NotFound';
+import { CompanyProvider } from './contexts/CompanyContext';
+import './App.css';
+import { Toaster } from './components/ui/toaster';
+import { Toaster as SonnerToaster } from 'sonner';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Feature pages
-import Payroll from "./pages/Payroll";
-import TimeTrackingPage from "./pages/TimeTracking";
-import Budgeting from "./pages/Budgeting";
-import Receipts from "./pages/Receipts";
-
-// All settings-related pages
-import AuditTrail from "./pages/AuditTrail";
-import MultiCurrency from "./pages/MultiCurrency";
-import Integrations from "./pages/Integrations";
-
+// Create a client
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
       <CompanyProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+        <Router>
           <Routes>
-            <Route element={<AppLayout />}>
-              {/* Main modules */}
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/invoices" element={<Invoices />} />
-              <Route path="/expenses" element={<Expenses />} />
-              <Route path="/receipts" element={<Receipts />} />
-              <Route path="/banking" element={<Banking />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/journal" element={<Journal />} />
-              
-              {/* Business modules */}
-              <Route path="/inventory" element={<Inventory />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/sales" element={<Sales />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/time-tracking" element={<TimeTrackingPage />} />
-              <Route path="/taxes" element={<Taxes />} />
-              
-              {/* Advanced modules */}
-              <Route path="/payroll" element={<Payroll />} />
-              <Route path="/budgeting" element={<Budgeting />} />
-              
-              {/* Settings */}
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/settings/audit-trail" element={<AuditTrail />} />
-              <Route path="/settings/multi-currency" element={<MultiCurrency />} />
-              <Route path="/settings/integrations" element={<Integrations />} />
-              <Route path="/audit-trail" element={<AuditTrail />} />
-              <Route path="/multi-currency" element={<MultiCurrency />} />
-              <Route path="/integrations" element={<Integrations />} />
-              
+            <Route path="/" element={<AppLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="customers" element={<Customers />} />
+              <Route path="invoices" element={<Invoices />} />
+              <Route path="banking" element={<Banking />} />
+              <Route path="accounting" element={<Accounting />} />
+              <Route path="projects" element={<Projects />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="sales" element={<Sales />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="time-tracking" element={<TimeTracking />} />
+              <Route path="expenses" element={<Expenses />} />
+              <Route path="taxes" element={<Taxes />} />
+              <Route path="payroll" element={<Payroll />} />
+              <Route path="inventory" element={<Inventory />} />
+              <Route path="journal" element={<Journal />} />
+              <Route path="budgeting" element={<Budgeting />} />
+              <Route path="audit-trail" element={<AuditTrail />} />
+              <Route path="multi-currency" element={<MultiCurrency />} />
+              <Route path="integrations" element={<Integrations />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
-        </BrowserRouter>
+        </Router>
+        <Toaster />
+        <SonnerToaster position="top-right" />
       </CompanyProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+}
 
 export default App;

@@ -6,7 +6,7 @@ import { TransactionSearchBar } from "./TransactionSearchBar";
 import { TransactionTable } from "./TransactionTable";
 import { useCompany, Transaction as CompanyTransaction } from "@/contexts/CompanyContext";
 
-// Use the Transaction type from CompanyContext to avoid conflicts
+// Just use the CompanyTransaction type directly to avoid conflicts
 interface TransactionHistoryTabProps {
   transactions: CompanyTransaction[];
 }

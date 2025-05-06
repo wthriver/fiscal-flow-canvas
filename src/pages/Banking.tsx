@@ -1,380 +1,268 @@
 
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PlusCircle, Download, Search, Building, ArrowUpRight, ArrowDownLeft, BarChart4 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FilterButton, ExportButton, ViewButton, EditButton, DeleteButton } from "@/components/common/ActionButtons";
-import { handleCreateItem, handleViewItem } from "@/utils/navigationUtils";
-import { toast } from "sonner";
 import { useCompany } from "@/contexts/CompanyContext";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, Plus, FileBarChart } from "lucide-react";
+import { BankReconciliation } from "@/components/banking/BankReconciliation";
 import { AddTransactionDialog } from "@/components/banking/AddTransactionDialog";
 import { ReportsDialog } from "@/components/banking/ReportsDialog";
+import { CashFlowForecasting } from "@/components/banking/CashFlowForecasting";
 
-const Banking: React.FC = () => {
-  const { currentCompany } = useCompany();
-  const [searchText, setSearchText] = useState("");
-  const [addTransactionOpen, setAddTransactionOpen] = useState(false);
-  const [reportsOpen, setReportsOpen] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState({ id: "", name: "" });
-  
-  // Filter transactions based on search text
-  const filteredTransactions = currentCompany.transactions.filter(transaction => 
-    transaction.id.toLowerCase().includes(searchText.toLowerCase()) ||
-    transaction.account.toLowerCase().includes(searchText.toLowerCase()) ||
-    transaction.description.toLowerCase().includes(searchText.toLowerCase()) ||
-    transaction.category.toLowerCase().includes(searchText.toLowerCase())
+const Banking = () => {
+  const { currentCompany, addBankAccount } = useCompany();
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [selectedAccountName, setSelectedAccountName] = useState<string>("");
+  const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
+  const [isReportsOpen, setIsReportsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("accounts");
+
+  // Map through bank accounts and sum up the balances
+  const totalBalance = currentCompany.bankAccounts.reduce(
+    (sum, account) => {
+      const accountBalance = parseFloat(account.balance.replace(/[^0-9.-]+/g, ""));
+      return sum + accountBalance;
+    },
+    0
   );
 
-  const handleAddTransaction = () => {
-    setAddTransactionOpen(true);
+  // Handle account selection
+  const handleAccountSelect = (accountId: string, accountName: string) => {
+    setSelectedAccountId(accountId);
+    setSelectedAccountName(accountName);
   };
 
-  const handleConnectBank = () => {
-    // Create a connect bank modal - simulation
-    const connectBankModal = document.createElement('div');
-    connectBankModal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
-    connectBankModal.innerHTML = `
-      <div class="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
-        <h3 class="text-lg font-bold mb-4">Connect Bank Account for ${currentCompany.name}</h3>
-        <div class="space-y-4 mb-4">
-          <p class="text-sm text-gray-600">Select your bank to securely connect your accounts. We use industry-standard encryption to protect your data.</p>
-          
-          <div class="border rounded-md p-4">
-            <div class="space-y-3">
-              <div class="flex items-center">
-                <input type="radio" id="bank-1" name="bank" class="mr-2" checked>
-                <label for="bank-1" class="flex-1">First National Bank</label>
-                <img src="https://via.placeholder.com/32" alt="Bank logo" class="h-8 w-8">
-              </div>
-              <div class="flex items-center">
-                <input type="radio" id="bank-2" name="bank" class="mr-2">
-                <label for="bank-2" class="flex-1">Capital Financial</label>
-                <img src="https://via.placeholder.com/32" alt="Bank logo" class="h-8 w-8">
-              </div>
-              <div class="flex items-center">
-                <input type="radio" id="bank-3" name="bank" class="mr-2">
-                <label for="bank-3" class="flex-1">Regional Credit Union</label>
-                <img src="https://via.placeholder.com/32" alt="Bank logo" class="h-8 w-8">
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <input type="text" class="w-full p-2 border rounded-md" placeholder="Search for your bank..." />
-          </div>
-        </div>
-        <div class="flex justify-end space-x-2">
-          <button class="px-4 py-2 bg-gray-200 rounded-md" id="cancel-bank">Cancel</button>
-          <button class="px-4 py-2 bg-primary text-white rounded-md" id="continue-bank">Continue</button>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(connectBankModal);
-    
-    document.getElementById('cancel-bank')?.addEventListener('click', () => {
-      document.body.removeChild(connectBankModal);
-    });
-    
-    document.getElementById('continue-bank')?.addEventListener('click', () => {
-      document.body.removeChild(connectBankModal);
-      
-      // Show a credentials modal
-      const credentialsModal = document.createElement('div');
-      credentialsModal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
-      credentialsModal.innerHTML = `
-        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-          <h3 class="text-lg font-bold mb-4">First National Bank Login</h3>
-          <div class="space-y-4 mb-4">
-            <div>
-              <label class="block text-sm font-medium mb-1">Username</label>
-              <input type="text" class="w-full p-2 border rounded-md" placeholder="Enter bank username" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Password</label>
-              <input type="password" class="w-full p-2 border rounded-md" placeholder="Enter bank password" />
-            </div>
-            <p class="text-xs text-gray-500">Your credentials are securely encrypted and never stored. We use them only to establish a connection with your bank.</p>
-          </div>
-          <div class="flex justify-end space-x-2">
-            <button class="px-4 py-2 bg-gray-200 rounded-md" id="back-cred">Back</button>
-            <button class="px-4 py-2 bg-primary text-white rounded-md" id="connect-cred">Connect</button>
-          </div>
-        </div>
-      `;
-      
-      document.body.appendChild(credentialsModal);
-      
-      document.getElementById('back-cred')?.addEventListener('click', () => {
-        document.body.removeChild(credentialsModal);
-        document.body.appendChild(connectBankModal);
-      });
-      
-      document.getElementById('connect-cred')?.addEventListener('click', () => {
-        document.body.removeChild(credentialsModal);
-        toast.success(`Bank connected successfully for ${currentCompany.name}! New accounts added.`);
-      });
-    });
-  };
-  
-  const handleTransferOut = (accountId: string, name: string) => {
-    // Create a transfer modal - simulation
-    const transferModal = document.createElement('div');
-    transferModal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
-    transferModal.innerHTML = `
-      <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-lg font-bold mb-4">Transfer Out from ${name}</h3>
-        <div class="space-y-4 mb-4">
-          <div>
-            <label class="block text-sm font-medium mb-1">To Account</label>
-            <select class="w-full p-2 border rounded-md">
-              ${currentCompany.accounts.filter(a => a.id !== accountId).map(a => 
-                `<option value="${a.id}">${a.name}</option>`
-              ).join('')}
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Amount</label>
-            <input type="number" class="w-full p-2 border rounded-md" placeholder="0.00" step="0.01" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Date</label>
-            <input type="date" class="w-full p-2 border rounded-md" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Memo</label>
-            <input type="text" class="w-full p-2 border rounded-md" placeholder="Add a note" />
-          </div>
-        </div>
-        <div class="flex justify-end space-x-2">
-          <button class="px-4 py-2 bg-gray-200 rounded-md" id="cancel-transfer">Cancel</button>
-          <button class="px-4 py-2 bg-primary text-white rounded-md" id="complete-transfer">Transfer</button>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(transferModal);
-    
-    document.getElementById('cancel-transfer')?.addEventListener('click', () => {
-      document.body.removeChild(transferModal);
-    });
-    
-    document.getElementById('complete-transfer')?.addEventListener('click', () => {
-      toast.success(`Transfer completed successfully for ${currentCompany.name}`);
-      document.body.removeChild(transferModal);
-    });
-  };
-  
-  const handleTransferIn = (accountId: string, name: string) => {
-    // Similar to transfer out, but for receiving funds
-    const transferModal = document.createElement('div');
-    transferModal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
-    transferModal.innerHTML = `
-      <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-lg font-bold mb-4">Transfer Into ${name}</h3>
-        <div class="space-y-4 mb-4">
-          <div>
-            <label class="block text-sm font-medium mb-1">From Account</label>
-            <select class="w-full p-2 border rounded-md">
-              ${currentCompany.accounts.filter(a => a.id !== accountId).map(a => 
-                `<option value="${a.id}">${a.name}</option>`
-              ).join('')}
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Amount</label>
-            <input type="number" class="w-full p-2 border rounded-md" placeholder="0.00" step="0.01" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Date</label>
-            <input type="date" class="w-full p-2 border rounded-md" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Memo</label>
-            <input type="text" class="w-full p-2 border rounded-md" placeholder="Add a note" />
-          </div>
-        </div>
-        <div class="flex justify-end space-x-2">
-          <button class="px-4 py-2 bg-gray-200 rounded-md" id="cancel-transfer-in">Cancel</button>
-          <button class="px-4 py-2 bg-primary text-white rounded-md" id="complete-transfer-in">Transfer</button>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(transferModal);
-    
-    document.getElementById('cancel-transfer-in')?.addEventListener('click', () => {
-      document.body.removeChild(transferModal);
-    });
-    
-    document.getElementById('complete-transfer-in')?.addEventListener('click', () => {
-      toast.success(`Transfer completed successfully for ${currentCompany.name}`);
-      document.body.removeChild(transferModal);
-    });
-  };
-  
-  const handleViewReports = (accountId: string, name: string) => {
-    setSelectedAccount({ id: accountId, name });
-    setReportsOpen(true);
+  // Handle add new bank account
+  const handleAddBankAccount = () => {
+    const newAccount = {
+      id: `account-${Date.now()}`,
+      name: "New Bank Account",
+      type: "Checking",
+      balance: "$0.00",
+      lastTransaction: new Date().toISOString().split("T")[0]
+    };
+
+    addBankAccount(newAccount);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Banking</h1>
-          <p className="text-muted-foreground">Manage {currentCompany.name}'s financial accounts and transactions</p>
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button variant="outline" className="flex items-center gap-2" onClick={handleConnectBank}>
-            <Building size={16} />
-            <span className="hidden sm:inline">Connect Bank</span>
-            <span className="sm:hidden">Connect</span>
+    <div className="container mx-auto p-4 space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
+        <h1 className="text-2xl font-bold">Banking</h1>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => setIsAddTransactionOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Transaction
           </Button>
-          <Button className="flex items-center gap-2" onClick={handleAddTransaction}>
-            <PlusCircle size={16} />
-            <span className="hidden sm:inline">Add Transaction</span>
-            <span className="sm:hidden">Add</span>
+          <Button variant="outline" onClick={handleAddBankAccount}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Bank Account
+          </Button>
+          <Button variant="outline" onClick={() => setIsReportsOpen(true)}>
+            <FileBarChart className="mr-2 h-4 w-4" />
+            Reports
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {currentCompany.accounts.map((account) => (
-          <Card key={account.id} className="h-full">
-            <CardHeader className="pb-2">
-              <CardDescription>{account.institution}</CardDescription>
-              <CardTitle>{account.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{account.balance}</div>
-              <p className="text-xs text-muted-foreground mt-1">Last synced: {account.lastSync}</p>
-            </CardContent>
-            <CardFooter className="pt-1 flex flex-wrap justify-between gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-xs"
-                onClick={() => handleTransferOut(account.id, account.name)}
-              >
-                <ArrowUpRight size={14} className="mr-1" />
-                <span className="hidden sm:inline">Transfer Out</span>
-                <span className="sm:hidden">Out</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-xs"
-                onClick={() => handleTransferIn(account.id, account.name)}
-              >
-                <ArrowDownLeft size={14} className="mr-1" />
-                <span className="hidden sm:inline">Transfer In</span>
-                <span className="sm:hidden">In</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-xs"
-                onClick={() => handleViewReports(account.id, account.name)}
-              >
-                <BarChart4 size={14} className="mr-1" />
-                <span>Reports</span>
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalBalance.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">{currentCompany.bankAccounts.length} connected accounts</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{currentCompany.transactions.length}</div>
+            <p className="text-xs text-muted-foreground">transactions this month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Pending Reconciliation</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {currentCompany.transactions.filter(t => !t.reconciled).length}
+            </div>
+            <p className="text-xs text-muted-foreground">unreconciled transactions</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full sm:w-auto">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search transactions..."
-            className="w-full sm:w-[300px] pl-8"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <FilterButton type="Banking" />
-          <ExportButton type="Banking" />
-        </div>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-1 sm:grid-cols-3 mb-4">
+          <TabsTrigger value="accounts">Accounts</TabsTrigger>
+          <TabsTrigger value="transactions">Transactions</TabsTrigger>
+          <TabsTrigger value="forecasting">Cash Flow Forecasting</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="accounts" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Bank Accounts</h2>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search accounts..." className="pl-8" />
+            </div>
+          </div>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle>Recent Transactions</CardTitle>
-          <CardDescription>Showing {currentCompany.name}'s latest transactions across all accounts</CardDescription>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Account</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead className="text-right">Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTransactions.length > 0 ? (
-                filteredTransactions.map((transaction) => (
-                  <TableRow key={transaction.id} id={`row-${transaction.id}`}>
-                    <TableCell>{transaction.date}</TableCell>
-                    <TableCell className="font-medium">{transaction.description}</TableCell>
-                    <TableCell>{transaction.account}</TableCell>
-                    <TableCell>{transaction.category}</TableCell>
-                    <TableCell className={transaction.amount.startsWith("+") ? "text-green-600" : "text-red-600"}>
-                      {transaction.amount}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {transaction.reconciled ? (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Reconciled
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          Pending
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <ViewButton id={transaction.id} type="Transaction" />
-                        <EditButton id={transaction.id} type="Transaction" />
-                        <DeleteButton id={transaction.id} type="Transaction" />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
-                    {searchText ? "No transactions found matching your search" : "No transactions found for this company."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {currentCompany.bankAccounts.map((account) => (
+              <Card 
+                key={account.id} 
+                className={`cursor-pointer hover:border-primary transition-all ${
+                  selectedAccountId === account.id ? "border-primary" : ""
+                }`}
+                onClick={() => handleAccountSelect(account.id, account.name)}
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex justify-between items-center">
+                    <span>{account.name}</span>
+                    <span className="text-sm font-normal px-2 py-1 bg-muted rounded-md">
+                      {account.type}
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{account.balance}</div>
+                  <div className="flex justify-between items-center mt-4 text-sm">
+                    <span className="text-muted-foreground">Last transaction:</span>
+                    <span>{account.lastTransaction}</span>
+                  </div>
+                  <div className="flex justify-between gap-2 mt-4">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsAddTransactionOpen(true);
+                      }}
+                    >
+                      Add Transaction
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsReportsOpen(true);
+                      }}
+                    >
+                      View Reports
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            
+            {/* Add Account Card */}
+            <Card className="cursor-pointer border-dashed border-2 flex items-center justify-center h-[200px]" onClick={handleAddBankAccount}>
+              <CardContent className="flex flex-col items-center justify-center p-6">
+                <div className="rounded-full bg-muted p-3 mb-4">
+                  <Plus className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-medium">Add Account</h3>
+                <p className="text-sm text-muted-foreground text-center mt-2">
+                  Connect a new bank account
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="transactions" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Recent Transactions</h2>
+            <div className="flex gap-2">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search transactions..." className="pl-8" />
+              </div>
+              <Button variant="outline" size="icon">
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
-      <AddTransactionDialog
-        open={addTransactionOpen}
-        onOpenChange={setAddTransactionOpen}
+          <div className="rounded-md border">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentCompany.transactions.length > 0 ? (
+                  currentCompany.transactions.map((transaction) => (
+                    <tr key={transaction.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">{transaction.date}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{transaction.description}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{transaction.category}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{transaction.bankAccount}</td>
+                      <td className={`px-6 py-4 whitespace-nowrap font-medium ${
+                        transaction.type === "Credit" ? "text-green-600" : "text-red-600"
+                      }`}>
+                        {transaction.type === "Credit" ? "+" : "-"}{transaction.amount}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          transaction.reconciled 
+                            ? "bg-green-100 text-green-800" 
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}>
+                          {transaction.reconciled ? "Reconciled" : "Pending"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Button variant="ghost" size="sm">Edit</Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                      No transactions found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="forecasting">
+          <CashFlowForecasting />
+        </TabsContent>
+      </Tabs>
+
+      {/* Add Transaction Dialog */}
+      <AddTransactionDialog 
+        open={isAddTransactionOpen} 
+        onOpenChange={setIsAddTransactionOpen} 
       />
 
-      <ReportsDialog
-        open={reportsOpen}
-        onOpenChange={setReportsOpen}
-        accountId={selectedAccount.id}
-        accountName={selectedAccount.name}
+      {/* Reports Dialog */}
+      <ReportsDialog 
+        open={isReportsOpen} 
+        onOpenChange={setIsReportsOpen} 
+        accountId={selectedAccountId || ""} 
+        accountName={selectedAccountName}
       />
     </div>
   );

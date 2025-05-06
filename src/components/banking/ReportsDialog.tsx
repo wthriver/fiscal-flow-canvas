@@ -8,8 +8,8 @@ import { ReportTabs } from "./reports/ReportTabs";
 import { useCompany } from "@/contexts/CompanyContext";
 
 interface ReportsDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
   accountId?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -30,7 +30,13 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
 
   // Use open/onOpenChange if provided, otherwise use isOpen/onClose
   const dialogOpen = open !== undefined ? open : isOpen;
-  const handleOpenChange = onOpenChange || (() => onClose());
+  const handleOpenChange = (newOpen: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(newOpen);
+    } else if (!newOpen && onClose) {
+      onClose();
+    }
+  };
 
   return (
     <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
