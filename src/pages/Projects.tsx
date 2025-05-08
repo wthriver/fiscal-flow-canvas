@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,13 @@ interface ProjectFormData {
   dueDate: string;
   description?: string;
   budget: number;
+  spent?: number;
+  progress?: number;
+  status?: string;
+  manager?: string;
+  team?: string[];
+  documents?: any[];
+  tasks?: any[];
 }
 
 const Projects: React.FC = () => {
@@ -82,7 +88,11 @@ const Projects: React.FC = () => {
       ...newProject,
       status: "In Progress",
       spent: 0,
-      progress: 0
+      progress: 0,
+      manager: "Unassigned",
+      team: [],
+      documents: [],
+      tasks: []
     };
 
     const updatedProjects = [...(currentCompany.projects || []), projectToAdd];
@@ -249,12 +259,12 @@ const Projects: React.FC = () => {
                     <TableCell className="font-medium">
                       <div>
                         {project.name}
-                        {new Date(project.dueDate) <= new Date() && project.status !== "Completed" && (
+                        {project.dueDate && new Date(project.dueDate) <= new Date() && project.status !== "Completed" && (
                           <Badge variant="destructive" className="ml-2">Overdue</Badge>
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        {project.description && project.description.length > 50 
+                        {project.description && typeof project.description === 'string' && project.description.length > 50 
                           ? `${project.description.substring(0, 50)}...` 
                           : project.description || "No description available"}
                       </div>
@@ -276,7 +286,7 @@ const Projects: React.FC = () => {
                     <TableCell>
                       <div className="flex items-center">
                         {project.dueDate}
-                        {new Date(project.dueDate) <= new Date() && project.status !== "Completed" && (
+                        {project.dueDate && new Date(project.dueDate) <= new Date() && project.status !== "Completed" && (
                           <AlertCircle size={16} className="ml-1 text-red-500" />
                         )}
                       </div>
@@ -294,12 +304,12 @@ const Projects: React.FC = () => {
                     <TableCell>
                       <div className="w-full">
                         <div className="flex justify-between text-xs mb-1">
-                          <span>{project.progress}% complete</span>
+                          <span>{project.progress ? project.progress : 0}% complete</span>
                           <span>
                             {project.tracked || "0"} tracked / {project.billed || "0"} billed
                           </span>
                         </div>
-                        <Progress value={project.progress} className="h-2" />
+                        <Progress value={project.progress ? project.progress : 0} className="h-2" />
                       </div>
                     </TableCell>
                     <TableCell className="text-right">

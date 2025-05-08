@@ -1,136 +1,177 @@
 
-import React from "react";
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Check, AlertTriangle } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompany } from "@/contexts/CompanyContext";
-import { prepareTransactionData } from "@/utils/reportUtils";
+import { toast } from "sonner";
 
-interface ReconciliationTabProps {
+export interface ReconciliationTabProps {
   accountId: string;
 }
 
 export const ReconciliationTab: React.FC<ReconciliationTabProps> = ({ accountId }) => {
-  const { currentCompany } = useCompany();
+  const { currentCompany, updateTransaction } = useCompany();
+  const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
+  const [statementBalance, setStatementBalance] = useState<string>("");
   
-  const account = accountId ? 
-    currentCompany.bankAccounts.find(acc => acc.id === accountId) : 
-    null;
-  
-  const accountName = account ? account.name : "All Accounts";
-  
-  // Use the utility function to prepare data
-  const { reconciliationData, filteredTransactions } = prepareTransactionData(
-    currentCompany.transactions,
-    accountName,
-    { from: undefined, to: undefined }
-  );
-
-  // Prepare data for the pie chart
-  const pieData = [
-    { name: "Reconciled", value: reconciliationData?.reconciled || 0, color: "#10b981" },
-    { name: "Unreconciled", value: reconciliationData?.unreconciled || 0, color: "#f43f5e" }
-  ];
-
-  // Get the most recent unreconciled transactions
-  const unreconciledTransactions = filteredTransactions
+  // Get account info and unreconciled transactions
+  const account = currentCompany.bankAccounts.find(acc => acc.id === accountId);
+  const unreconciledTransactions = currentCompany.transactions
+    .filter(t => !accountId || t.bankAccount === accountId)
     .filter(t => !t.reconciled)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5);
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Calculate account balance from transactions
+  const calculateBalance = (reconciled: boolean) => {
+    return currentCompany.transactions
+      .filter(t => (!accountId || t.bankAccount === accountId) && t.reconciled === reconciled)
+      .reduce((sum, t) => {
+        const amount = parseFloat(t.amount.replace(/[^0-9.-]+/g, "")) || 0;
+        return t.type === 'Credit' ? sum + amount : sum - amount;
+      }, 0);
+  };
+
+  const bookBalance = calculateBalance(true);
+  const pendingBalance = calculateBalance(false);
+  const selectedBalance = unreconciledTransactions
+    .filter(t => selectedTransactions.includes(t.id))
+    .reduce((sum, t) => {
+      const amount = parseFloat(t.amount.replace(/[^0-9.-]+/g, "")) || 0;
+      return t.type === 'Credit' ? sum + amount : sum - amount;
+    }, 0);
+
+  const handleToggleTransaction = (transactionId: string) => {
+    setSelectedTransactions(prev => 
+      prev.includes(transactionId) 
+        ? prev.filter(id => id !== transactionId)
+        : [...prev, transactionId]
+    );
+  };
+
+  const handleReconcile = () => {
+    if (!statementBalance) {
+      toast.error("Please enter your bank statement balance");
+      return;
+    }
+
+    const parsedStatementBalance = parseFloat(statementBalance.replace(/[^0-9.-]+/g, "")) || 0;
+    const expectedBalance = bookBalance + selectedBalance;
+    const diff = Math.abs(parsedStatementBalance - expectedBalance);
+    
+    if (diff > 0.01) {
+      toast.error(`Reconciliation difference: $${diff.toFixed(2)}`, {
+        description: "Your statement balance doesn't match the selected transactions."
+      });
+      return;
+    }
+    
+    // Mark selected transactions as reconciled
+    selectedTransactions.forEach(id => {
+      updateTransaction(id, { reconciled: true });
+    });
+    
+    toast.success(`${selectedTransactions.length} transactions reconciled successfully!`);
+    setSelectedTransactions([]);
+    setStatementBalance("");
+  };
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Reconciliation Status</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Book Balance</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`${value} transactions`, ""]} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="rounded-lg bg-green-50 p-3 text-center">
-                <div className="text-xl font-bold text-green-700">{reconciliationData?.reconciled || 0}</div>
-                <div className="text-sm text-green-600">Reconciled</div>
-              </div>
-              <div className="rounded-lg bg-red-50 p-3 text-center">
-                <div className="text-xl font-bold text-red-700">{reconciliationData?.unreconciled || 0}</div>
-                <div className="text-sm text-red-600">Unreconciled</div>
-              </div>
-            </div>
+            <p className="text-2xl font-bold">${bookBalance.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">All reconciled transactions</p>
           </CardContent>
         </Card>
-
         <Card>
-          <CardHeader>
-            <CardTitle>Unreconciled Transactions</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Pending Balance</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead className="text-right">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {unreconciledTransactions.length > 0 ? (
-                  unreconciledTransactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell>{transaction.date}</TableCell>
-                      <TableCell>{transaction.description}</TableCell>
-                      <TableCell>{transaction.amount}</TableCell>
-                      <TableCell className="text-right">
-                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
-                          <AlertTriangle className="mr-1 h-3 w-3" />
-                          Unreconciled
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4">
-                      All transactions have been reconciled
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-
-            <div className="flex justify-end mt-4">
-              <Button className="flex items-center gap-2">
-                <Check className="h-4 w-4" />
-                Start Reconciliation
-              </Button>
-            </div>
+            <p className="text-2xl font-bold">${pendingBalance.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">Unreconciled transactions</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Selected Balance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">${selectedBalance.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">{selectedTransactions.length} transactions selected</p>
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Reconciliation</CardTitle>
+          <div className="flex items-center gap-2">
+            <div>
+              <label htmlFor="statement-balance" className="text-sm mr-2">Statement Balance:</label>
+              <input 
+                id="statement-balance" 
+                type="text" 
+                value={statementBalance} 
+                onChange={e => setStatementBalance(e.target.value)}
+                placeholder="$ 0.00"
+                className="w-32 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
+              />
+            </div>
+            <Button 
+              onClick={handleReconcile}
+              disabled={selectedTransactions.length === 0}
+            >
+              Reconcile
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[40px]"></TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {unreconciledTransactions.length > 0 ? (
+                unreconciledTransactions.map(t => (
+                  <TableRow key={t.id}>
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedTransactions.includes(t.id)} 
+                        onCheckedChange={() => handleToggleTransaction(t.id)}
+                      />
+                    </TableCell>
+                    <TableCell>{t.date}</TableCell>
+                    <TableCell>{t.description}</TableCell>
+                    <TableCell>{t.category}</TableCell>
+                    <TableCell className={`text-right ${t.type === 'Credit' ? 'text-green-600' : 'text-red-600'}`}>
+                      {t.type === 'Credit' ? '+' : '-'}{t.amount}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-4">
+                    All transactions have been reconciled.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -33,15 +33,15 @@ export const ReportTabs: React.FC<ReportTabsProps> = ({ accountId }) => {
       </TabsContent>
 
       <TabsContent value="income-expenses" className="mt-4">
-        <IncomeExpensesTab />
+        <IncomeExpensesTab accountId={accountId} />
       </TabsContent>
 
       <TabsContent value="statement" className="mt-4">
-        <AccountStatementTab />
+        <AccountStatementTab accountId={accountId} />
       </TabsContent>
 
       <TabsContent value="reconciliation" className="mt-4">
-        <ReconciliationTab />
+        <ReconciliationTab accountId={accountId} />
       </TabsContent>
     </Tabs>
   );

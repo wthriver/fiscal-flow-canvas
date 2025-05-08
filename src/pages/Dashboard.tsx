@@ -10,26 +10,18 @@ import { useCompany } from "@/contexts/CompanyContext";
 const Dashboard: React.FC = () => {
   const { currentCompany } = useCompany();
   
-  // Safely access nested properties with nullish coalescing
-  const revenue = {
-    current: currentCompany?.revenue?.current ?? 0,
-    percentChange: currentCompany?.revenue?.percentChange ?? 0
-  };
+  // Safely access nested properties with proper type checking
+  const revenueData = currentCompany?.revenue && typeof currentCompany.revenue === 'object' && !Array.isArray(currentCompany.revenue)
+    ? currentCompany.revenue 
+    : { current: 0, percentChange: 0 };
   
-  const outstandingInvoices = {
-    amount: currentCompany?.outstandingInvoices?.amount ?? 0,
-    percentChange: currentCompany?.outstandingInvoices?.percentChange ?? 0
-  };
+  const outstandingInvoices = currentCompany?.outstandingInvoices || { amount: 0, percentChange: 0 };
   
-  const profitMargin = {
-    value: currentCompany?.profitMargin?.value ?? 0,
-    percentChange: currentCompany?.profitMargin?.percentChange ?? 0
-  };
+  const profitMarginData = currentCompany?.profitMargin && typeof currentCompany.profitMargin === 'object' && !Array.isArray(currentCompany.profitMargin)
+    ? currentCompany.profitMargin 
+    : { value: 0, percentChange: 0 };
   
-  const activeCustomers = {
-    count: currentCompany?.activeCustomers?.count ?? 0,
-    percentChange: currentCompany?.activeCustomers?.percentChange ?? 0
-  };
+  const activeCustomers = currentCompany?.activeCustomers || { count: 0, percentChange: 0 };
   
   return (
     <div className="space-y-6">
@@ -41,8 +33,8 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Revenue"
-          value={`$${revenue.current.toLocaleString() || 0}.00`}
-          percentageChange={revenue.percentChange}
+          value={`$${revenueData.current.toLocaleString() || 0}.00`}
+          percentageChange={revenueData.percentChange}
           description="vs. last month"
           icon={<DollarSign size={20} />}
         />
@@ -55,8 +47,8 @@ const Dashboard: React.FC = () => {
         />
         <StatCard
           title="Profit Margin"
-          value={`${profitMargin.value || 0}%`}
-          percentageChange={profitMargin.percentChange}
+          value={`${profitMarginData.value || 0}%`}
+          percentageChange={profitMarginData.percentChange}
           description="vs. last month"
           icon={<TrendingUp size={20} />}
         />

@@ -52,7 +52,7 @@ export const ReportsDialog: React.FC<ReportsDialogProps> = ({
         <ReportTabs accountId={accountId} />
 
         <DialogFooter>
-          <Button onClick={onClose}>Close</Button>
+          <Button onClick={() => handleOpenChange(false)}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

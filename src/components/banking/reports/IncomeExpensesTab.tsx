@@ -1,98 +1,96 @@
 
-import React, { useMemo } from "react";
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { useCompany } from "@/contexts/CompanyContext";
-import { prepareTransactionData } from "@/utils/reportUtils";
 
-interface IncomeExpenseData {
-  month: string;
-  income: number;
-  expenses: number;
-  balance: number;
-}
-
-interface IncomeExpensesTabProps {
+export interface IncomeExpensesTabProps {
   accountId: string;
 }
 
-export const IncomeExpensesTab: React.FC<IncomeExpensesTabProps> = ({
-  accountId
-}) => {
+export const IncomeExpensesTab: React.FC<IncomeExpensesTabProps> = ({ accountId }) => {
   const { currentCompany } = useCompany();
-  
-  const account = accountId ? 
-    currentCompany.bankAccounts.find(acc => acc.id === accountId) : 
-    null;
-  
-  const accountName = account ? account.name : "All Accounts";
-  
-  // Use the utility function to prepare data
-  const { incomeExpenseData } = useMemo(() => {
-    return prepareTransactionData(
-      currentCompany.transactions,
-      accountName,
-      { from: undefined, to: undefined }
-    );
-  }, [currentCompany.transactions, accountName]);
+
+  // Filter transactions based on accountId if provided
+  const transactions = accountId 
+    ? currentCompany.transactions.filter(t => t.bankAccount === accountId)
+    : currentCompany.transactions;
+
+  // Calculate income and expenses
+  const income = transactions
+    .filter(t => t.type === 'Credit')
+    .reduce((sum, t) => sum + parseFloat(t.amount.replace(/[^0-9.-]+/g, "")), 0);
+
+  const expenses = transactions
+    .filter(t => t.type === 'Debit')
+    .reduce((sum, t) => sum + parseFloat(t.amount.replace(/[^0-9.-]+/g, "")), 0);
+
+  // Get income and expense categories
+  const incomeByCategory = transactions
+    .filter(t => t.type === 'Credit')
+    .reduce((acc, t) => {
+      const category = t.category || 'Uncategorized';
+      const amount = parseFloat(t.amount.replace(/[^0-9.-]+/g, "")) || 0;
+      acc[category] = (acc[category] || 0) + amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+  const expensesByCategory = transactions
+    .filter(t => t.type === 'Debit')
+    .reduce((acc, t) => {
+      const category = t.category || 'Uncategorized';
+      const amount = parseFloat(t.amount.replace(/[^0-9.-]+/g, "")) || 0;
+      acc[category] = (acc[category] || 0) + amount;
+      return acc;
+    }, {} as Record<string, number>);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Income</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${income.toLocaleString()}</div>
+            <div className="space-y-4 mt-4">
+              {Object.entries(incomeByCategory).map(([category, amount]) => (
+                <div key={category} className="flex justify-between items-center">
+                  <div>{category}</div>
+                  <div className="font-medium">${amount.toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Expenses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${expenses.toLocaleString()}</div>
+            <div className="space-y-4 mt-4">
+              {Object.entries(expensesByCategory).map(([category, amount]) => (
+                <div key={category} className="flex justify-between items-center">
+                  <div>{category}</div>
+                  <div className="font-medium">${amount.toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle>Income vs. Expenses</CardTitle>
+          <CardTitle>Net Income</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={incomeExpenseData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value: any) => [`$${value.toFixed(2)}`, ""]} />
-                <Legend />
-                <Bar dataKey="income" name="Income" fill="#82ca9d" />
-                <Bar dataKey="expenses" name="Expenses" fill="#ff7e7e" />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="text-3xl font-bold">
+            ${(income - expenses).toLocaleString()}
           </div>
         </CardContent>
       </Card>
-      
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Month</TableHead>
-            <TableHead>Income</TableHead>
-            <TableHead>Expenses</TableHead>
-            <TableHead>Net</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {incomeExpenseData && incomeExpenseData.length > 0 ? (
-            incomeExpenseData.map((entry, index) => (
-              <TableRow key={index}>
-                <TableCell>{entry.month}</TableCell>
-                <TableCell className="text-green-600">${entry.income.toFixed(2)}</TableCell>
-                <TableCell className="text-red-600">${entry.expenses.toFixed(2)}</TableCell>
-                <TableCell className={entry.balance >= 0 ? "text-green-600" : "text-red-600"}>
-                  ${entry.balance.toFixed(2)}
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={4} className="text-center py-4">
-                No data available
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
     </div>
   );
 };
