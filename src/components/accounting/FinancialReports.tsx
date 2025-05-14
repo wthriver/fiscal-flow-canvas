@@ -1,381 +1,787 @@
 
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Download, FileText, Mail, Printer } from "lucide-react";
-import { format } from "date-fns";
-import { useCompany } from "@/contexts/CompanyContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, Download, Printer, ChevronDown, FileText } from "lucide-react";
+import { toast } from "sonner";
 
-export const FinancialReports = () => {
-  const { currentCompany } = useCompany();
+export const FinancialReports: React.FC = () => {
+  const [period, setPeriod] = useState("current-month");
+  const [compareWith, setCompareWith] = useState("previous-year");
   
-  const [activeReport, setActiveReport] = useState("profitLoss");
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [dateRange, setDateRange] = useState({
-    from: new Date(),
-    to: new Date(new Date().setMonth(new Date().getMonth() + 1))
-  });
-  const [reportPeriod, setReportPeriod] = useState("month");
-  
-  // Sample profit and loss data
-  const profitLossData = {
-    revenue: [
-      { account: "Sales Revenue", amount: 45800 },
-      { account: "Service Revenue", amount: 32500 },
-      { account: "Other Income", amount: 1250 }
-    ],
-    expenses: [
-      { account: "Cost of Goods Sold", amount: 28500 },
-      { account: "Salaries and Wages", amount: 18250 },
-      { account: "Rent", amount: 4000 },
-      { account: "Utilities", amount: 1250 },
-      { account: "Marketing", amount: 3500 },
-      { account: "Insurance", amount: 1200 },
-      { account: "Office Supplies", amount: 850 },
-      { account: "Depreciation", amount: 2300 },
-      { account: "Other Expenses", amount: 1150 }
-    ]
+  const handleExportPDF = () => {
+    toast.success("Exporting report to PDF", {
+      description: "Your report will be downloaded shortly"
+    });
   };
   
-  // Sample balance sheet data
-  const balanceSheetData = {
-    assets: [
-      { account: "Cash", amount: 24500 },
-      { account: "Accounts Receivable", amount: 12250 },
-      { account: "Inventory", amount: 34750 },
-      { account: "Prepaid Expenses", amount: 2500 },
-      { account: "Fixed Assets", amount: 85000 },
-      { account: "Accumulated Depreciation", amount: -15000 }
-    ],
-    liabilities: [
-      { account: "Accounts Payable", amount: 8350 },
-      { account: "Accrued Expenses", amount: 3500 },
-      { account: "Short-term Loan", amount: 15000 },
-      { account: "Long-term Loan", amount: 75000 }
-    ],
-    equity: [
-      { account: "Common Stock", amount: 50000 },
-      { account: "Retained Earnings", amount: 23750 },
-      { account: "Current Year Earnings", amount: 18500 }
-    ]
+  const handlePrintReport = () => {
+    toast.info("Preparing report for printing", {
+      description: "Your browser print dialog will open shortly"
+    });
+    setTimeout(() => window.print(), 500);
   };
-  
-  // Calculate totals
-  const totalRevenue = profitLossData.revenue.reduce((sum, item) => sum + item.amount, 0);
-  const totalExpenses = profitLossData.expenses.reduce((sum, item) => sum + item.amount, 0);
-  const netIncome = totalRevenue - totalExpenses;
-  
-  const totalAssets = balanceSheetData.assets.reduce((sum, item) => sum + item.amount, 0);
-  const totalLiabilities = balanceSheetData.liabilities.reduce((sum, item) => sum + item.amount, 0);
-  const totalEquity = balanceSheetData.equity.reduce((sum, item) => sum + item.amount, 0);
   
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h2 className="text-2xl font-bold">Financial Reports</h2>
-        <div className="flex flex-wrap items-center gap-2">
-          <Select value={reportPeriod} onValueChange={setReportPeriod}>
-            <SelectTrigger className="w-[180px]">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">Financial Reports</h2>
+          <p className="text-muted-foreground">Generate and view your business financial reports</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handlePrintReport}>
+            <Printer className="mr-2 h-4 w-4" />
+            Print
+          </Button>
+          <Button onClick={handleExportPDF}>
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+        </div>
+      </div>
+      
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div>
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Select period" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="month">Current Month</SelectItem>
-              <SelectItem value="quarter">Current Quarter</SelectItem>
-              <SelectItem value="year">Current Year</SelectItem>
-              <SelectItem value="custom">Custom Date Range</SelectItem>
+              <SelectItem value="current-month">Current Month</SelectItem>
+              <SelectItem value="current-quarter">Current Quarter</SelectItem>
+              <SelectItem value="year-to-date">Year to Date</SelectItem>
+              <SelectItem value="last-year">Last Year</SelectItem>
+              <SelectItem value="custom">Custom Range</SelectItem>
             </SelectContent>
           </Select>
-          
-          {reportPeriod === "custom" && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-[240px] justify-start">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateRange.from ? (
-                    dateRange.to ? (
-                      <>
-                        {format(dateRange.from, "LLL dd, y")} -{" "}
-                        {format(dateRange.to, "LLL dd, y")}
-                      </>
-                    ) : (
-                      format(dateRange.from, "LLL dd, y")
-                    )
-                  ) : (
-                    <span>Pick a date range</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="range"
-                  selected={{
-                    from: dateRange.from,
-                    to: dateRange.to,
-                  }}
-                  onSelect={(range) => {
-                    if (range) {
-                      setDateRange({
-                        from: range.from || new Date(),
-                        to: range.to || new Date()
-                      });
-                    }
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          )}
-          
-          <div className="flex gap-2">
-            <Button variant="outline" size="icon">
-              <Printer className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon">
-              <Download className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon">
-              <Mail className="h-4 w-4" />
-            </Button>
+        </div>
+        <div>
+          <Select value={compareWith} onValueChange={setCompareWith}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Compare with" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No Comparison</SelectItem>
+              <SelectItem value="previous-period">Previous Period</SelectItem>
+              <SelectItem value="previous-year">Previous Year</SelectItem>
+              <SelectItem value="budget">Budget</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center">
+          <div className="flex items-center gap-2 text-sm">
+            <Calendar className="h-4 w-4" />
+            <span>May 1, 2025 - May 31, 2025</span>
           </div>
         </div>
       </div>
       
-      <Tabs value={activeReport} onValueChange={setActiveReport}>
-        <TabsList>
-          <TabsTrigger value="profitLoss">Profit & Loss</TabsTrigger>
-          <TabsTrigger value="balanceSheet">Balance Sheet</TabsTrigger>
-          <TabsTrigger value="cashFlow">Cash Flow</TabsTrigger>
-          <TabsTrigger value="custom">Custom Reports</TabsTrigger>
+      <Tabs defaultValue="profit-loss">
+        <TabsList className="mb-6">
+          <TabsTrigger value="profit-loss">Profit & Loss</TabsTrigger>
+          <TabsTrigger value="balance-sheet">Balance Sheet</TabsTrigger>
+          <TabsTrigger value="cash-flow">Cash Flow</TabsTrigger>
+          <TabsTrigger value="accounts-receivable">Accounts Receivable</TabsTrigger>
+          <TabsTrigger value="accounts-payable">Accounts Payable</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="profitLoss" className="pt-6">
+        <TabsContent value="profit-loss">
           <Card>
             <CardHeader>
-              <div className="flex flex-col md:flex-row justify-between md:items-center">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
                 <div>
                   <CardTitle>Profit & Loss Statement</CardTitle>
                   <CardDescription>
-                    {reportPeriod === "month" ? "For the Month Ending " : 
-                     reportPeriod === "quarter" ? "For the Quarter Ending " : 
-                     reportPeriod === "year" ? "For the Year Ending " : 
-                     "For the Period "} 
-                    {date ? format(date, "MMMM d, yyyy") : ""}
+                    May 1, 2025 - May 31, 2025 | Compared to Previous Year
                   </CardDescription>
                 </div>
-                <div className="text-right mt-2 md:mt-0">
-                  <p className="text-sm font-medium">{currentCompany.name}</p>
-                  <p className="text-xs text-muted-foreground">{currentCompany.address}</p>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <table className="w-full">
-                <tbody>
-                  <tr className="border-b">
-                    <td colSpan={2} className="py-2 font-medium">Revenue</td>
-                  </tr>
-                  
-                  {profitLossData.revenue.map((item, index) => (
-                    <tr key={`revenue-${index}`}>
-                      <td className="py-1 pl-4">{item.account}</td>
-                      <td className="py-1 text-right">${item.amount.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                  
-                  <tr className="border-t">
-                    <td className="py-2 font-medium">Total Revenue</td>
-                    <td className="py-2 text-right font-medium">${totalRevenue.toLocaleString()}</td>
-                  </tr>
-                  
-                  <tr className="border-b border-t">
-                    <td colSpan={2} className="py-2 font-medium">Expenses</td>
-                  </tr>
-                  
-                  {profitLossData.expenses.map((item, index) => (
-                    <tr key={`expense-${index}`}>
-                      <td className="py-1 pl-4">{item.account}</td>
-                      <td className="py-1 text-right">${item.amount.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                  
-                  <tr className="border-t">
-                    <td className="py-2 font-medium">Total Expenses</td>
-                    <td className="py-2 text-right font-medium">${totalExpenses.toLocaleString()}</td>
-                  </tr>
-                  
-                  <tr className="border-t-2 font-medium">
-                    <td className="py-3">Net Income</td>
-                    <td className={`py-3 text-right ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ${netIncome.toLocaleString()}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <CardContent className="px-6">
+              <div className="space-y-6">
+                <div className="rounded-md overflow-hidden border">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-muted/50">
+                        <th className="text-left py-2 px-4 font-medium">Account</th>
+                        <th className="text-right py-2 px-4 font-medium">Current Period</th>
+                        <th className="text-right py-2 px-4 font-medium">Previous Year</th>
+                        <th className="text-right py-2 px-4 font-medium">% Change</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="font-bold bg-muted/30">
+                        <td className="py-2 px-4">Revenue</td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Sales Revenue</td>
+                        <td className="text-right py-2 px-4">$54,250.00</td>
+                        <td className="text-right py-2 px-4">$48,320.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">+12.3%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Service Revenue</td>
+                        <td className="text-right py-2 px-4">$12,800.00</td>
+                        <td className="text-right py-2 px-4">$10,550.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">+21.3%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Other Revenue</td>
+                        <td className="text-right py-2 px-4">$2,150.00</td>
+                        <td className="text-right py-2 px-4">$2,850.00</td>
+                        <td className="text-right py-2 px-4 text-red-600">-24.6%</td>
+                      </tr>
+                      <tr className="border-t font-bold">
+                        <td className="py-2 px-4">Total Revenue</td>
+                        <td className="text-right py-2 px-4">$69,200.00</td>
+                        <td className="text-right py-2 px-4">$61,720.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">+12.1%</td>
+                      </tr>
+                      
+                      <tr className="font-bold bg-muted/30">
+                        <td className="py-2 px-4">Cost of Sales</td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Cost of Goods Sold</td>
+                        <td className="text-right py-2 px-4">$30,450.00</td>
+                        <td className="text-right py-2 px-4">$28,350.00</td>
+                        <td className="text-right py-2 px-4 text-red-600">+7.4%</td>
+                      </tr>
+                      <tr className="border-t font-bold">
+                        <td className="py-2 px-4">Gross Profit</td>
+                        <td className="text-right py-2 px-4">$38,750.00</td>
+                        <td className="text-right py-2 px-4">$33,370.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">+16.1%</td>
+                      </tr>
+                      
+                      <tr className="font-bold bg-muted/30">
+                        <td className="py-2 px-4">Operating Expenses</td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Salary Expenses</td>
+                        <td className="text-right py-2 px-4">$18,350.00</td>
+                        <td className="text-right py-2 px-4">$17,200.00</td>
+                        <td className="text-right py-2 px-4 text-red-600">+6.7%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Rent Expense</td>
+                        <td className="text-right py-2 px-4">$4,000.00</td>
+                        <td className="text-right py-2 px-4">$4,000.00</td>
+                        <td className="text-right py-2 px-4">0.0%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Utilities Expense</td>
+                        <td className="text-right py-2 px-4">$875.00</td>
+                        <td className="text-right py-2 px-4">$780.00</td>
+                        <td className="text-right py-2 px-4 text-red-600">+12.2%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Office Supplies</td>
+                        <td className="text-right py-2 px-4">$550.00</td>
+                        <td className="text-right py-2 px-4">$620.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">-11.3%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Marketing Expense</td>
+                        <td className="text-right py-2 px-4">$2,350.00</td>
+                        <td className="text-right py-2 px-4">$1,850.00</td>
+                        <td className="text-right py-2 px-4 text-red-600">+27.0%</td>
+                      </tr>
+                      <tr className="border-t font-bold">
+                        <td className="py-2 px-4">Total Operating Expenses</td>
+                        <td className="text-right py-2 px-4">$26,125.00</td>
+                        <td className="text-right py-2 px-4">$24,450.00</td>
+                        <td className="text-right py-2 px-4 text-red-600">+6.9%</td>
+                      </tr>
+                      
+                      <tr className="border-t font-bold text-lg">
+                        <td className="py-3 px-4">Net Income</td>
+                        <td className="text-right py-3 px-4">$12,625.00</td>
+                        <td className="text-right py-3 px-4">$8,920.00</td>
+                        <td className="text-right py-3 px-4 text-green-600">+41.5%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </CardContent>
           </Card>
-          
-          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Revenue Breakdown</CardTitle>
-                <CardDescription>By source</CardDescription>
-              </CardHeader>
-              <CardContent className="h-80 flex items-center justify-center">
-                <p className="text-muted-foreground">Revenue chart will be displayed here</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Expense Breakdown</CardTitle>
-                <CardDescription>By category</CardDescription>
-              </CardHeader>
-              <CardContent className="h-80 flex items-center justify-center">
-                <p className="text-muted-foreground">Expense chart will be displayed here</p>
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
         
-        <TabsContent value="balanceSheet" className="pt-6">
+        <TabsContent value="balance-sheet">
           <Card>
             <CardHeader>
-              <div className="flex flex-col md:flex-row justify-between md:items-center">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
                 <div>
                   <CardTitle>Balance Sheet</CardTitle>
                   <CardDescription>
-                    As of {date ? format(date, "MMMM d, yyyy") : ""}
+                    As of May 31, 2025 | Compared to Previous Year
                   </CardDescription>
                 </div>
-                <div className="text-right mt-2 md:mt-0">
-                  <p className="text-sm font-medium">{currentCompany.name}</p>
-                  <p className="text-xs text-muted-foreground">{currentCompany.address}</p>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <table className="w-full">
-                <tbody>
-                  <tr className="border-b">
-                    <td colSpan={2} className="py-2 font-medium">Assets</td>
-                  </tr>
-                  
-                  {balanceSheetData.assets.map((item, index) => (
-                    <tr key={`asset-${index}`}>
-                      <td className="py-1 pl-4">{item.account}</td>
-                      <td className="py-1 text-right">${item.amount.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                  
-                  <tr className="border-t">
-                    <td className="py-2 font-medium">Total Assets</td>
-                    <td className="py-2 text-right font-medium">${totalAssets.toLocaleString()}</td>
-                  </tr>
-                  
-                  <tr className="border-b border-t">
-                    <td colSpan={2} className="py-2 font-medium">Liabilities</td>
-                  </tr>
-                  
-                  {balanceSheetData.liabilities.map((item, index) => (
-                    <tr key={`liability-${index}`}>
-                      <td className="py-1 pl-4">{item.account}</td>
-                      <td className="py-1 text-right">${item.amount.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                  
-                  <tr className="border-t">
-                    <td className="py-2 font-medium">Total Liabilities</td>
-                    <td className="py-2 text-right font-medium">${totalLiabilities.toLocaleString()}</td>
-                  </tr>
-                  
-                  <tr className="border-b border-t">
-                    <td colSpan={2} className="py-2 font-medium">Equity</td>
-                  </tr>
-                  
-                  {balanceSheetData.equity.map((item, index) => (
-                    <tr key={`equity-${index}`}>
-                      <td className="py-1 pl-4">{item.account}</td>
-                      <td className="py-1 text-right">${item.amount.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                  
-                  <tr className="border-t">
-                    <td className="py-2 font-medium">Total Equity</td>
-                    <td className="py-2 text-right font-medium">${totalEquity.toLocaleString()}</td>
-                  </tr>
-                  
-                  <tr className="border-t-2 font-medium">
-                    <td className="py-3">Total Liabilities & Equity</td>
-                    <td className="py-3 text-right">
-                      ${(totalLiabilities + totalEquity).toLocaleString()}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <CardContent className="px-6">
+              <div className="space-y-6">
+                <div className="rounded-md overflow-hidden border">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-muted/50">
+                        <th className="text-left py-2 px-4 font-medium">Account</th>
+                        <th className="text-right py-2 px-4 font-medium">Current Period</th>
+                        <th className="text-right py-2 px-4 font-medium">Previous Year</th>
+                        <th className="text-right py-2 px-4 font-medium">% Change</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="font-bold bg-muted/30">
+                        <td className="py-2 px-4">Assets</td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Cash and Cash Equivalents</td>
+                        <td className="text-right py-2 px-4">$35,250.00</td>
+                        <td className="text-right py-2 px-4">$28,750.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">+22.6%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Accounts Receivable</td>
+                        <td className="text-right py-2 px-4">$18,750.00</td>
+                        <td className="text-right py-2 px-4">$22,350.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">-16.1%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Inventory</td>
+                        <td className="text-right py-2 px-4">$24,500.00</td>
+                        <td className="text-right py-2 px-4">$18,750.00</td>
+                        <td className="text-right py-2 px-4 text-red-600">+30.7%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Fixed Assets</td>
+                        <td className="text-right py-2 px-4">$75,800.00</td>
+                        <td className="text-right py-2 px-4">$78,250.00</td>
+                        <td className="text-right py-2 px-4 text-red-600">-3.1%</td>
+                      </tr>
+                      <tr className="border-t font-bold">
+                        <td className="py-2 px-4">Total Assets</td>
+                        <td className="text-right py-2 px-4">$154,300.00</td>
+                        <td className="text-right py-2 px-4">$148,100.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">+4.2%</td>
+                      </tr>
+                      
+                      <tr className="font-bold bg-muted/30">
+                        <td className="py-2 px-4">Liabilities</td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Accounts Payable</td>
+                        <td className="text-right py-2 px-4">$12,450.00</td>
+                        <td className="text-right py-2 px-4">$14,200.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">-12.3%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Short-term Debt</td>
+                        <td className="text-right py-2 px-4">$5,800.00</td>
+                        <td className="text-right py-2 px-4">$12,350.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">-53.0%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Long-term Debt</td>
+                        <td className="text-right py-2 px-4">$45,200.00</td>
+                        <td className="text-right py-2 px-4">$50,000.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">-9.6%</td>
+                      </tr>
+                      <tr className="border-t font-bold">
+                        <td className="py-2 px-4">Total Liabilities</td>
+                        <td className="text-right py-2 px-4">$63,450.00</td>
+                        <td className="text-right py-2 px-4">$76,550.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">-17.1%</td>
+                      </tr>
+                      
+                      <tr className="font-bold bg-muted/30">
+                        <td className="py-2 px-4">Equity</td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Owner's Capital</td>
+                        <td className="text-right py-2 px-4">$75,000.00</td>
+                        <td className="text-right py-2 px-4">$75,000.00</td>
+                        <td className="text-right py-2 px-4">0.0%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Retained Earnings</td>
+                        <td className="text-right py-2 px-4">$15,850.00</td>
+                        <td className="text-right py-2 px-4">($3,450.00)</td>
+                        <td className="text-right py-2 px-4 text-green-600">+559.4%</td>
+                      </tr>
+                      <tr className="border-t font-bold">
+                        <td className="py-2 px-4">Total Equity</td>
+                        <td className="text-right py-2 px-4">$90,850.00</td>
+                        <td className="text-right py-2 px-4">$71,550.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">+27.0%</td>
+                      </tr>
+                      
+                      <tr className="border-t font-bold text-lg">
+                        <td className="py-3 px-4">Total Liabilities and Equity</td>
+                        <td className="text-right py-3 px-4">$154,300.00</td>
+                        <td className="text-right py-3 px-4">$148,100.00</td>
+                        <td className="text-right py-3 px-4 text-green-600">+4.2%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </CardContent>
           </Card>
-          
-          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Asset Composition</CardTitle>
-                <CardDescription>By category</CardDescription>
-              </CardHeader>
-              <CardContent className="h-80 flex items-center justify-center">
-                <p className="text-muted-foreground">Asset chart will be displayed here</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Liability & Equity Structure</CardTitle>
-                <CardDescription>Financing sources</CardDescription>
-              </CardHeader>
-              <CardContent className="h-80 flex items-center justify-center">
-                <p className="text-muted-foreground">Liability & Equity chart will be displayed here</p>
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
         
-        <TabsContent value="cashFlow" className="pt-6">
+        <TabsContent value="cash-flow">
           <Card>
             <CardHeader>
-              <CardTitle>Cash Flow Statement</CardTitle>
-              <CardDescription>
-                {reportPeriod === "month" ? "For the Month Ending " : 
-                 reportPeriod === "quarter" ? "For the Quarter Ending " : 
-                 reportPeriod === "year" ? "For the Year Ending " : 
-                 "For the Period "} 
-                {date ? format(date, "MMMM d, yyyy") : ""}
-              </CardDescription>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                <div>
+                  <CardTitle>Cash Flow Statement</CardTitle>
+                  <CardDescription>
+                    May 1, 2025 - May 31, 2025 | Compared to Previous Year
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="h-80 flex items-center justify-center">
-              <p className="text-muted-foreground">Cash Flow Statement will be displayed here</p>
+            <CardContent className="px-6">
+              <div className="space-y-6">
+                <div className="rounded-md overflow-hidden border">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-muted/50">
+                        <th className="text-left py-2 px-4 font-medium">Activities</th>
+                        <th className="text-right py-2 px-4 font-medium">Current Period</th>
+                        <th className="text-right py-2 px-4 font-medium">Previous Year</th>
+                        <th className="text-right py-2 px-4 font-medium">% Change</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="font-bold">
+                        <td className="py-2 px-4">Beginning Cash Balance</td>
+                        <td className="text-right py-2 px-4">$28,750.00</td>
+                        <td className="text-right py-2 px-4">$25,350.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">+13.4%</td>
+                      </tr>
+                      
+                      <tr className="font-bold bg-muted/30">
+                        <td className="py-2 px-4">Operating Activities</td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Net Income</td>
+                        <td className="text-right py-2 px-4">$12,625.00</td>
+                        <td className="text-right py-2 px-4">$8,920.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">+41.5%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Depreciation</td>
+                        <td className="text-right py-2 px-4">$1,250.00</td>
+                        <td className="text-right py-2 px-4">$1,250.00</td>
+                        <td className="text-right py-2 px-4">0.0%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Decrease in Accounts Receivable</td>
+                        <td className="text-right py-2 px-4">$3,600.00</td>
+                        <td className="text-right py-2 px-4">$1,250.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">+188.0%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Increase in Inventory</td>
+                        <td className="text-right py-2 px-4">($5,750.00)</td>
+                        <td className="text-right py-2 px-4">($2,350.00)</td>
+                        <td className="text-right py-2 px-4 text-red-600">+144.7%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Decrease in Accounts Payable</td>
+                        <td className="text-right py-2 px-4">($1,750.00)</td>
+                        <td className="text-right py-2 px-4">($850.00)</td>
+                        <td className="text-right py-2 px-4 text-red-600">+105.9%</td>
+                      </tr>
+                      <tr className="border-t">
+                        <td className="py-2 px-4">Net Cash from Operating Activities</td>
+                        <td className="text-right py-2 px-4">$9,975.00</td>
+                        <td className="text-right py-2 px-4">$8,220.00</td>
+                        <td className="text-right py-2 px-4 text-green-600">+21.4%</td>
+                      </tr>
+                      
+                      <tr className="font-bold bg-muted/30">
+                        <td className="py-2 px-4">Investing Activities</td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Purchase of Equipment</td>
+                        <td className="text-right py-2 px-4">($1,200.00)</td>
+                        <td className="text-right py-2 px-4">($4,500.00)</td>
+                        <td className="text-right py-2 px-4 text-green-600">-73.3%</td>
+                      </tr>
+                      <tr className="border-t">
+                        <td className="py-2 px-4">Net Cash from Investing Activities</td>
+                        <td className="text-right py-2 px-4">($1,200.00)</td>
+                        <td className="text-right py-2 px-4">($4,500.00)</td>
+                        <td className="text-right py-2 px-4 text-green-600">-73.3%</td>
+                      </tr>
+                      
+                      <tr className="font-bold bg-muted/30">
+                        <td className="py-2 px-4">Financing Activities</td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                        <td className="text-right py-2 px-4"></td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Loan Repayment</td>
+                        <td className="text-right py-2 px-4">($2,275.00)</td>
+                        <td className="text-right py-2 px-4">($2,275.00)</td>
+                        <td className="text-right py-2 px-4">0.0%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4 pl-8">Owner's Draw</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4">($2,000.00)</td>
+                        <td className="text-right py-2 px-4 text-green-600">-100.0%</td>
+                      </tr>
+                      <tr className="border-t">
+                        <td className="py-2 px-4">Net Cash from Financing Activities</td>
+                        <td className="text-right py-2 px-4">($2,275.00)</td>
+                        <td className="text-right py-2 px-4">($4,275.00)</td>
+                        <td className="text-right py-2 px-4 text-green-600">-46.8%</td>
+                      </tr>
+                      
+                      <tr className="border-t font-bold">
+                        <td className="py-2 px-4">Net Change in Cash</td>
+                        <td className="text-right py-2 px-4">$6,500.00</td>
+                        <td className="text-right py-2 px-4">($555.00)</td>
+                        <td className="text-right py-2 px-4 text-green-600">+1271.2%</td>
+                      </tr>
+                      
+                      <tr className="border-t font-bold text-lg">
+                        <td className="py-3 px-4">Ending Cash Balance</td>
+                        <td className="text-right py-3 px-4">$35,250.00</td>
+                        <td className="text-right py-3 px-4">$24,795.00</td>
+                        <td className="text-right py-3 px-4 text-green-600">+42.2%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="custom" className="pt-6">
+        <TabsContent value="accounts-receivable">
           <Card>
             <CardHeader>
-              <CardTitle>Custom Reports</CardTitle>
-              <CardDescription>Create and customize your own financial reports</CardDescription>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                <div>
+                  <CardTitle>Accounts Receivable Aging</CardTitle>
+                  <CardDescription>
+                    As of May 31, 2025
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="h-80 flex flex-col items-center justify-center gap-4">
-              <FileText className="h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground">Select a template or create a custom report</p>
-              <Button>Create Custom Report</Button>
+            <CardContent className="px-6">
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                  <Card className="bg-green-50 border-green-200">
+                    <CardContent className="p-4">
+                      <div className="text-xs text-green-600 font-medium mb-1">Current</div>
+                      <div className="text-2xl font-bold text-green-700">$10,350.00</div>
+                      <div className="text-xs text-green-600 mt-1">55.2% of total</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-yellow-50 border-yellow-200">
+                    <CardContent className="p-4">
+                      <div className="text-xs text-yellow-600 font-medium mb-1">1-30 Days</div>
+                      <div className="text-2xl font-bold text-yellow-700">$4,850.00</div>
+                      <div className="text-xs text-yellow-600 mt-1">25.9% of total</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-orange-50 border-orange-200">
+                    <CardContent className="p-4">
+                      <div className="text-xs text-orange-600 font-medium mb-1">31-60 Days</div>
+                      <div className="text-2xl font-bold text-orange-700">$2,350.00</div>
+                      <div className="text-xs text-orange-600 mt-1">12.5% of total</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-red-50 border-red-200">
+                    <CardContent className="p-4">
+                      <div className="text-xs text-red-600 font-medium mb-1">61-90 Days</div>
+                      <div className="text-2xl font-bold text-red-700">$750.00</div>
+                      <div className="text-xs text-red-600 mt-1">4.0% of total</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-red-100 border-red-300">
+                    <CardContent className="p-4">
+                      <div className="text-xs text-red-700 font-medium mb-1">Over 90 Days</div>
+                      <div className="text-2xl font-bold text-red-800">$450.00</div>
+                      <div className="text-xs text-red-700 mt-1">2.4% of total</div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                <div className="rounded-md overflow-hidden border">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-muted/50">
+                        <th className="text-left py-2 px-4 font-medium">Customer</th>
+                        <th className="text-right py-2 px-4 font-medium">Current</th>
+                        <th className="text-right py-2 px-4 font-medium">1-30 Days</th>
+                        <th className="text-right py-2 px-4 font-medium">31-60 Days</th>
+                        <th className="text-right py-2 px-4 font-medium">61-90 Days</th>
+                        <th className="text-right py-2 px-4 font-medium">Over 90 Days</th>
+                        <th className="text-right py-2 px-4 font-medium">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="py-2 px-4">ABC Corp</td>
+                        <td className="text-right py-2 px-4">$2,500.00</td>
+                        <td className="text-right py-2 px-4">$1,250.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4 font-medium">$3,750.00</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4">XYZ Industries</td>
+                        <td className="text-right py-2 px-4">$3,850.00</td>
+                        <td className="text-right py-2 px-4">$1,500.00</td>
+                        <td className="text-right py-2 px-4">$750.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4 font-medium">$6,100.00</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4">Acme Enterprises</td>
+                        <td className="text-right py-2 px-4">$1,750.00</td>
+                        <td className="text-right py-2 px-4">$850.00</td>
+                        <td className="text-right py-2 px-4">$1,100.00</td>
+                        <td className="text-right py-2 px-4">$300.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4 font-medium">$4,000.00</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4">Smith & Co.</td>
+                        <td className="text-right py-2 px-4">$1,500.00</td>
+                        <td className="text-right py-2 px-4">$750.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4 font-medium">$2,250.00</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4">Global Ventures</td>
+                        <td className="text-right py-2 px-4">$750.00</td>
+                        <td className="text-right py-2 px-4">$500.00</td>
+                        <td className="text-right py-2 px-4">$500.00</td>
+                        <td className="text-right py-2 px-4">$450.00</td>
+                        <td className="text-right py-2 px-4">$450.00</td>
+                        <td className="text-right py-2 px-4 font-medium">$2,650.00</td>
+                      </tr>
+                      <tr className="border-t font-bold">
+                        <td className="py-2 px-4">Total</td>
+                        <td className="text-right py-2 px-4">$10,350.00</td>
+                        <td className="text-right py-2 px-4">$4,850.00</td>
+                        <td className="text-right py-2 px-4">$2,350.00</td>
+                        <td className="text-right py-2 px-4">$750.00</td>
+                        <td className="text-right py-2 px-4">$450.00</td>
+                        <td className="text-right py-2 px-4">$18,750.00</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="accounts-payable">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                <div>
+                  <CardTitle>Accounts Payable Aging</CardTitle>
+                  <CardDescription>
+                    As of May 31, 2025
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="px-6">
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                  <Card className="bg-green-50 border-green-200">
+                    <CardContent className="p-4">
+                      <div className="text-xs text-green-600 font-medium mb-1">Current</div>
+                      <div className="text-2xl font-bold text-green-700">$6,350.00</div>
+                      <div className="text-xs text-green-600 mt-1">51.0% of total</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-yellow-50 border-yellow-200">
+                    <CardContent className="p-4">
+                      <div className="text-xs text-yellow-600 font-medium mb-1">1-30 Days</div>
+                      <div className="text-2xl font-bold text-yellow-700">$3,450.00</div>
+                      <div className="text-xs text-yellow-600 mt-1">27.7% of total</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-orange-50 border-orange-200">
+                    <CardContent className="p-4">
+                      <div className="text-xs text-orange-600 font-medium mb-1">31-60 Days</div>
+                      <div className="text-2xl font-bold text-orange-700">$1,850.00</div>
+                      <div className="text-xs text-orange-600 mt-1">14.9% of total</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-red-50 border-red-200">
+                    <CardContent className="p-4">
+                      <div className="text-xs text-red-600 font-medium mb-1">61-90 Days</div>
+                      <div className="text-2xl font-bold text-red-700">$650.00</div>
+                      <div className="text-xs text-red-600 mt-1">5.2% of total</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-red-100 border-red-300">
+                    <CardContent className="p-4">
+                      <div className="text-xs text-red-700 font-medium mb-1">Over 90 Days</div>
+                      <div className="text-2xl font-bold text-red-800">$150.00</div>
+                      <div className="text-xs text-red-700 mt-1">1.2% of total</div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                <div className="rounded-md overflow-hidden border">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-muted/50">
+                        <th className="text-left py-2 px-4 font-medium">Vendor</th>
+                        <th className="text-right py-2 px-4 font-medium">Current</th>
+                        <th className="text-right py-2 px-4 font-medium">1-30 Days</th>
+                        <th className="text-right py-2 px-4 font-medium">31-60 Days</th>
+                        <th className="text-right py-2 px-4 font-medium">61-90 Days</th>
+                        <th className="text-right py-2 px-4 font-medium">Over 90 Days</th>
+                        <th className="text-right py-2 px-4 font-medium">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="py-2 px-4">Office Supply Co.</td>
+                        <td className="text-right py-2 px-4">$1,350.00</td>
+                        <td className="text-right py-2 px-4">$750.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4 font-medium">$2,100.00</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4">Tech Distributors Inc.</td>
+                        <td className="text-right py-2 px-4">$2,850.00</td>
+                        <td className="text-right py-2 px-4">$1,250.00</td>
+                        <td className="text-right py-2 px-4">$850.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4 font-medium">$4,950.00</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4">Facilities Management</td>
+                        <td className="text-right py-2 px-4">$1,000.00</td>
+                        <td className="text-right py-2 px-4">$750.00</td>
+                        <td className="text-right py-2 px-4">$500.00</td>
+                        <td className="text-right py-2 px-4">$350.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4 font-medium">$2,600.00</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4">Shipping Services</td>
+                        <td className="text-right py-2 px-4">$650.00</td>
+                        <td className="text-right py-2 px-4">$350.00</td>
+                        <td className="text-right py-2 px-4">$250.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4">$0.00</td>
+                        <td className="text-right py-2 px-4 font-medium">$1,250.00</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-4">Consulting Group</td>
+                        <td className="text-right py-2 px-4">$500.00</td>
+                        <td className="text-right py-2 px-4">$350.00</td>
+                        <td className="text-right py-2 px-4">$250.00</td>
+                        <td className="text-right py-2 px-4">$300.00</td>
+                        <td className="text-right py-2 px-4">$150.00</td>
+                        <td className="text-right py-2 px-4 font-medium">$1,550.00</td>
+                      </tr>
+                      <tr className="border-t font-bold">
+                        <td className="py-2 px-4">Total</td>
+                        <td className="text-right py-2 px-4">$6,350.00</td>
+                        <td className="text-right py-2 px-4">$3,450.00</td>
+                        <td className="text-right py-2 px-4">$1,850.00</td>
+                        <td className="text-right py-2 px-4">$650.00</td>
+                        <td className="text-right py-2 px-4">$150.00</td>
+                        <td className="text-right py-2 px-4">$12,450.00</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

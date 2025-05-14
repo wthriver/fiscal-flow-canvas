@@ -1,215 +1,151 @@
 
 import React, { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Search, Download, ArrowDown, ArrowUp, Package2 } from "lucide-react";
+import { InventoryItemsTab } from "@/components/inventory/tabs/InventoryItemsTab";
+import { BundlesTab } from "@/components/inventory/tabs/BundlesTab";
+import { LotTrackingTab } from "@/components/inventory/tabs/LotTrackingTab";
+import { SerialNumbersTab } from "@/components/inventory/tabs/SerialNumbersTab";
+import { InventoryValuation } from "@/components/inventory/InventoryValuation";
+import { PurchaseOrders } from "@/components/inventory/PurchaseOrders";
 import { useCompany } from "@/contexts/CompanyContext";
-import { AdvancedInventoryManagement } from "@/components/inventory/AdvancedInventoryManagement";
 
 const Inventory = () => {
-  const { currentCompany } = useCompany();
-  const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("items");
-
-  // Make sure inventory exists and has items
-  const inventory = currentCompany.inventory || { 
-    items: [], 
-    categories: [], 
-    locations: [],
-    bundles: [],
-    serialNumbers: [],
-    lotTracking: []
-  };
-
-  // Filter items based on search term
-  const filteredItems = inventory.items ? inventory.items.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase())
-  ) : [];
-
-  // Calculate inventory statistics
-  const totalItems = inventory.items ? inventory.items.length : 0;
-  const lowStockItems = inventory.items ? inventory.items.filter(item => item.quantity < 10).length : 0;
-  const outOfStockItems = inventory.items ? inventory.items.filter(item => item.quantity === 0).length : 0;
-  const totalValue = inventory.items ? inventory.items.reduce((sum, item) => {
-    const cost = parseFloat(item.cost.replace(/[^0-9.-]+/g, ""));
-    return sum + (cost * item.quantity);
-  }, 0) : 0;
-
+  const { currentCompany } = useCompany();
+  
+  // Get inventory stats
+  const totalItems = currentCompany.inventory?.items?.length || 0;
+  const totalValue = (currentCompany.inventory?.items || []).reduce((acc, item) => {
+    const cost = parseFloat(item.cost.replace(/[^0-9.-]+/g, "") || "0");
+    return acc + (cost * item.quantity);
+  }, 0);
+  
+  // Count low stock items (those below reorder point)
+  const lowStockItems = (currentCompany.inventory?.items || []).filter(item => {
+    return item.quantity <= 20; // Using arbitrary value as reorder point
+  }).length;
+  
   return (
-    <div className="container mx-auto p-4">
-      {activeTab === "advanced" ? (
-        <AdvancedInventoryManagement />
-      ) : (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
-            <h1 className="text-2xl font-bold">Inventory Management</h1>
-            <Button>Add New Item</Button>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-sm font-medium text-muted-foreground">Total Items</div>
-                <div className="text-2xl font-bold">{totalItems}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-sm font-medium text-muted-foreground">Low Stock</div>
-                <div className="text-2xl font-bold">{lowStockItems}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-sm font-medium text-muted-foreground">Out of Stock</div>
-                <div className="text-2xl font-bold">{outOfStockItems}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-sm font-medium text-muted-foreground">Inventory Value</div>
-                <div className="text-2xl font-bold">${totalValue.toFixed(2)}</div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
-            <Tabs defaultValue="items" className="w-full" onValueChange={setActiveTab}>
-              <TabsList>
-                <TabsTrigger value="items">Items</TabsTrigger>
-                <TabsTrigger value="categories">Categories</TabsTrigger>
-                <TabsTrigger value="locations">Locations</TabsTrigger>
-                <TabsTrigger value="advanced">Advanced</TabsTrigger>
-              </TabsList>
-              
-              <div className="mt-4 w-full">
-                <div className="flex justify-between items-center mb-4">
-                  <Input 
-                    placeholder="Search inventory..." 
-                    className="max-w-sm" 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  <Button variant="outline">Export</Button>
-                </div>
-                
-                <TabsContent value="items">
-                  <div className="rounded-md border">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredItems.length > 0 ? (
-                          filteredItems.map((item) => (
-                            <tr key={item.id}>
-                              <td className="px-6 py-4 whitespace-nowrap">{item.name}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">{item.sku}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">{item.category}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">{item.quantity}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">{item.cost}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">{item.location}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <Button variant="ghost" size="sm">Edit</Button>
-                                <Button variant="ghost" size="sm" className="text-red-500">Delete</Button>
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                              No inventory items found.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="categories">
-                  <div className="rounded-md border">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {inventory.categories && inventory.categories.length > 0 ? (
-                          inventory.categories.map((category) => (
-                            <tr key={category.id}>
-                              <td className="px-6 py-4 whitespace-nowrap">{category.name}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">{category.description}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <Button variant="ghost" size="sm">Edit</Button>
-                                <Button variant="ghost" size="sm" className="text-red-500">Delete</Button>
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan={3} className="px-6 py-4 text-center text-gray-500">
-                              No categories found.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="locations">
-                  <div className="rounded-md border">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {inventory.locations && inventory.locations.length > 0 ? (
-                          inventory.locations.map((location) => (
-                            <tr key={location.id}>
-                              <td className="px-6 py-4 whitespace-nowrap">{location.name}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">{location.address}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <Button variant="ghost" size="sm">Edit</Button>
-                                <Button variant="ghost" size="sm" className="text-red-500">Delete</Button>
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan={3} className="px-6 py-4 text-center text-gray-500">
-                              No locations found.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </TabsContent>
-              </div>
-            </Tabs>
-          </div>
+    <div className="container mx-auto p-4 space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+        <h1 className="text-2xl font-bold">Inventory Management</h1>
+        <div className="flex gap-2 mt-2 sm:mt-0">
+          <Button variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Item
+          </Button>
         </div>
-      )}
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Inventory Value</p>
+                <p className="text-2xl font-bold">${totalValue.toFixed(2)}</p>
+              </div>
+              <div className="bg-blue-100 p-2 rounded-full text-blue-600">
+                <Package2 size={20} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Items</p>
+                <p className="text-2xl font-bold">{totalItems}</p>
+              </div>
+              <div className="bg-purple-100 p-2 rounded-full text-purple-600">
+                <Package2 size={20} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Low Stock Items</p>
+                <p className="text-2xl font-bold">{lowStockItems}</p>
+              </div>
+              <div className="bg-yellow-100 p-2 rounded-full text-yellow-600">
+                <ArrowDown size={20} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Active Categories</p>
+                <p className="text-2xl font-bold">{currentCompany.inventory?.categories?.length || 0}</p>
+              </div>
+              <div className="bg-green-100 p-2 rounded-full text-green-600">
+                <ArrowUp size={20} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="bg-background">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="flex justify-between items-center mb-4">
+            <TabsList>
+              <TabsTrigger value="items">Items</TabsTrigger>
+              <TabsTrigger value="purchase-orders">Purchase Orders</TabsTrigger>
+              <TabsTrigger value="bundles">Bundles & Kits</TabsTrigger>
+              <TabsTrigger value="serial-numbers">Serial Numbers</TabsTrigger>
+              <TabsTrigger value="lot-tracking">Lot Tracking</TabsTrigger>
+              <TabsTrigger value="valuation">Valuation</TabsTrigger>
+            </TabsList>
+            
+            <div className="relative hidden md:block w-[250px]">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search inventory..."
+                className="pl-8"
+              />
+            </div>
+          </div>
+          
+          <TabsContent value="items">
+            <InventoryItemsTab />
+          </TabsContent>
+          
+          <TabsContent value="purchase-orders">
+            <PurchaseOrders />
+          </TabsContent>
+          
+          <TabsContent value="bundles">
+            <BundlesTab />
+          </TabsContent>
+          
+          <TabsContent value="serial-numbers">
+            <SerialNumbersTab />
+          </TabsContent>
+          
+          <TabsContent value="lot-tracking">
+            <LotTrackingTab />
+          </TabsContent>
+          
+          <TabsContent value="valuation">
+            <InventoryValuation />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

@@ -5,9 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Plus, FileBarChart } from "lucide-react";
 import { ChartOfAccounts } from "@/components/accounting/ChartOfAccounts";
+import { JournalEntries } from "@/components/accounting/JournalEntries";
+import { GeneralLedger } from "@/components/accounting/GeneralLedger";
+import { FinancialReports } from "@/components/accounting/FinancialReports";
+import { useCompany } from "@/contexts/CompanyContext";
 
 const Accounting = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const { currentCompany } = useCompany();
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -37,55 +42,67 @@ const Accounting = () => {
         <TabsContent value="dashboard" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Profit & Loss</CardTitle>
-                <CardDescription>Current month</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">$15,750.00</p>
-                <p className="text-xs text-muted-foreground">+8.2% from last month</p>
-                <Button variant="link" className="p-0 h-auto mt-2 flex items-center">
-                  View report <ArrowRight className="h-4 w-4 ml-1" />
-                </Button>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Profit & Loss</p>
+                    <p className="text-2xl font-bold">$15,750.00</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">+8.2% from last month</p>
+                    <Button variant="link" className="p-0 h-auto mt-2 flex items-center">
+                      View report <ArrowRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Balance Sheet</CardTitle>
-                <CardDescription>Total assets</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">$87,300.00</p>
-                <p className="text-xs text-muted-foreground">As of today</p>
-                <Button variant="link" className="p-0 h-auto mt-2 flex items-center">
-                  View report <ArrowRight className="h-4 w-4 ml-1" />
-                </Button>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Balance Sheet</p>
+                    <p className="text-2xl font-bold">$87,300.00</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">As of today</p>
+                    <Button variant="link" className="p-0 h-auto mt-2 flex items-center">
+                      View report <ArrowRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Cash Flow</CardTitle>
-                <CardDescription>Year to date</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">$32,150.00</p>
-                <p className="text-xs text-muted-foreground">+15.3% from last year</p>
-                <Button variant="link" className="p-0 h-auto mt-2 flex items-center">
-                  View report <ArrowRight className="h-4 w-4 ml-1" />
-                </Button>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Cash Flow</p>
+                    <p className="text-2xl font-bold">$32,150.00</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">+15.3% from last year</p>
+                    <Button variant="link" className="p-0 h-auto mt-2 flex items-center">
+                      View report <ArrowRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Outstanding Taxes</CardTitle>
-                <CardDescription>Due next quarter</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">$5,280.00</p>
-                <p className="text-xs text-muted-foreground">Due in 32 days</p>
-                <Button variant="link" className="p-0 h-auto mt-2 flex items-center">
-                  View details <ArrowRight className="h-4 w-4 ml-1" />
-                </Button>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Outstanding Taxes</p>
+                    <p className="text-2xl font-bold">$5,280.00</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Due in 32 days</p>
+                    <Button variant="link" className="p-0 h-auto mt-2 flex items-center">
+                      View details <ArrowRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -192,7 +209,9 @@ const Accounting = () => {
                 </tbody>
               </table>
               <div className="mt-4 flex justify-center">
-                <Button variant="outline">View All Journal Entries</Button>
+                <Button variant="outline" onClick={() => setActiveTab("journal-entries")}>
+                  View All Journal Entries
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -202,21 +221,32 @@ const Accounting = () => {
           <ChartOfAccounts />
         </TabsContent>
         
-        <TabsContent value="journal-entries" className="border rounded-md p-4">
-          <div className="flex items-center justify-center h-96">
-            <p className="text-muted-foreground">Journal Entries will be displayed here.</p>
-          </div>
+        <TabsContent value="journal-entries">
+          <JournalEntries />
         </TabsContent>
         
-        <TabsContent value="financial-reports" className="border rounded-md p-4">
-          <div className="flex items-center justify-center h-96">
-            <p className="text-muted-foreground">Financial Reports will be displayed here.</p>
-          </div>
+        <TabsContent value="financial-reports">
+          <FinancialReports />
         </TabsContent>
         
-        <TabsContent value="tax-forms" className="border rounded-md p-4">
-          <div className="flex items-center justify-center h-96">
-            <p className="text-muted-foreground">Tax Forms will be displayed here.</p>
+        <TabsContent value="tax-forms">
+          <div className="card">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tax Forms and Reporting</CardTitle>
+                <CardDescription>Manage and file your taxes</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">
+                    Use the Tax Calculator to prepare your tax forms and reports.
+                  </p>
+                  <Button onClick={() => window.location.href = "/taxes"}>
+                    Go to Tax Management
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
