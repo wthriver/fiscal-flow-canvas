@@ -1,7 +1,8 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, MoreHorizontal, Check, X, Clock, CalendarIcon, FileText, AlertCircle, Timer } from "lucide-react";
+import { PlusCircle, Search, MoreHorizontal, Check, X, Clock, Calendar, FileText, AlertCircle, Timer } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -13,7 +14,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DialogTrigger } from "@radix-ui/react-dialog";
 
-// New Project Interface for cleaner typing
 interface ProjectFormData {
   id?: string;
   name: string;
@@ -21,7 +21,7 @@ interface ProjectFormData {
   startDate: string;
   dueDate: string;
   description?: string;
-  budget: number;
+  budget: string; // Changed type to string to match the Company context
   spent?: number;
   progress?: number;
   status?: string;
@@ -43,7 +43,7 @@ const Projects: React.FC = () => {
     client: "",
     startDate: new Date().toISOString().split('T')[0],
     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    budget: 0,
+    budget: "0",
   });
   
   // Filter projects based on search term
@@ -106,7 +106,7 @@ const Projects: React.FC = () => {
       client: "",
       startDate: new Date().toISOString().split('T')[0],
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      budget: 0,
+      budget: "0",
     });
   };
 
@@ -166,6 +166,12 @@ const Projects: React.FC = () => {
     navigate(`/time-tracking?projectId=${projectId}`);
   };
 
+  // Calculate remaining project budget
+  const calculateRemaining = (budget: string, spent: number): string => {
+    const budgetValue = parseFloat(budget.replace(/[^0-9.-]+/g, "")) || 0;
+    return `$${(budgetValue - spent).toLocaleString()}`;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -222,7 +228,7 @@ const Projects: React.FC = () => {
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <CalendarIcon size={16} />
+            <Calendar size={16} />
             <span>Filter by Date</span>
           </Button>
           <Link to="/time-tracking">
@@ -293,10 +299,10 @@ const Projects: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <div>
-                        ${project.budget.toLocaleString()}
+                        {project.budget}
                         <div className="text-xs text-muted-foreground mt-1">
-                          <span className={project.remaining && project.remaining.includes("-") ? "text-red-500" : ""}>
-                            ${(project.budget - project.spent).toLocaleString()} remaining
+                          <span className={parseFloat(calculateRemaining(project.budget, project.spent || 0).replace(/[^0-9.-]+/g, "")) < 0 ? "text-red-500" : ""}>
+                            {calculateRemaining(project.budget, project.spent || 0)} remaining
                           </span>
                         </div>
                       </div>
@@ -419,9 +425,9 @@ const Projects: React.FC = () => {
               <Input 
                 id="budget" 
                 className="col-span-3" 
-                type="number"
+                type="text"
                 value={newProject.budget}
-                onChange={(e) => setNewProject({...newProject, budget: Number(e.target.value)})}
+                onChange={(e) => setNewProject({...newProject, budget: `$${parseFloat(e.target.value.replace(/[^0-9.-]+/g, "") || "0").toLocaleString()}`})}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -507,9 +513,12 @@ const Projects: React.FC = () => {
                 <Input 
                   id="edit-budget" 
                   className="col-span-3" 
-                  type="number"
+                  type="text"
                   value={selectedProject.budget}
-                  onChange={(e) => setSelectedProject({...selectedProject, budget: Number(e.target.value)})}
+                  onChange={(e) => setSelectedProject({
+                    ...selectedProject, 
+                    budget: `$${parseFloat(e.target.value.replace(/[^0-9.-]+/g, "") || "0").toLocaleString()}`
+                  })}
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">

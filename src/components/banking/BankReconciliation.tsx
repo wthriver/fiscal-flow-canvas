@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -302,7 +301,7 @@ export const BankReconciliation = () => {
       <FinishReconciliationDialog 
         open={openFinishDialog}
         onOpenChange={setOpenFinishDialog}
-        onConfirm={handleCompleteReconciliation}
+        onComplete={handleCompleteReconciliation}
         beginningBalance="$10,934.09"
         endingBalance="$15,243.89"
         clearedDeposits="$6,250.00"

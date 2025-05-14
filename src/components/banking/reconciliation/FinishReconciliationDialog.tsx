@@ -7,12 +7,22 @@ interface FinishReconciliationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onComplete: () => void;
+  beginningBalance?: string;
+  endingBalance?: string;
+  clearedDeposits?: string;
+  clearedPayments?: string;
+  difference?: string;
 }
 
 export const FinishReconciliationDialog: React.FC<FinishReconciliationDialogProps> = ({
   open,
   onOpenChange,
-  onComplete
+  onComplete,
+  beginningBalance = "$0.00",
+  endingBalance = "$0.00",
+  clearedDeposits = "$0.00",
+  clearedPayments = "$0.00",
+  difference = "$0.00"
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -31,13 +41,25 @@ export const FinishReconciliationDialog: React.FC<FinishReconciliationDialogProp
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Ending Balance</p>
-              <p>$15,243.89</p>
+              <p>{endingBalance}</p>
             </div>
           </div>
           <div className="rounded-md bg-muted p-4">
             <div className="flex items-center justify-between">
+              <p>Beginning Balance</p>
+              <p className="font-medium">{beginningBalance}</p>
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <p>Cleared Deposits</p>
+              <p className="font-medium text-green-600">{clearedDeposits}</p>
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <p>Cleared Payments</p>
+              <p className="font-medium text-red-600">{clearedPayments}</p>
+            </div>
+            <div className="flex items-center justify-between mt-2 border-t pt-2">
               <p>Difference</p>
-              <p className="text-green-600 font-medium">$0.00</p>
+              <p className="text-green-600 font-medium">{difference}</p>
             </div>
           </div>
           <p className="text-sm text-muted-foreground">

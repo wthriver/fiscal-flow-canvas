@@ -6,7 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { toast } from "sonner";
-import { EstimateItem } from "@/contexts/CompanyContext";
+
+interface EstimateItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: string;
+  amount: string;
+}
 
 interface EstimateDialogProps {
   isOpen: boolean;
@@ -16,7 +23,8 @@ interface EstimateDialogProps {
 export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose }) => {
   const { currentCompany, addEstimate } = useCompany();
   const [estimate, setEstimate] = useState({
-    customer: "",
+    id: `est-${Date.now()}`,
+    customerId: "",
     date: new Date().toISOString().split('T')[0],
     expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     items: [
@@ -31,7 +39,8 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
     notes: "",
     termsAndConditions: "Standard terms and conditions apply.",
     amount: "$0.00",
-    status: "Draft"
+    status: "Draft",
+    estimateNumber: ""
   });
 
   const handleAddItem = () => {
@@ -112,7 +121,7 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
   };
 
   const handleSave = () => {
-    if (!estimate.customer) {
+    if (!estimate.customerId) {
       toast.error("Please select a customer");
       return;
     }
@@ -124,6 +133,7 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
     
     const newEstimate = {
       ...estimate,
+      id: `est-${Date.now()}`,
       estimateNumber: `EST-${Date.now().toString().slice(-6)}`,
     };
     
@@ -150,12 +160,12 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
             <select
               id="customer"
               className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-              value={estimate.customer}
-              onChange={(e) => setEstimate({...estimate, customer: e.target.value})}
+              value={estimate.customerId}
+              onChange={(e) => setEstimate({...estimate, customerId: e.target.value})}
             >
               <option value="">Select Customer</option>
               {currentCompany.customers?.map(customer => (
-                <option key={customer.id} value={customer.name}>
+                <option key={customer.id} value={customer.id}>
                   {customer.name}
                 </option>
               ))}
@@ -164,12 +174,12 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
           
           <div className="grid grid-cols-4 items-center gap-4">
             <label htmlFor="date" className="text-right">
-              Date
+              Date*
             </label>
-            <Input 
-              id="date" 
-              className="col-span-3" 
+            <input
+              id="date"
               type="date"
+              className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
               value={estimate.date}
               onChange={(e) => setEstimate({...estimate, date: e.target.value})}
             />
@@ -179,10 +189,10 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
             <label htmlFor="expiryDate" className="text-right">
               Expiry Date
             </label>
-            <Input 
-              id="expiryDate" 
-              className="col-span-3" 
+            <input
+              id="expiryDate"
               type="date"
+              className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
               value={estimate.expiryDate}
               onChange={(e) => setEstimate({...estimate, expiryDate: e.target.value})}
             />
@@ -262,25 +272,28 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
             </div>
           </div>
           
-          <div className="grid grid-cols-4 items-center gap-4">
+          <div className="grid grid-cols-4 items-start gap-4">
             <label htmlFor="notes" className="text-right">
               Notes
             </label>
-            <textarea 
-              id="notes" 
-              className="col-span-3 flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+            <textarea
+              id="notes"
+              rows={3}
+              className="col-span-3 min-h-[80px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
               value={estimate.notes}
               onChange={(e) => setEstimate({...estimate, notes: e.target.value})}
+              placeholder="Additional notes for the estimate"
             />
           </div>
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="termsAndConditions" className="text-right">
+          <div className="grid grid-cols-4 items-start gap-4">
+            <label htmlFor="terms" className="text-right">
               Terms & Conditions
             </label>
-            <textarea 
-              id="termsAndConditions" 
-              className="col-span-3 flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+            <textarea
+              id="terms"
+              rows={3}
+              className="col-span-3 min-h-[80px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
               value={estimate.termsAndConditions}
               onChange={(e) => setEstimate({...estimate, termsAndConditions: e.target.value})}
             />

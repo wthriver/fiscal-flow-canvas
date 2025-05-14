@@ -1,56 +1,59 @@
 
 import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { FileCheck } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
-interface BankAccountProps {
-  title: string;
-  lastReconciled: string;
-  balance: string;
+interface AccountSummaryCardsProps {
+  beginningBalance: string;
+  endingBalance: string;
+  clearedBalance: string;
+  difference: string;
 }
 
-const BankAccount: React.FC<BankAccountProps> = ({ title, lastReconciled, balance }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle>{title}</CardTitle>
-      <CardDescription>Last reconciled: {lastReconciled}</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <div className="flex justify-between items-center">
-        <div>
-          <p className="text-sm">Account Balance</p>
-          <p className="text-2xl font-bold">{balance}</p>
-        </div>
-        <Button variant="outline" className="flex items-center gap-1">
-          <FileCheck className="h-4 w-4" />
-          <span>View History</span>
-        </Button>
-      </div>
-    </CardContent>
-  </Card>
-);
-
-export const AccountSummaryCards: React.FC = () => {
+export const AccountSummaryCards: React.FC<AccountSummaryCardsProps> = ({
+  beginningBalance,
+  endingBalance,
+  clearedBalance,
+  difference
+}) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <BankAccount 
-        title="Business Checking" 
-        lastReconciled="March 31, 2025"
-        balance="$15,243.89"
-      />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-muted-foreground">Beginning Balance</span>
+            <span className="text-xl font-bold">{beginningBalance}</span>
+          </div>
+        </CardContent>
+      </Card>
       
-      <BankAccount 
-        title="Business Savings" 
-        lastReconciled="March 31, 2025"
-        balance="$42,876.54"
-      />
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-muted-foreground">Ending Balance</span>
+            <span className="text-xl font-bold">{endingBalance}</span>
+          </div>
+        </CardContent>
+      </Card>
       
-      <BankAccount 
-        title="Operating Account" 
-        lastReconciled="March 15, 2025"
-        balance="$8,721.33"
-      />
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-muted-foreground">Cleared Balance</span>
+            <span className="text-xl font-bold">{clearedBalance}</span>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-muted-foreground">Difference</span>
+            <span className={`text-xl font-bold ${difference === "$0.00" ? "text-green-600" : "text-red-600"}`}>
+              {difference}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
