@@ -1,77 +1,81 @@
 
 import React, { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { TaxCalculator } from "@/components/taxes/TaxCalculator";
+import { FileText, Download, Calendar, Clock } from "lucide-react";
 
-const Taxes: React.FC = () => {
-  const [taxYear, setTaxYear] = useState("2023");
-  const [income, setIncome] = useState("50000");
-  const [filingStatus, setFilingStatus] = useState("single");
-  const [taxLiability, setTaxLiability] = useState<number | null>(null);
-
-  const calculateTaxes = () => {
-    // Basic tax calculation logic (simplified)
-    let taxRate = 0.25; // Default tax rate
-    if (filingStatus === "married") {
-      taxRate = 0.15;
-    }
-
-    const calculatedTax = parseFloat(income) * taxRate;
-    setTaxLiability(calculatedTax);
-  };
-
+const Taxes = () => {
+  const [activeTab, setActiveTab] = useState("calculator");
+  
   return (
-    <div className="container mx-auto p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Tax Calculator</CardTitle>
-          <CardDescription>Estimate your tax liability.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid grid-cols-3 items-center gap-4">
-            <label htmlFor="tax-year" className="text-right">
-              Tax Year
-            </label>
-            <Input id="tax-year" value={taxYear} onChange={(e) => setTaxYear(e.target.value)} className="col-span-2" />
-          </div>
-          <div className="grid grid-cols-3 items-center gap-4">
-            <label htmlFor="income" className="text-right">
-              Income
-            </label>
-            <Input id="income" value={income} onChange={(e) => setIncome(e.target.value)} className="col-span-2" />
-          </div>
-          <div className="grid grid-cols-3 items-center gap-4">
-            <label htmlFor="filing-status" className="text-right">
-              Filing Status
-            </label>
-            <select id="filing-status" value={filingStatus} onChange={(e) => setFilingStatus(e.target.value)} className="col-span-2 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50">
-              <option value="single">Single</option>
-              <option value="married">Married</option>
-            </select>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline">Reset</Button>
-          <Button onClick={calculateTaxes}>Calculate</Button>
-        </CardFooter>
-      </Card>
+    <div className="container mx-auto p-4 space-y-6">
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Tax Management</h1>
+          <p className="text-muted-foreground">Prepare and manage your tax filings</p>
+        </div>
+      </div>
 
-      {taxLiability !== null && (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle>Tax Liability</CardTitle>
-            <CardDescription>Estimated tax for {taxYear}.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg font-semibold">
-              ${taxLiability.toFixed(2)}
-            </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Estimated Tax</p>
+                <p className="text-2xl font-bold">$14,325.00</p>
+              </div>
+              <div className="bg-blue-100 p-2 rounded-full text-blue-600">
+                <FileText size={20} />
+              </div>
+            </div>
           </CardContent>
         </Card>
-      )}
-      
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Deductions</p>
+                <p className="text-2xl font-bold">$5,250.00</p>
+              </div>
+              <div className="bg-green-100 p-2 rounded-full text-green-600">
+                <Download size={20} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Next Filing</p>
+                <p className="text-2xl font-bold">Q2 2025</p>
+              </div>
+              <div className="bg-yellow-100 p-2 rounded-full text-yellow-600">
+                <Calendar size={20} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Days Remaining</p>
+                <p className="text-2xl font-bold">45</p>
+              </div>
+              <div className="bg-red-100 p-2 rounded-full text-red-600">
+                <Clock size={20} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <TaxCalculator />
     </div>
   );

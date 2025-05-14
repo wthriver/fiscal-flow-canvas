@@ -1,638 +1,302 @@
 
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, MoreHorizontal, Check, X, Clock, Calendar, FileText, AlertCircle, Timer } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Progress } from "@/components/ui/progress";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProjectDocuments } from "@/components/projects/ProjectDocuments";
 import { useCompany } from "@/contexts/CompanyContext";
-import { toast } from "sonner";
-import { Link, useNavigate } from "react-router-dom";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DialogTrigger } from "@radix-ui/react-dialog";
+import { Check, Clock, Calendar, DollarSign, Users, FileText, Search } from "lucide-react";
 
-interface ProjectFormData {
-  id?: string;
+interface Project {
+  id: string;
   name: string;
   client: string;
   startDate: string;
   dueDate: string;
+  status: string;
   description?: string;
-  budget: string; // Changed type to string to match the Company context
-  spent?: number;
-  progress?: number;
-  status?: string;
-  manager?: string;
-  team?: string[];
-  documents?: any[];
-  tasks?: any[];
+  budget: string; 
+  spent: string; // Changed from number to string to match CompanyContext
+  progress: number;
+  manager: string;
+  team: string[];
+  documents: any[];
+  tasks: any[];
 }
 
 const Projects: React.FC = () => {
-  const { currentCompany, updateCompany } = useCompany();
-  const navigate = useNavigate();
+  const { currentCompany } = useCompany();
   const [searchTerm, setSearchTerm] = useState("");
-  const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
-  const [editProjectDialogOpen, setEditProjectDialogOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<any>(null);
-  const [newProject, setNewProject] = useState<ProjectFormData>({
-    name: "",
-    client: "",
-    startDate: new Date().toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    budget: "0",
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  
+  // Make sure projects have the correct typing
+  const projects = (currentCompany.projects || []).map(project => ({
+    ...project,
+    // Ensure consistent types
+    budget: typeof project.budget === 'number' ? `$${project.budget.toFixed(2)}` : project.budget,
+    spent: typeof project.spent === 'number' ? `$${project.spent.toFixed(2)}` : project.spent,
+    progress: typeof project.progress === 'number' ? project.progress : 0
+  }));
+  
+  // Calculate project statistics
+  const totalProjects = projects.length;
+  const completedProjects = projects.filter(p => p.status === "Completed").length;
+  const ongoingProjects = projects.filter(p => p.status === "In Progress").length;
+  const delayedProjects = projects.filter(p => p.status === "Delayed").length;
+  
+  // Filter projects based on search term and active tab
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = 
+      project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.client.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (activeTab === "all") return matchesSearch;
+    return project.status.toLowerCase() === activeTab.toLowerCase() && matchesSearch;
   });
   
-  // Filter projects based on search term
-  const filteredProjects = (currentCompany.projects || []).filter(project => 
-    project.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    project.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Calculate the number of active projects
-  const activeProjects = filteredProjects.filter(project => project.status === "In Progress").length;
-
-  // Calculate the number of completed projects
-  const completedProjects = filteredProjects.filter(project => project.status === "Completed").length;
-
-  // Find upcoming due projects
-  const upcomingDueProjects = filteredProjects
-    .filter(project => {
-      const dueDate = new Date(project.dueDate);
-      const today = new Date();
-      const twoWeeksFromNow = new Date();
-      twoWeeksFromNow.setDate(today.getDate() + 14);
-      
-      return dueDate <= twoWeeksFromNow && 
-             dueDate >= today && 
-             project.status !== "Completed";
-    })
-    .length;
-
-  const handleCreateProject = () => {
-    setNewProjectDialogOpen(true);
-  };
-
-  const handleSaveNewProject = () => {
-    if (!newProject.name || !newProject.client) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    const projectToAdd = {
-      id: `proj-${Date.now()}`,
-      ...newProject,
-      status: "In Progress",
-      spent: 0,
-      progress: 0,
-      manager: "Unassigned",
-      team: [],
-      documents: [],
-      tasks: []
-    };
-
-    const updatedProjects = [...(currentCompany.projects || []), projectToAdd];
-    
-    updateCompany(currentCompany.id, { projects: updatedProjects });
-    
-    toast.success("Project created successfully!");
-    setNewProjectDialogOpen(false);
-    setNewProject({
-      name: "",
-      client: "",
-      startDate: new Date().toISOString().split('T')[0],
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      budget: "0",
-    });
-  };
-
-  const handleEditProject = (projectId: string) => {
-    const project = currentCompany.projects?.find(p => p.id === projectId);
-    if (project) {
-      setSelectedProject(project);
-      setEditProjectDialogOpen(true);
-    }
-  };
-
-  const handleUpdateProject = () => {
-    if (!selectedProject) return;
-
-    const updatedProjects = (currentCompany.projects || []).map(project => 
-      project.id === selectedProject.id ? selectedProject : project
-    );
-    
-    updateCompany(currentCompany.id, { projects: updatedProjects });
-    
-    toast.success(`Project "${selectedProject.name}" updated successfully!`);
-    setEditProjectDialogOpen(false);
-    setSelectedProject(null);
-  };
-
-  const handleDeleteProject = (projectId: string) => {
-    const updatedProjects = (currentCompany.projects || []).filter(
-      project => project.id !== projectId
-    );
-    
-    updateCompany(currentCompany.id, { projects: updatedProjects });
-    
-    toast.success("Project deleted successfully");
-  };
-
-  const handleArchiveProject = (projectId: string) => {
-    const updatedProjects = (currentCompany.projects || []).map(project => 
-      project.id === projectId ? { ...project, status: "Archived" } : project
-    );
-    
-    updateCompany(currentCompany.id, { projects: updatedProjects });
-    
-    toast.success("Project archived successfully");
-  };
-
-  const handleMarkComplete = (projectId: string) => {
-    const updatedProjects = (currentCompany.projects || []).map(project => 
-      project.id === projectId ? { ...project, status: "Completed", progress: 100 } : project
-    );
-    
-    updateCompany(currentCompany.id, { projects: updatedProjects });
-    
-    toast.success("Project marked as complete");
-  };
-
-  const handleTrackTime = (projectId: string) => {
-    navigate(`/time-tracking?projectId=${projectId}`);
-  };
-
-  // Calculate remaining project budget
-  const calculateRemaining = (budget: string, spent: number): string => {
-    const budgetValue = parseFloat(budget.replace(/[^0-9.-]+/g, "")) || 0;
-    return `$${(budgetValue - spent).toLocaleString()}`;
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Projects</h1>
-          <p className="text-muted-foreground">Manage {currentCompany.name}'s projects and client work</p>
-        </div>
-        <Button 
-          className="flex items-center gap-2"
-          onClick={handleCreateProject}
-        >
-          <PlusCircle size={16} />
-          <span>New Project</span>
-        </Button>
+    <div className="container mx-auto p-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <h1 className="text-2xl font-bold">Project Management</h1>
+        <Button>New Project</Button>
       </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-2xl">{filteredProjects.length}</CardTitle>
-            <CardDescription>Total Projects</CardDescription>
-          </CardHeader>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Projects</p>
+                <p className="text-2xl font-bold">{totalProjects}</p>
+              </div>
+              <div className="bg-primary/10 p-2 rounded-full text-primary">
+                <FileText size={20} />
+              </div>
+            </div>
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-blue-500">{activeProjects}</CardTitle>
-            <CardDescription>Active Projects</CardDescription>
-          </CardHeader>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Completed</p>
+                <p className="text-2xl font-bold">{completedProjects}</p>
+              </div>
+              <div className="bg-green-100 p-2 rounded-full text-green-600">
+                <Check size={20} />
+              </div>
+            </div>
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-green-500">{completedProjects}</CardTitle>
-            <CardDescription>Completed Projects</CardDescription>
-          </CardHeader>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">In Progress</p>
+                <p className="text-2xl font-bold">{ongoingProjects}</p>
+              </div>
+              <div className="bg-blue-100 p-2 rounded-full text-blue-600">
+                <Clock size={20} />
+              </div>
+            </div>
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-2xl text-amber-500">{upcomingDueProjects}</CardTitle>
-            <CardDescription>Due Soon</CardDescription>
-          </CardHeader>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Delayed</p>
+                <p className="text-2xl font-bold">{delayedProjects}</p>
+              </div>
+              <div className="bg-red-100 p-2 rounded-full text-red-600">
+                <Calendar size={20} />
+              </div>
+            </div>
+          </CardContent>
         </Card>
       </div>
-
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full sm:w-auto">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search projects..."
-            className="w-full sm:w-[300px] pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <Calendar size={16} />
-            <span>Filter by Date</span>
-          </Button>
-          <Link to="/time-tracking">
-            <Button variant="outline" size="sm" className="flex items-center gap-1">
-              <Timer size={16} />
-              <span>Time Tracking</span>
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle>All Projects</CardTitle>
-          <CardDescription>View and manage {currentCompany.name}'s project portfolio</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Project</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Budget</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProjects.length > 0 ? (
-                filteredProjects.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell className="font-medium">
-                      <div>
-                        {project.name}
-                        {project.dueDate && new Date(project.dueDate) <= new Date() && project.status !== "Completed" && (
-                          <Badge variant="destructive" className="ml-2">Overdue</Badge>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {project.description && typeof project.description === 'string' && project.description.length > 50 
-                          ? `${project.description.substring(0, 50)}...` 
-                          : project.description || "No description available"}
-                      </div>
-                    </TableCell>
-                    <TableCell>{project.client}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        project.status === "Completed" 
-                          ? "bg-green-100 text-green-800" 
-                          : project.status === "In Progress" 
-                            ? "bg-blue-100 text-blue-800" 
-                            : project.status === "On Hold" 
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-gray-100 text-gray-800"
-                      }`}>
-                        {project.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        {project.dueDate}
-                        {project.dueDate && new Date(project.dueDate) <= new Date() && project.status !== "Completed" && (
-                          <AlertCircle size={16} className="ml-1 text-red-500" />
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        {project.budget}
-                        <div className="text-xs text-muted-foreground mt-1">
-                          <span className={parseFloat(calculateRemaining(project.budget, project.spent || 0).replace(/[^0-9.-]+/g, "")) < 0 ? "text-red-500" : ""}>
-                            {calculateRemaining(project.budget, project.spent || 0)} remaining
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="w-full">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span>{project.progress ? project.progress : 0}% complete</span>
-                          <span>
-                            {project.tracked || "0"} tracked / {project.billed || "0"} billed
-                          </span>
-                        </div>
-                        <Progress value={project.progress ? project.progress : 0} className="h-2" />
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleTrackTime(project.id)}>
-                            Track Time
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditProject(project.id)}>
-                            Edit Project
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleMarkComplete(project.id)}>
-                            Mark as Complete
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleArchiveProject(project.id)}>
-                            Archive Project
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteProject(project.id)}
-                            className="text-red-600"
-                          >
-                            Delete Project
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
-                    No projects found for {currentCompany.name}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Create New Project Dialog */}
-      <Dialog open={newProjectDialogOpen} onOpenChange={setNewProjectDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Create New Project</DialogTitle>
-            <DialogDescription>
-              Add a new project to your portfolio.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="name" className="text-right">
-                Project Name*
-              </label>
-              <Input 
-                id="name" 
-                className="col-span-3" 
-                value={newProject.name}
-                onChange={(e) => setNewProject({...newProject, name: e.target.value})}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="client" className="text-right">
-                Client*
-              </label>
-              <Input 
-                id="client" 
-                className="col-span-3"
-                value={newProject.client}
-                onChange={(e) => setNewProject({...newProject, client: e.target.value})}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="start-date" className="text-right">
-                Start Date
-              </label>
-              <Input 
-                id="start-date" 
-                className="col-span-3" 
-                type="date"
-                value={newProject.startDate}
-                onChange={(e) => setNewProject({...newProject, startDate: e.target.value})}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="due-date" className="text-right">
-                Due Date
-              </label>
-              <Input 
-                id="due-date" 
-                className="col-span-3" 
-                type="date"
-                value={newProject.dueDate}
-                onChange={(e) => setNewProject({...newProject, dueDate: e.target.value})}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="budget" className="text-right">
-                Budget ($)
-              </label>
-              <Input 
-                id="budget" 
-                className="col-span-3" 
-                type="text"
-                value={newProject.budget}
-                onChange={(e) => setNewProject({...newProject, budget: `$${parseFloat(e.target.value.replace(/[^0-9.-]+/g, "") || "0").toLocaleString()}`})}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="description" className="text-right">
-                Description
-              </label>
-              <Input 
-                id="description" 
-                className="col-span-3"
-                value={newProject.description || ''}
-                onChange={(e) => setNewProject({...newProject, description: e.target.value})}
+      
+      <div className="flex flex-col space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+            <TabsList>
+              <TabsTrigger value="all">All Projects</TabsTrigger>
+              <TabsTrigger value="In Progress">In Progress</TabsTrigger>
+              <TabsTrigger value="Completed">Completed</TabsTrigger>
+              <TabsTrigger value="Delayed">Delayed</TabsTrigger>
+            </TabsList>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search projects..."
+                className="pl-8 md:w-[300px]"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setNewProjectDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveNewProject}>Create Project</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Project Dialog */}
-      <Dialog open={editProjectDialogOpen} onOpenChange={setEditProjectDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Project</DialogTitle>
-            <DialogDescription>
-              Update project details.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedProject && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="edit-name" className="text-right">
-                  Project Name
-                </label>
-                <Input 
-                  id="edit-name" 
-                  className="col-span-3" 
-                  value={selectedProject.name}
-                  onChange={(e) => setSelectedProject({...selectedProject, name: e.target.value})}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="edit-client" className="text-right">
-                  Client
-                </label>
-                <Input 
-                  id="edit-client" 
-                  className="col-span-3"
-                  value={selectedProject.client}
-                  onChange={(e) => setSelectedProject({...selectedProject, client: e.target.value})}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="edit-start-date" className="text-right">
-                  Start Date
-                </label>
-                <Input 
-                  id="edit-start-date" 
-                  className="col-span-3" 
-                  type="date"
-                  value={selectedProject.startDate}
-                  onChange={(e) => setSelectedProject({...selectedProject, startDate: e.target.value})}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="edit-due-date" className="text-right">
-                  Due Date
-                </label>
-                <Input 
-                  id="edit-due-date" 
-                  className="col-span-3" 
-                  type="date"
-                  value={selectedProject.dueDate}
-                  onChange={(e) => setSelectedProject({...selectedProject, dueDate: e.target.value})}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="edit-budget" className="text-right">
-                  Budget ($)
-                </label>
-                <Input 
-                  id="edit-budget" 
-                  className="col-span-3" 
-                  type="text"
-                  value={selectedProject.budget}
-                  onChange={(e) => setSelectedProject({
-                    ...selectedProject, 
-                    budget: `$${parseFloat(e.target.value.replace(/[^0-9.-]+/g, "") || "0").toLocaleString()}`
-                  })}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="edit-progress" className="text-right">
-                  Progress (%)
-                </label>
-                <Input 
-                  id="edit-progress" 
-                  className="col-span-3" 
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={selectedProject.progress}
-                  onChange={(e) => setSelectedProject({...selectedProject, progress: Math.min(100, Math.max(0, Number(e.target.value)))})}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="edit-status" className="text-right">
-                  Status
-                </label>
-                <select 
-                  id="edit-status"
-                  className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
-                  value={selectedProject.status}
-                  onChange={(e) => setSelectedProject({...selectedProject, status: e.target.value})}
-                >
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                  <option value="On Hold">On Hold</option>
-                  <option value="Archived">Archived</option>
-                </select>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditProjectDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdateProject}>Update Project</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {filteredProjects.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Recent Project Activity</CardTitle>
-              <CardDescription>Latest updates and milestones</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {filteredProjects.slice(0, 5).map((project) => (
-                  <div key={`activity-${project.id}`} className="flex items-start space-x-3 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
-                    {project.progress >= 100 ? (
-                      <div className="bg-green-100 text-green-600 p-2 rounded-full">
-                        <Check size={16} />
-                      </div>
-                    ) : new Date(project.dueDate) < new Date() && project.status !== "Completed" ? (
-                      <div className="bg-red-100 text-red-600 p-2 rounded-full">
-                        <X size={16} />
-                      </div>
-                    ) : (
-                      <div className="bg-blue-100 text-blue-600 p-2 rounded-full">
-                        <Clock size={16} />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium">{project.name}</h4>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {project.progress >= 100 
-                          ? "Project completed" 
-                          : new Date(project.dueDate) < new Date() && project.status !== "Completed"
-                            ? `Overdue by ${Math.floor((new Date().getTime() - new Date(project.dueDate).getTime()) / (1000 * 60 * 60 * 24))} days`
-                            : `${project.progress}% completed`
-                        }
-                      </p>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(project.status === "Completed" && project.endDate ? project.endDate : project.dueDate)
-                        .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
           
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Project Documents</CardTitle>
-              <CardDescription>Recent contracts and files</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {filteredProjects.slice(0, 5).map((project) => (
-                  <div key={`doc-${project.id}`} className="flex items-center justify-between pb-4 border-b border-gray-100 last:border-0 last:pb-0">
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-gray-100 p-2 rounded-full">
-                        <FileText size={16} />
+          <TabsContent value={activeTab} className="mt-0 p-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredProjects.map(project => (
+                <Card 
+                  key={project.id} 
+                  className={`cursor-pointer hover:border-primary transition-all ${
+                    selectedProject?.id === project.id ? "border-primary" : ""
+                  }`}
+                  onClick={() => setSelectedProject(project)}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-lg">{project.name}</CardTitle>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        project.status === "Completed" ? "bg-green-100 text-green-700" :
+                        project.status === "In Progress" ? "bg-blue-100 text-blue-700" :
+                        "bg-yellow-100 text-yellow-700"
+                      }`}>
+                        {project.status}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{project.client}</p>
+                  </CardHeader>
+                  <CardContent className="pb-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-1">
+                          <Calendar size={14} />
+                          <span>Start: {project.startDate}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar size={14} />
+                          <span>Due: {project.dueDate}</span>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-sm font-medium">{project.name} - Contract</h4>
-                        <p className="text-xs text-muted-foreground mt-0.5">PDF • Updated 3 days ago</p>
+                      
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span>Progress</span>
+                          <span>{project.progress}%</span>
+                        </div>
+                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary" 
+                            style={{ width: `${project.progress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-sm">
+                        <div className="flex items-center gap-1">
+                          <DollarSign size={14} />
+                          <span>Budget: {project.budget}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Users size={14} />
+                          <span>{project.team?.length || 0} members</span>
+                        </div>
                       </div>
                     </div>
-                    <Button size="sm" variant="ghost">
-                      View
-                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+        
+        {selectedProject && (
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>{selectedProject.name}</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">{selectedProject.client}</p>
+                </div>
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  selectedProject.status === "Completed" ? "bg-green-100 text-green-700" :
+                  selectedProject.status === "In Progress" ? "bg-blue-100 text-blue-700" :
+                  "bg-yellow-100 text-yellow-700"
+                }`}>
+                  {selectedProject.status}
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-md font-medium mb-2">Project Details</h3>
+                    <p className="text-sm">{selectedProject.description || "No description provided."}</p>
                   </div>
-                ))}
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Start Date</p>
+                      <p className="font-medium">{selectedProject.startDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Due Date</p>
+                      <p className="font-medium">{selectedProject.dueDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Budget</p>
+                      <p className="font-medium">{selectedProject.budget}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Spent</p>
+                      <p className="font-medium">{selectedProject.spent}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Progress</span>
+                      <span>{selectedProject.progress}%</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary" 
+                        style={{ width: `${selectedProject.progress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-md font-medium mb-2">Project Team</h3>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <p className="text-sm text-muted-foreground">Manager:</p>
+                      <p className="text-sm font-medium">{selectedProject.manager}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {selectedProject.team && selectedProject.team.map((member, index) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <div className="h-6 w-6 rounded-full bg-gray-300"></div>
+                          <p className="text-sm">{typeof member === 'string' ? member : 'Team Member'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                  <h3 className="text-md font-medium">Project Documents</h3>
+                  <Button size="sm" variant="outline" className="mt-2 sm:mt-0">Upload Document</Button>
+                </div>
+                
+                <ProjectDocuments 
+                  projectDocuments={selectedProject.documents || []} 
+                  onViewDocument={() => {}}
+                />
               </div>
             </CardContent>
           </Card>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

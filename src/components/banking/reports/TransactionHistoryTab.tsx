@@ -6,7 +6,7 @@ import { TransactionSearchBar } from "./TransactionSearchBar";
 import { TransactionTable } from "./TransactionTable";
 import { useCompany } from "@/contexts/CompanyContext";
 
-// Define a local Transaction interface that matches what we need in this component
+// Define a Transaction interface that matches the one in CompanyContext
 interface Transaction {
   id: string;
   date: string;
@@ -14,8 +14,8 @@ interface Transaction {
   description: string;
   category: string;
   reconciled: boolean;
-  type?: string;
-  bankAccount?: string;
+  type: string;
+  bankAccount: string;
 }
 
 interface TransactionHistoryTabProps {

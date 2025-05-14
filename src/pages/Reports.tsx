@@ -11,10 +11,21 @@ const Reports = () => {
   const { currentCompany } = useCompany();
   const [reportPeriod, setReportPeriod] = useState("month");
 
+  // Helper function to safely get revenue data
+  const getRevenueData = () => {
+    const revenue = currentCompany.revenue || { current: 0, previous: 0, percentChange: 0 };
+    return {
+      current: typeof revenue === 'object' && 'current' in revenue ? revenue.current : 0,
+      percentChange: typeof revenue === 'object' && 'percentChange' in revenue ? revenue.percentChange : 0
+    };
+  };
+
   // Helper function to count items in arrays safely
   const countItems = (items: any[] | undefined) => {
     return items?.length || 0;
   };
+  
+  const revenueData = getRevenueData();
   
   return (
     <div className="container mx-auto p-4">
@@ -46,8 +57,8 @@ const Reports = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Revenue</p>
-                <p className="text-2xl font-bold">${currentCompany.revenue?.current?.toLocaleString() || 0}</p>
-                <p className="text-xs text-green-500">↑ {currentCompany.revenue?.percentChange || 0}% from last month</p>
+                <p className="text-2xl font-bold">${revenueData.current.toLocaleString()}</p>
+                <p className="text-xs text-green-500">↑ {revenueData.percentChange}% from last month</p>
               </div>
               <div className="bg-green-100 p-2 rounded-full text-green-600">
                 <DollarSign size={20} />

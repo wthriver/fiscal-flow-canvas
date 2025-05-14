@@ -15,9 +15,18 @@ export const ReportTabs: React.FC<ReportTabsProps> = ({ accountId }) => {
   const [activeTab, setActiveTab] = useState("transactions");
   const { currentCompany } = useCompany();
 
+  // Ensure all required properties are present
   const transactions = accountId
-    ? currentCompany.transactions.filter(t => t.bankAccount === accountId)
-    : currentCompany.transactions;
+    ? currentCompany.transactions
+        .filter(t => t.bankAccount === accountId)
+        .map(t => ({
+          ...t,
+          reconciled: t.reconciled === undefined ? false : t.reconciled
+        }))
+    : currentCompany.transactions.map(t => ({
+        ...t,
+        reconciled: t.reconciled === undefined ? false : t.reconciled
+      }));
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
