@@ -8,6 +8,15 @@ import { ProjectDocuments } from "@/components/projects/ProjectDocuments";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Check, Clock, Calendar, DollarSign, Users, FileText, Search } from "lucide-react";
 
+interface ProjectDocument {
+  id: string;
+  name: string;
+  type: string;
+  size: string;
+  uploadedBy: string;
+  date: string;
+}
+
 interface Project {
   id: string;
   name: string;
@@ -17,11 +26,11 @@ interface Project {
   status: string;
   description?: string;
   budget: string; 
-  spent: string; // Changed from number to string to match CompanyContext
+  spent: string;
   progress: number;
   manager: string;
   team: string[];
-  documents: any[];
+  documents: ProjectDocument[];
   tasks: any[];
 }
 
@@ -35,10 +44,13 @@ const Projects: React.FC = () => {
   const projects = (currentCompany.projects || []).map(project => ({
     ...project,
     // Ensure consistent types
-    budget: typeof project.budget === 'number' ? `$${project.budget.toFixed(2)}` : project.budget,
-    spent: typeof project.spent === 'number' ? `$${project.spent.toFixed(2)}` : project.spent,
-    progress: typeof project.progress === 'number' ? project.progress : 0
-  }));
+    budget: typeof project.budget === 'string' ? project.budget : `$${Number(project.budget || 0).toFixed(2)}`,
+    spent: typeof project.spent === 'string' ? project.spent : `$${Number(project.spent || 0).toFixed(2)}`,
+    progress: typeof project.progress === 'number' ? project.progress : 0,
+    // Ensure all required fields are present
+    startDate: project.startDate || new Date().toISOString().split('T')[0],
+    team: project.team || []
+  })) as Project[];
   
   // Calculate project statistics
   const totalProjects = projects.length;
@@ -289,7 +301,7 @@ const Projects: React.FC = () => {
                 </div>
                 
                 <ProjectDocuments 
-                  projectDocuments={selectedProject.documents || []} 
+                  documents={selectedProject.documents || []} 
                   onViewDocument={() => {}}
                 />
               </div>

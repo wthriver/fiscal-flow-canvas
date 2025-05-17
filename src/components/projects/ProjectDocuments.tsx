@@ -1,95 +1,71 @@
 
-import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ProjectDocument } from "@/contexts/CompanyContext";
-import { FileText, Plus } from "lucide-react";
-import { useCompany } from "@/contexts/CompanyContext";
-import { ProjectDocumentsDialog } from "./ProjectDocumentsDialog";
-import { toast } from "sonner";
+import { FileText, Download, Eye } from "lucide-react";
 
-interface ProjectDocumentsProps {
-  projectId: string;
-  projectName: string;
+export interface ProjectDocument {
+  id: string;
+  name: string;
+  type: string;
+  size: string;
+  uploadedBy: string;
+  date: string;
 }
 
-export const ProjectDocuments: React.FC<ProjectDocumentsProps> = ({ projectId, projectName }) => {
-  const { currentCompany } = useCompany();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  
-  const project = currentCompany.projects.find(p => p.id === projectId);
-  const documents = project?.documents || [];
-  
+export interface ProjectDocumentsProps {
+  documents: ProjectDocument[];
+  onViewDocument: (document: ProjectDocument) => void;
+}
+
+export const ProjectDocuments: React.FC<ProjectDocumentsProps> = ({ 
+  documents,
+  onViewDocument 
+}) => {
+  if (!documents || documents.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <FileText className="mx-auto h-8 w-8 mb-2" />
+        <p>No documents have been uploaded yet</p>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-lg">Project Documents</CardTitle>
-              <CardDescription>
-                {documents.length} document{documents.length !== 1 ? 's' : ''} available
-              </CardDescription>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-1"
-              onClick={() => setDialogOpen(true)}
-            >
-              <Plus size={16} />
-              <span>Manage Documents</span>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {documents.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {documents.slice(0, 4).map(document => (
-                <div
-                  key={document.id}
-                  className="flex items-center gap-2 p-2 border rounded-md hover:bg-muted/50 cursor-pointer"
-                  onClick={() => toast.info(`Opening document: ${document.name}`)}
-                >
-                  <FileText size={18} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{document.name}</p>
-                    <p className="text-xs text-muted-foreground">{document.type} • {document.size}</p>
-                  </div>
+    <div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Size</TableHead>
+            <TableHead>Uploaded By</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {documents.map((doc) => (
+            <TableRow key={doc.id}>
+              <TableCell className="font-medium">{doc.name}</TableCell>
+              <TableCell>{doc.type}</TableCell>
+              <TableCell>{doc.size}</TableCell>
+              <TableCell>{doc.uploadedBy}</TableCell>
+              <TableCell>{doc.date}</TableCell>
+              <TableCell>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => onViewDocument(doc)}>
+                    <Eye className="h-4 w-4 mr-1" /> View
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4" />
+                  </Button>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-6">
-              <FileText size={24} className="mx-auto mb-2 text-muted-foreground" />
-              <p className="text-muted-foreground">No documents available</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-2"
-                onClick={() => setDialogOpen(true)}
-              >
-                Upload Documents
-              </Button>
-            </div>
-          )}
-          
-          {documents.length > 4 && (
-            <div className="mt-2 text-center">
-              <Button variant="link" onClick={() => setDialogOpen(true)}>
-                View all {documents.length} documents
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      <ProjectDocumentsDialog
-        isOpen={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        projectId={projectId}
-        projectName={projectName}
-      />
-    </>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
