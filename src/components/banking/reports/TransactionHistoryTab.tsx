@@ -26,7 +26,7 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
   transactions: inputTransactions = []
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: "asc" | "desc" } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   // Filter transactions based on search term
@@ -41,8 +41,8 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     let sortableTransactions = [...filteredTransactions];
     if (sortConfig !== null) {
       sortableTransactions.sort((a, b) => {
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
+        const aValue = a[sortConfig.key as keyof Transaction];
+        const bValue = b[sortConfig.key as keyof Transaction];
         
         if (!aValue && !bValue) return 0;
         if (!aValue) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -60,7 +60,7 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     return sortableTransactions;
   }, [filteredTransactions, sortConfig]);
 
-  const requestSort = (key: keyof Transaction) => {
+  const requestSort = (key: string) => {
     let direction: "asc" | "desc" = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';

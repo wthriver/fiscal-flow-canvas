@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RecurringInvoices } from "@/components/invoices/RecurringInvoices";
 import { AccountsPayableAging } from "@/components/expenses/AccountsPayableAging";
 import { DigitalReceiptCapture } from "@/components/expenses/DigitalReceiptCapture";
+import { ChartOfAccountsComponent } from "@/components/accounting/ChartOfAccountsComponent";
 
 const Accounting = () => {
   return (
@@ -18,6 +19,7 @@ const Accounting = () => {
       <Tabs defaultValue="general-ledger" className="space-y-6">
         <TabsList>
           <TabsTrigger value="general-ledger">General Ledger</TabsTrigger>
+          <TabsTrigger value="chart-of-accounts">Chart of Accounts</TabsTrigger>
           <TabsTrigger value="recurring">Recurring Invoices</TabsTrigger>
           <TabsTrigger value="accounts-payable">Accounts Payable</TabsTrigger>
           <TabsTrigger value="receipts">Receipt Management</TabsTrigger>
@@ -26,6 +28,10 @@ const Accounting = () => {
 
         <TabsContent value="general-ledger">
           <GeneralLedger />
+        </TabsContent>
+
+        <TabsContent value="chart-of-accounts">
+          <ChartOfAccountsComponent />
         </TabsContent>
 
         <TabsContent value="recurring">

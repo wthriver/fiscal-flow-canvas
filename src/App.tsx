@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -17,6 +16,7 @@ import Banking from './pages/Banking';
 import TimeTracking from './pages/TimeTracking';
 import Settings from './pages/Settings';
 import Taxes from './pages/Taxes';
+import ChartOfAccounts from './pages/ChartOfAccounts';
 
 const App = () => {
   return (
@@ -36,6 +36,7 @@ const App = () => {
             <Route path="/time-tracking" element={<TimeTracking />} />
             <Route path="/taxes" element={<Taxes />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/chart-of-accounts" element={<ChartOfAccounts />} />
           </Route>
         </Routes>
       </Router>

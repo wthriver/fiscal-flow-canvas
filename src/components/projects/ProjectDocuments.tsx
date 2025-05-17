@@ -19,10 +19,20 @@ export interface ProjectDocumentsProps {
 }
 
 export const ProjectDocuments: React.FC<ProjectDocumentsProps> = ({ 
-  documents,
+  documents = [],
   onViewDocument 
 }) => {
-  if (!documents || documents.length === 0) {
+  // Map company context documents to component format if needed
+  const formattedDocuments = documents.map(doc => ({
+    id: doc.id,
+    name: doc.name,
+    type: doc.type,
+    size: doc.size,
+    uploadedBy: doc.uploadedBy || "Unknown",
+    date: doc.date || (doc as any).uploadDate || "Unknown" // Handle both date naming conventions
+  }));
+
+  if (!formattedDocuments || formattedDocuments.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         <FileText className="mx-auto h-8 w-8 mb-2" />
@@ -45,7 +55,7 @@ export const ProjectDocuments: React.FC<ProjectDocumentsProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {documents.map((doc) => (
+          {formattedDocuments.map((doc) => (
             <TableRow key={doc.id}>
               <TableCell className="font-medium">{doc.name}</TableCell>
               <TableCell>{doc.type}</TableCell>

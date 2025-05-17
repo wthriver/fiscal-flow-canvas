@@ -1,5 +1,5 @@
-
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { saveToLocalStorage, loadFromLocalStorage } from '@/services/localStorageService';
 
 // Define types for our domain
 export interface Customer {
@@ -865,7 +865,15 @@ interface CompanyProviderProps {
 }
 
 export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) => {
-  const [currentCompany, setCurrentCompany] = useState<Company>(initialCompany);
+  const [currentCompany, setCurrentCompany] = useState<Company>(() => {
+    const savedData = loadFromLocalStorage();
+    return savedData || initialCompany;
+  });
+
+  // Save to local storage whenever company data changes
+  useEffect(() => {
+    saveToLocalStorage(currentCompany);
+  }, [currentCompany]);
 
   const updateCompany = (id: string, updatedFields: Partial<Company>) => {
     setCurrentCompany(prevCompany => {
@@ -1098,6 +1106,54 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     }));
   };
 
+  // Add taxRates management
+  const addTaxRate = (taxRate: any) => {
+    setCurrentCompany(prevCompany => ({
+      ...prevCompany,
+      taxRates: [...(prevCompany.taxRates || []), taxRate]
+    }));
+  };
+
+  const updateTaxRate = (id: string, updatedFields: any) => {
+    setCurrentCompany(prevCompany => ({
+      ...prevCompany,
+      taxRates: (prevCompany.taxRates || []).map(rate => 
+        rate.id === id ? { ...rate, ...updatedFields } : rate
+      )
+    }));
+  };
+
+  const deleteTaxRate = (id: string) => {
+    setCurrentCompany(prevCompany => ({
+      ...prevCompany,
+      taxRates: (prevCompany.taxRates || []).filter(rate => rate.id !== id)
+    }));
+  };
+
+  // Add account management for Chart of Accounts
+  const addAccount = (account: any) => {
+    setCurrentCompany(prevCompany => ({
+      ...prevCompany,
+      accounts: [...(prevCompany.accounts || []), account]
+    }));
+  };
+
+  const updateAccount = (id: string, updatedFields: any) => {
+    setCurrentCompany(prevCompany => ({
+      ...prevCompany,
+      accounts: (prevCompany.accounts || []).map(account => 
+        account.id === id ? { ...account, ...updatedFields } : account
+      )
+    }));
+  };
+
+  const deleteAccount = (id: string) => {
+    setCurrentCompany(prevCompany => ({
+      ...prevCompany,
+      accounts: (prevCompany.accounts || []).filter(account => account.id !== id)
+    }));
+  };
+
   // Mock implementation for the missing methods to fix build errors
   const calculateTax = (data: any) => {
     // Simple implementation to satisfy type requirements
@@ -1148,10 +1204,17 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
       addEstimate,
       updateEstimate,
       deleteEstimate,
-      // Add missing methods to fix build errors
+      // Add the new methods
+      addTaxRate,
+      updateTaxRate,
+      deleteTaxRate,
+      addAccount,
+      updateAccount,
+      deleteAccount,
+      // Keep existing methods
       calculateTax,
       addExpense,
-      companies: [initialCompany],
+      companies: [currentCompany], // Dynamic company list using current company
       switchCompany: (id: string) => console.log(`Switch to company ${id}`),
       addCompany,
       addSale,
