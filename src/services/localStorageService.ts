@@ -4,7 +4,7 @@
  * Handles saving and retrieving application data from local storage
  */
 
-import { Company } from "@/contexts/CompanyContext";
+import { Company } from '@/types/company';
 
 const STORAGE_KEY = "financial_app_data";
 
@@ -39,10 +39,14 @@ export const loadFromLocalStorage = (): Company | null => {
       taxId: parsedData.taxId || "",
       industry: parsedData.industry || "",
       fiscalYearStart: parsedData.fiscalYearStart || "January 1",
-      transactions: parsedData.transactions || [],
-      accounts: parsedData.accounts || [],
-      taxRates: parsedData.taxRates || [],
-      bankAccounts: Array.isArray(parsedData.bankAccounts) ? parsedData.bankAccounts : [
+      transactions: Array.isArray(parsedData.transactions) ? parsedData.transactions : [],
+      accounts: Array.isArray(parsedData.accounts) ? parsedData.accounts : [],
+      taxRates: Array.isArray(parsedData.taxRates) ? parsedData.taxRates : [],
+      bankAccounts: Array.isArray(parsedData.bankAccounts) ? parsedData.bankAccounts.map((account: any) => ({
+        ...account,
+        balance: typeof account.balance === 'number' ? account.balance : parseFloat(account.balance?.replace(/[^0-9.-]+/g, "") || "0"),
+        transactions: Array.isArray(account.transactions) ? account.transactions : []
+      })) : [
         {
           id: 'bank-1',
           name: 'Checking Account',
@@ -64,9 +68,12 @@ export const loadFromLocalStorage = (): Company | null => {
       customers: Array.isArray(parsedData.customers) ? parsedData.customers : [],
       invoices: Array.isArray(parsedData.invoices) ? parsedData.invoices : [],
       expenses: Array.isArray(parsedData.expenses) ? parsedData.expenses : [],
-      projects: Array.isArray(parsedData.projects) ? parsedData.projects : [],
-      employees: Array.isArray(parsedData.employees) ? parsedData.employees : [],
+      projects: Array.isArray(parsedData.projects) ? parsedData.projects.map((project: any) => ({
+        ...project,
+        documents: Array.isArray(project.documents) ? project.documents : []
+      })) : [],
       timeEntries: Array.isArray(parsedData.timeEntries) ? parsedData.timeEntries : [],
+      employees: Array.isArray(parsedData.employees) ? parsedData.employees : [],
       inventory: parsedData.inventory || {
         items: [],
         categories: [],
@@ -75,7 +82,18 @@ export const loadFromLocalStorage = (): Company | null => {
         serialNumbers: [],
         lotTracking: []
       },
-      budgets: Array.isArray(parsedData.budgets) ? parsedData.budgets : [],
+      budgets: Array.isArray(parsedData.budgets) ? parsedData.budgets.map((budget: any) => ({
+        ...budget,
+        categories: Array.isArray(budget.categories) ? budget.categories.map((category: any) => ({
+          id: category.id || `cat-${Date.now()}-${Math.random()}`,
+          name: category.name || "",
+          type: category.type || "expense",
+          budgeted: typeof category.budgeted === 'number' ? category.budgeted : 
+                  (category.budgeted || parseFloat(category.budgetedAmount?.replace(/[^0-9.-]+/g, "") || "0")),
+          actual: typeof category.actual === 'number' ? category.actual : 
+                (category.actual || parseFloat(category.actualAmount?.replace(/[^0-9.-]+/g, "") || "0")),
+        })) : []
+      })) : [],
       estimates: Array.isArray(parsedData.estimates) ? parsedData.estimates : [],
       payrollData: parsedData.payrollData || { payPeriods: [] },
       auditTrail: Array.isArray(parsedData.auditTrail) ? parsedData.auditTrail : [],

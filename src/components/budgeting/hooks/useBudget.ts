@@ -1,11 +1,11 @@
 
 import { useState } from "react";
 import { useCompany } from "@/contexts/CompanyContext";
-import { Budget, BudgetCategory } from "@/contexts/CompanyContext";
+import { Budget, BudgetCategory } from "@/types/company";
 import { toast } from "sonner";
 
 export const useBudget = () => {
-  const { currentCompany, updateCompany, updateBudget } = useCompany();
+  const { currentCompany, updateBudget, addBudget } = useCompany();
   const [newBudgetDialogOpen, setNewBudgetDialogOpen] = useState(false);
   const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
@@ -16,12 +16,11 @@ export const useBudget = () => {
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
     categories: [] as BudgetCategory[],
-    totalBudgeted: "$0.00",
-    totalActual: "$0.00"
   });
   const [newCategory, setNewCategory] = useState({
     name: "",
-    budgetedAmount: "$0.00"
+    type: "expense" as "income" | "expense",
+    budgeted: 0,
   });
 
   // Calculate budget actuals and variance
@@ -30,8 +29,8 @@ export const useBudget = () => {
     let totalActual = 0;
     
     budget.categories.forEach(category => {
-      totalBudgeted += parseFloat(category.budgetedAmount.replace(/[^0-9.-]+/g, "") || "0");
-      totalActual += parseFloat(category.actualAmount.replace(/[^0-9.-]+/g, "") || "0");
+      totalBudgeted += category.budgeted;
+      totalActual += category.actual;
     });
     
     const variance = totalBudgeted - totalActual;
@@ -58,12 +57,8 @@ export const useBudget = () => {
     const calculatedBudget = calculateBudgetActuals({
       ...newBudget,
       id: `budget-${Date.now()}`,
-      categories: newBudget.categories.map(cat => ({
-        ...cat,
-        actualAmount: "$0.00",
-        variance: cat.budgetedAmount
-      })),
-      variance: "$0.00" // Add the missing variance field
+      status: "Active",
+      categories: newBudget.categories
     });
     
     const budgetToAdd: Budget = {
@@ -72,21 +67,20 @@ export const useBudget = () => {
       period: newBudget.period,
       startDate: newBudget.startDate,
       endDate: newBudget.endDate,
+      status: "Active",
       categories: newBudget.categories.map(cat => ({
         id: `cat-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         name: cat.name,
-        budgetedAmount: cat.budgetedAmount,
-        actualAmount: "$0.00",
-        variance: cat.budgetedAmount
+        type: cat.type || "expense",
+        budgeted: cat.budgeted,
+        actual: 0
       })),
       totalBudgeted: calculatedBudget.totalBudgeted,
       totalActual: calculatedBudget.totalActual,
       variance: calculatedBudget.variance
     };
     
-    updateCompany(currentCompany.id, {
-      budgets: [...currentCompany.budgets, budgetToAdd]
-    });
+    addBudget(budgetToAdd);
     
     toast.success("Budget created successfully");
     setNewBudgetDialogOpen(false);
@@ -96,13 +90,11 @@ export const useBudget = () => {
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
       categories: [],
-      totalBudgeted: "$0.00",
-      totalActual: "$0.00"
     });
   };
 
   const handleAddCategory = () => {
-    if (!newCategory.name || !newCategory.budgetedAmount) {
+    if (!newCategory.name || newCategory.budgeted <= 0) {
       toast.error("Please provide a category name and budgeted amount");
       return;
     }
@@ -114,16 +106,17 @@ export const useBudget = () => {
         {
           id: `temp-${Date.now()}`,
           name: newCategory.name,
-          budgetedAmount: newCategory.budgetedAmount,
-          actualAmount: "$0.00",
-          variance: newCategory.budgetedAmount
+          type: newCategory.type,
+          budgeted: newCategory.budgeted,
+          actual: 0
         }
       ]
     });
     
     setNewCategory({
       name: "",
-      budgetedAmount: "$0.00"
+      type: "expense",
+      budgeted: 0
     });
   };
 
@@ -136,22 +129,17 @@ export const useBudget = () => {
     });
   };
 
-  const handleUpdateActual = (budgetId: string, categoryId: string, actualAmount: string) => {
+  const handleUpdateActual = (budgetId: string, categoryId: string, actualAmount: number) => {
+    if (!currentCompany.budgets) return;
+    
     const budget = currentCompany.budgets.find(b => b.id === budgetId);
     if (!budget) return;
     
-    const numericActual = parseFloat(actualAmount.replace(/[^0-9.-]+/g, "") || "0");
-    const formattedActual = `$${numericActual.toFixed(2)}`;
-    
     const updatedCategories = budget.categories.map(category => {
       if (category.id === categoryId) {
-        const budgetedAmount = parseFloat(category.budgetedAmount.replace(/[^0-9.-]+/g, "") || "0");
-        const variance = `$${(budgetedAmount - numericActual).toFixed(2)}`;
-        
         return {
           ...category,
-          actualAmount: formattedActual,
-          variance
+          actual: actualAmount
         };
       }
       return category;
@@ -162,7 +150,8 @@ export const useBudget = () => {
       categories: updatedCategories
     });
     
-    updateBudget(budgetId, {
+    updateBudget({
+      ...budget,
       categories: updatedCategories,
       totalActual: calculatedBudget.totalActual,
       variance: calculatedBudget.variance
@@ -192,7 +181,8 @@ export const useBudget = () => {
       categories: updatedCategories
     });
     
-    updateBudget(selectedBudget.id, {
+    updateBudget({
+      ...selectedBudget,
       categories: updatedCategories,
       totalBudgeted: calculatedBudget.totalBudgeted,
       totalActual: calculatedBudget.totalActual,
@@ -204,11 +194,9 @@ export const useBudget = () => {
   };
 
   // Format currency numbers
-  const formatCurrency = (value: string): string => {
+  const formatCurrency = (value: number): string => {
     if (!value) return "$0.00";
-    
-    const numericValue = parseFloat(value.replace(/[^0-9.-]+/g, "") || "0");
-    return `$${numericValue.toFixed(2)}`;
+    return `$${value.toFixed(2)}`;
   };
 
   return {

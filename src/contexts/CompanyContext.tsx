@@ -1,259 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { saveToLocalStorage, loadFromLocalStorage } from '@/services/localStorageService';
-
-// Define all the necessary types
-export interface TaxRate {
-  id: string;
-  name: string;
-  rate: number;
-  isDefault: boolean;
-}
-
-export interface BankAccount {
-  id: string;
-  name: string;
-  balance: number;
-  transactions: Transaction[];
-  type?: string;
-}
-
-export interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: string;
-  category: string;
-  account: string;
-  reconciled: boolean;
-  type: "Deposit" | "Withdrawal" | "Transfer";
-  bankAccount?: string;
-}
-
-export interface Account {
-  id: string;
-  number: string;
-  name: string;
-  type: string;
-  balance: number;
-  description: string;
-}
-
-export interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  company?: string;
-}
-
-export interface Invoice {
-  id: string;
-  customer: string;
-  date: string;
-  dueDate: string;
-  items: InvoiceItem[];
-  status: string;
-  total: number;
-  amount: string;
-}
-
-export interface InvoiceItem {
-  id: string;
-  description: string;
-  quantity: number;
-  price: number;
-  total: number;
-}
-
-export interface Expense {
-  id: string;
-  date: string;
-  vendor: string;
-  category: string;
-  amount: number;
-  description: string;
-  status: string;
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  client: string;
-  status: string;
-  startDate: string;
-  endDate?: string;
-  budget?: number;
-  documents: ProjectDocument[];
-}
-
-export interface ProjectDocument {
-  id: string;
-  name: string;
-  type: string;
-  size: string;
-  uploadedBy?: string;
-  date?: string;
-  uploadDate?: string;
-}
-
-export interface Employee {
-  id: string;
-  name: string;
-  position: string;
-  salary: number;
-  hireDate: string;
-  status: string;
-}
-
-export interface TimeEntry {
-  id: string;
-  employeeId: string;
-  projectId: string;
-  date: string;
-  hours: number;
-  description: string;
-}
-
-export interface InventoryItem {
-  id: string;
-  name: string;
-  sku: string;
-  quantity: number;
-  price: number;
-  cost: number;
-  category: string;
-  location?: string;
-}
-
-export interface BudgetCategory {
-  id: string;
-  name: string;
-  type: "income" | "expense";
-  budgeted: number;
-  actual: number;
-}
-
-export interface Budget {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  categories: BudgetCategory[];
-  status: string;
-  period?: string;
-}
-
-export interface Estimate {
-  id: string;
-  customer: string;
-  date: string;
-  expiryDate: string;
-  items: InvoiceItem[];
-  status: string;
-  total: number;
-}
-
-export interface PayPeriod {
-  id: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-  totalPaid: number;
-  payDate?: string;
-  employees?: any[];
-  totalGross?: number;
-}
-
-export interface PayrollData {
-  payPeriods: PayPeriod[];
-}
-
-export interface RevenueData {
-  current: number;
-  previous: number;
-  percentChange: number;
-}
-
-export interface ProfitMarginData {
-  value: number;
-  trend: number;
-  percentChange: number;
-}
-
-export interface OutstandingInvoicesData {
-  amount: number;
-  percentChange: number;
-}
-
-export interface ActiveCustomersData {
-  count: number;
-  percentChange: number;
-}
-
-export interface InventoryData {
-  items: InventoryItem[];
-  categories: string[];
-  locations: string[];
-  bundles: any[];
-  serialNumbers: any[];
-  lotTracking: any[];
-}
-
-export interface Company {
-  id: string;
-  name: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  website?: string;
-  taxId?: string;
-  industry?: string;
-  fiscalYearStart?: string;
-  transactions: Transaction[];
-  accounts: Account[];
-  taxRates: TaxRate[];
-  bankAccounts: BankAccount[];
-  customers?: Customer[];
-  invoices?: Invoice[];
-  expenses?: Expense[];
-  projects?: Project[];
-  timeEntries?: TimeEntry[];
-  employees?: Employee[];
-  inventory?: InventoryData;
-  budgets?: Budget[];
-  estimates?: Estimate[];
-  payrollData?: PayrollData;
-  auditTrail?: any[];
-  integrations?: any[];
-  sales?: any[];
-  revenue?: RevenueData;
-  profitMargin?: ProfitMarginData;
-  outstandingInvoices?: OutstandingInvoicesData;
-  activeCustomers?: ActiveCustomersData;
-}
-
-export interface CompanyContextType {
-  currentCompany: Company;
-  companies: Company[];
-  updateCompany: (updatedCompany: Company) => void;
-  switchCompany: (companyId: string) => void;
-  addCompany: (company: Company) => void;
-  updateTaxRate: (taxRate: TaxRate) => void;
-  addTaxRate: (taxRate: TaxRate) => void;
-  deleteTaxRate: (taxRateId: string) => void;
-  updateAccount: (account: Account) => void;
-  addAccount: (account: Account) => void;
-  deleteAccount: (accountId: string) => void;
-  addExpense: (expense: Expense) => void;
-  addEstimate: (estimate: Estimate) => void;
-  updateBudget: (budget: Budget) => void;
-  processPayroll: (payrollData: any) => void;
-  addInvoice: (invoice: Invoice) => void;
-  updateTransaction: (transaction: Transaction) => void;
-  addTransaction: (transaction: Transaction, bankAccountId: string) => void;
-}
+import { Company, TaxRate, Account, Transaction, Invoice, Expense, Estimate, Budget } from '@/types/company';
+import { CompanyContextType } from '@/types/context';
 
 // Create the context with default values
 const CompanyContext = createContext<CompanyContextType>({
@@ -276,12 +25,21 @@ const CompanyContext = createContext<CompanyContextType>({
   addAccount: () => {},
   deleteAccount: () => {},
   addExpense: () => {},
-  addEstimate: () => {},
-  updateBudget: () => {},
-  processPayroll: () => {},
+  updateExpense: () => {},
+  deleteExpense: () => {},
   addInvoice: () => {},
+  updateInvoice: () => {},
+  deleteInvoice: () => {},
+  addEstimate: () => {},
+  updateEstimate: () => {},
+  deleteEstimate: () => {},
+  updateBudget: () => {},
+  addBudget: () => {},
+  deleteBudget: () => {},
+  processPayroll: () => {},
   updateTransaction: () => {},
   addTransaction: () => {},
+  deleteTransaction: () => {},
 });
 
 interface CompanyProviderProps {
@@ -464,6 +222,30 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     
     updateCompany(updatedCompany);
   };
+  
+  const updateExpense = (expense: Expense) => {
+    const expenses = currentCompany.expenses || [];
+    const updatedExpenses = expenses.map(exp => 
+      exp.id === expense.id ? expense : exp
+    );
+    
+    const updatedCompany = {
+      ...currentCompany,
+      expenses: updatedExpenses
+    };
+    
+    updateCompany(updatedCompany);
+  };
+  
+  const deleteExpense = (expenseId: string) => {
+    const expenses = currentCompany.expenses || [];
+    const updatedCompany = {
+      ...currentCompany,
+      expenses: expenses.filter(exp => exp.id !== expenseId)
+    };
+    
+    updateCompany(updatedCompany);
+  };
 
   // Invoice operations
   const addInvoice = (invoice: Invoice) => {
@@ -471,6 +253,30 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     const updatedCompany = {
       ...currentCompany,
       invoices: [...invoices, invoice]
+    };
+    
+    updateCompany(updatedCompany);
+  };
+  
+  const updateInvoice = (invoice: Invoice) => {
+    const invoices = currentCompany.invoices || [];
+    const updatedInvoices = invoices.map(inv => 
+      inv.id === invoice.id ? invoice : inv
+    );
+    
+    const updatedCompany = {
+      ...currentCompany,
+      invoices: updatedInvoices
+    };
+    
+    updateCompany(updatedCompany);
+  };
+  
+  const deleteInvoice = (invoiceId: string) => {
+    const invoices = currentCompany.invoices || [];
+    const updatedCompany = {
+      ...currentCompany,
+      invoices: invoices.filter(inv => inv.id !== invoiceId)
     };
     
     updateCompany(updatedCompany);
@@ -530,6 +336,31 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
       updateCompany(updatedCompany);
     }
   };
+  
+  const deleteTransaction = (transactionId: string, bankAccountId: string) => {
+    // Find the bank account
+    const bankAccount = currentCompany.bankAccounts.find(account => account.id === bankAccountId);
+
+    if (bankAccount) {
+      // Remove the transaction from the bank account
+      const updatedTransactions = bankAccount.transactions.filter(t => t.id !== transactionId);
+
+      // Update the bank account with new transactions list
+      const updatedBankAccounts = currentCompany.bankAccounts.map(account => 
+        account.id === bankAccountId 
+          ? { ...account, transactions: updatedTransactions }
+          : account
+      );
+
+      // Update company with new bank accounts list
+      const updatedCompany = {
+        ...currentCompany,
+        bankAccounts: updatedBankAccounts
+      };
+
+      updateCompany(updatedCompany);
+    }
+  };
 
   // Estimate operations
   const addEstimate = (estimate: Estimate) => {
@@ -541,8 +372,42 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     
     updateCompany(updatedCompany);
   };
+  
+  const updateEstimate = (estimate: Estimate) => {
+    const estimates = currentCompany.estimates || [];
+    const updatedEstimates = estimates.map(est => 
+      est.id === estimate.id ? estimate : est
+    );
+    
+    const updatedCompany = {
+      ...currentCompany,
+      estimates: updatedEstimates
+    };
+    
+    updateCompany(updatedCompany);
+  };
+  
+  const deleteEstimate = (estimateId: string) => {
+    const estimates = currentCompany.estimates || [];
+    const updatedCompany = {
+      ...currentCompany,
+      estimates: estimates.filter(est => est.id !== estimateId)
+    };
+    
+    updateCompany(updatedCompany);
+  };
 
   // Budget operations
+  const addBudget = (budget: Budget) => {
+    const budgets = currentCompany.budgets || [];
+    const updatedCompany = {
+      ...currentCompany,
+      budgets: [...budgets, budget]
+    };
+    
+    updateCompany(updatedCompany);
+  };
+  
   const updateBudget = (budget: Budget) => {
     const budgets = currentCompany.budgets || [];
     const updatedBudgets = budgets.map(b => 
@@ -552,6 +417,16 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     const updatedCompany = {
       ...currentCompany,
       budgets: updatedBudgets
+    };
+    
+    updateCompany(updatedCompany);
+  };
+  
+  const deleteBudget = (budgetId: string) => {
+    const budgets = currentCompany.budgets || [];
+    const updatedCompany = {
+      ...currentCompany,
+      budgets: budgets.filter(b => b.id !== budgetId)
     };
     
     updateCompany(updatedCompany);
@@ -586,12 +461,21 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
         addAccount,
         deleteAccount,
         addExpense,
+        updateExpense,
+        deleteExpense,
         addInvoice,
+        updateInvoice,
+        deleteInvoice,
         addEstimate,
+        updateEstimate,
+        deleteEstimate,
+        addBudget,
         updateBudget,
+        deleteBudget,
         processPayroll,
         updateTransaction,
-        addTransaction
+        addTransaction,
+        deleteTransaction
       }}
     >
       {children}
@@ -606,3 +490,6 @@ export const useCompany = () => {
   }
   return context;
 };
+
+// Re-export types
+export type { Company, TaxRate, Account, Transaction, Invoice, Expense, Estimate, Budget } from '@/types/company';

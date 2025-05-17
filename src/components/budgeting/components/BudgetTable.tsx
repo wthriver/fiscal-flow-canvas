@@ -1,14 +1,14 @@
 
 import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Budget, BudgetCategory } from "@/contexts/CompanyContext";
+import { Budget, BudgetCategory } from "@/types/company";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowDown, ArrowUp } from "lucide-react";
 
 interface BudgetTableProps {
   budget: Budget;
-  handleUpdateActual: (budgetId: string, categoryId: string, actualAmount: string) => void;
+  handleUpdateActual: (budgetId: string, categoryId: string, actual: number) => void;
   handleEditCategory: (budget: Budget, categoryId: string) => void;
 }
 
@@ -30,21 +30,26 @@ export const BudgetTable: React.FC<BudgetTableProps> = ({
       </TableHeader>
       <TableBody>
         {budget.categories.map((category) => {
-          const budgetedAmount = parseFloat(category.budgetedAmount.replace(/[^0-9.-]+/g, "") || "0");
-          const actualAmount = parseFloat(category.actualAmount.replace(/[^0-9.-]+/g, "") || "0");
-          const variance = budgetedAmount - actualAmount;
-          const percentUsed = budgetedAmount > 0 ? (actualAmount / budgetedAmount) * 100 : 0;
+          const budgeted = category.budgeted;
+          const actual = category.actual;
+          const variance = budgeted - actual;
+          const percentUsed = budgeted > 0 ? (actual / budgeted) * 100 : 0;
           
           return (
             <TableRow key={category.id}>
               <TableCell className="font-medium">{category.name}</TableCell>
-              <TableCell>{category.budgetedAmount}</TableCell>
+              <TableCell>${budgeted.toFixed(2)}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Input
                     className="w-24"
-                    value={category.actualAmount}
-                    onChange={(e) => handleUpdateActual(budget.id, category.id, e.target.value)}
+                    value={actual}
+                    type="number"
+                    onChange={(e) => handleUpdateActual(
+                      budget.id, 
+                      category.id, 
+                      parseFloat(e.target.value)
+                    )}
                   />
                   <div className="w-16 text-xs">
                     {percentUsed.toFixed(1)}%
@@ -59,7 +64,7 @@ export const BudgetTable: React.FC<BudgetTableProps> = ({
                     <ArrowUp className="h-4 w-4 text-red-500" />
                   )}
                   <span className={variance >= 0 ? "text-green-600" : "text-red-600"}>
-                    {`$${Math.abs(variance).toFixed(2)}`}
+                    ${Math.abs(variance).toFixed(2)}
                   </span>
                 </div>
               </TableCell>

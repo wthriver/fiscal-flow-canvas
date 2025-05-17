@@ -3,7 +3,7 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, Eye } from "lucide-react";
-import { ProjectDocument } from "@/contexts/CompanyContext";
+import { ProjectDocument } from "@/types/company";
 
 export interface ProjectDocumentsProps {
   documents: ProjectDocument[];
@@ -56,7 +56,7 @@ export const ProjectDocuments: React.FC<ProjectDocumentsProps> = ({
               <TableCell>{doc.date}</TableCell>
               <TableCell>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => onViewDocument(doc)}>
+                  <Button variant="outline" size="sm" onClick={() => onViewDocument(doc as ProjectDocument)}>
                     <Eye className="h-4 w-4 mr-1" /> View
                   </Button>
                   <Button variant="outline" size="sm">
