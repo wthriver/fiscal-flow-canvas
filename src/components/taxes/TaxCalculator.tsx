@@ -1,309 +1,253 @@
 
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useCompany } from "@/contexts/CompanyContext";
-import { Plus, Edit, Trash2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Pencil, Trash2, Plus } from "lucide-react";
+import { useCompany } from "@/contexts/CompanyContext";
 
-interface TaxRate {
+export interface TaxRate {
   id: string;
   name: string;
   rate: number;
   description?: string;
+  category?: string;
 }
 
-export const TaxCalculator: React.FC = () => {
+export const TaxCalculator = () => {
   const { currentCompany, addTaxRate, updateTaxRate, deleteTaxRate } = useCompany();
-  const [amount, setAmount] = useState<string>("0");
-  const [selectedTaxRate, setSelectedTaxRate] = useState<string>("");
-  const [calculatedTax, setCalculatedTax] = useState<number | null>(null);
-  const [total, setTotal] = useState<number | null>(null);
-
-  // Tax rate management
-  const [taxRateDialogOpen, setTaxRateDialogOpen] = useState(false);
+  const [taxRates, setTaxRates] = useState<TaxRate[]>(currentCompany.taxRates || []);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentTaxRate, setCurrentTaxRate] = useState<TaxRate | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [taxRateToDelete, setTaxRateToDelete] = useState<TaxRate | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    rate: 0,
+    description: "",
+    category: "Sales Tax",
+  });
 
-  // Make sure taxRates exists with a default value
-  const taxRates = currentCompany.taxRates || [];
+  const taxCategories = [
+    "Sales Tax",
+    "Income Tax",
+    "Property Tax",
+    "Value Added Tax",
+    "Other",
+  ];
 
-  const calculateTax = (amount: number, taxRateId: string) => {
-    const taxRate = taxRates.find(rate => rate.id === taxRateId);
-    if (!taxRate) return 0;
-    
-    return (amount * taxRate.rate) / 100;
-  };
-
-  const handleCalculate = () => {
-    if (!selectedTaxRate) {
-      toast.error("Please select a tax rate");
-      return;
+  const handleOpenDialog = (taxRate?: TaxRate) => {
+    if (taxRate) {
+      setCurrentTaxRate(taxRate);
+      setFormData({
+        name: taxRate.name,
+        rate: taxRate.rate,
+        description: taxRate.description || "",
+        category: taxRate.category || "Sales Tax",
+      });
+    } else {
+      setCurrentTaxRate(null);
+      setFormData({
+        name: "",
+        rate: 0,
+        description: "",
+        category: "Sales Tax",
+      });
     }
-
-    const numericAmount = parseFloat(amount);
-    if (isNaN(numericAmount)) {
-      toast.error("Please enter a valid amount");
-      return;
-    }
-
-    const tax = calculateTax(numericAmount, selectedTaxRate);
-    setCalculatedTax(tax);
-    setTotal(numericAmount + tax);
+    setIsDialogOpen(true);
   };
 
-  const handleAddTaxRate = () => {
-    setCurrentTaxRate(null);
-    setTaxRateDialogOpen(true);
+  const handleChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const handleEditTaxRate = (taxRate: TaxRate) => {
-    setCurrentTaxRate(taxRate);
-    setTaxRateDialogOpen(true);
-  };
-
-  const handleDeleteTaxRate = (taxRate: TaxRate) => {
-    setTaxRateToDelete(taxRate);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleSaveTaxRate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentTaxRate) return;
-
-    if (currentTaxRate.id) {
+  const handleSubmit = () => {
+    if (currentTaxRate) {
       // Update existing tax rate
-      updateTaxRate(currentTaxRate.id, currentTaxRate);
-      toast.success(`Tax rate "${currentTaxRate.name}" updated successfully`);
+      const updatedTaxRate = {
+        ...currentTaxRate,
+        ...formData
+      };
+      updateTaxRate(currentTaxRate.id, updatedTaxRate);
+      setTaxRates(taxRates.map(tr => tr.id === currentTaxRate.id ? updatedTaxRate : tr));
     } else {
       // Add new tax rate
       const newTaxRate = {
-        ...currentTaxRate,
-        id: `tax-${Date.now()}`
+        id: `tax${Date.now()}`,
+        ...formData
       };
       addTaxRate(newTaxRate);
-      toast.success(`Tax rate "${newTaxRate.name}" created successfully`);
+      setTaxRates([...taxRates, newTaxRate]);
     }
-    setTaxRateDialogOpen(false);
+    setIsDialogOpen(false);
   };
 
-  const confirmDeleteTaxRate = () => {
-    if (taxRateToDelete) {
-      deleteTaxRate(taxRateToDelete.id);
-      toast.success(`Tax rate "${taxRateToDelete.name}" deleted successfully`);
-      // If the deleted tax rate was selected, reset the selection
-      if (selectedTaxRate === taxRateToDelete.id) {
-        setSelectedTaxRate("");
-        setCalculatedTax(null);
-        setTotal(null);
-      }
-      setDeleteDialogOpen(false);
-    }
+  const handleDelete = (id: string) => {
+    deleteTaxRate(id);
+    setTaxRates(taxRates.filter(tr => tr.id !== id));
+  };
+
+  const calculateTax = (amount: number, rate: number) => {
+    return (amount * rate / 100).toFixed(2);
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Tax Calculator</CardTitle>
-            <CardDescription>Calculate taxes for any amount</CardDescription>
-          </div>
-          <Button variant="outline" size="sm" onClick={handleAddTaxRate}>
-            <Plus className="h-4 w-4 mr-1" /> Add Tax Rate
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Tax Rates</CardTitle>
+          <Button size="sm" onClick={() => handleOpenDialog()}>
+            <Plus className="mr-1 h-4 w-4" /> Add Tax Rate
           </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-4 items-center gap-4">
-          <label htmlFor="amount" className="text-right text-sm">
-            Amount
-          </label>
-          <div className="col-span-3">
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
-              <Input
-                id="amount"
-                type="number"
-                min="0"
-                step="0.01"
-                className="pl-7"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-4 items-center gap-4">
-          <label htmlFor="tax-rate" className="text-right text-sm">
-            Tax Rate
-          </label>
-          <div className="col-span-3">
-            <div className="flex gap-2">
-              <select
-                id="tax-rate"
-                className="w-full flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-                value={selectedTaxRate}
-                onChange={(e) => setSelectedTaxRate(e.target.value)}
-              >
-                <option value="">Select Tax Rate</option>
-                {taxRates.map((rate) => (
-                  <option key={rate.id} value={rate.id}>
-                    {rate.name} ({rate.rate}%)
-                  </option>
-                ))}
-              </select>
-              {selectedTaxRate && (
-                <div className="flex gap-1">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="w-9 h-9 p-0"
-                    onClick={() => {
-                      const taxRate = taxRates.find(rate => rate.id === selectedTaxRate);
-                      if (taxRate) handleEditTaxRate(taxRate);
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="w-9 h-9 p-0"
-                    onClick={() => {
-                      const taxRate = taxRates.find(rate => rate.id === selectedTaxRate);
-                      if (taxRate) handleDeleteTaxRate(taxRate);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Rate</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {taxRates && taxRates.length > 0 ? (
+                taxRates.map((taxRate) => (
+                  <TableRow key={taxRate.id}>
+                    <TableCell>{taxRate.name}</TableCell>
+                    <TableCell>{taxRate.rate}%</TableCell>
+                    <TableCell>{taxRate.category || 'N/A'}</TableCell>
+                    <TableCell>{taxRate.description || 'N/A'}</TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(taxRate)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(taxRate.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    No tax rates found
+                  </TableCell>
+                </TableRow>
               )}
-            </div>
-          </div>
-        </div>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-        <Button onClick={handleCalculate} className="w-full">Calculate</Button>
-
-        {calculatedTax !== null && total !== null && (
-          <div className="border rounded-md p-4 mt-4">
-            <div className="flex justify-between mb-2">
-              <span className="text-muted-foreground">Subtotal:</span>
-              <span>${parseFloat(amount).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between mb-2">
-              <span className="text-muted-foreground">
-                Tax ({taxRates.find(rate => rate.id === selectedTaxRate)?.rate || 0}%):
-              </span>
-              <span>${calculatedTax.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between font-bold border-t pt-2 mt-2">
-              <span>Total:</span>
-              <span>${total.toFixed(2)}</span>
-            </div>
-          </div>
-        )}
-      </CardContent>
-      <CardFooter className="text-xs text-muted-foreground">
-        This is for estimation purposes only. Actual taxes may vary.
-      </CardFooter>
-
-      {/* Tax Rate Dialog */}
-      <Dialog open={taxRateDialogOpen} onOpenChange={setTaxRateDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <form onSubmit={handleSaveTaxRate}>
-            <DialogHeader>
-              <DialogTitle>{currentTaxRate?.id ? 'Edit Tax Rate' : 'Add Tax Rate'}</DialogTitle>
-              <DialogDescription>
-                {currentTaxRate?.id ? 'Update the tax rate details below.' : 'Enter the tax rate details below.'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Name
-                </Label>
+      <Card>
+        <CardHeader>
+          <CardTitle>Tax Calculator</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="amount">Amount</Label>
                 <Input
-                  id="name"
-                  value={currentTaxRate?.name || ''}
-                  onChange={(e) => setCurrentTaxRate(prev => prev ? { ...prev, name: e.target.value } : { name: e.target.value, rate: 0, id: '' })}
-                  className="col-span-3"
-                  required
+                  id="amount"
+                  type="number"
+                  placeholder="Enter amount"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="rate" className="text-right">
-                  Rate (%)
-                </Label>
+              <div>
+                <Label htmlFor="tax-rate">Tax Rate</Label>
+                <Select>
+                  <SelectTrigger id="tax-rate">
+                    <SelectValue placeholder="Select tax rate" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {taxRates && taxRates.map((taxRate) => (
+                      <SelectItem key={taxRate.id} value={taxRate.id}>
+                        {taxRate.name} ({taxRate.rate}%)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Button className="w-full">Calculate Tax</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{currentTaxRate ? "Edit Tax Rate" : "Add New Tax Rate"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div>
+              <Label htmlFor="name">Tax Name</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+                placeholder="e.g., GST"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="rate">Rate (%)</Label>
                 <Input
                   id="rate"
                   type="number"
-                  min="0"
                   step="0.01"
-                  value={currentTaxRate?.rate || ''}
-                  onChange={(e) => setCurrentTaxRate(prev => prev ? { ...prev, rate: parseFloat(e.target.value) || 0 } : { name: '', rate: parseFloat(e.target.value) || 0, id: '' })}
-                  className="col-span-3"
-                  required
+                  value={formData.rate}
+                  onChange={(e) => handleChange("rate", parseFloat(e.target.value) || 0)}
+                  placeholder="e.g., 7.5"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="description" className="text-right">
-                  Description
-                </Label>
-                <Input
-                  id="description"
-                  value={currentTaxRate?.description || ''}
-                  onChange={(e) => setCurrentTaxRate(prev => prev ? { ...prev, description: e.target.value } : { name: '', rate: 0, description: e.target.value, id: '' })}
-                  className="col-span-3"
-                />
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select 
+                  value={formData.category} 
+                  onValueChange={(value) => handleChange("category", value)}
+                >
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {taxCategories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <DialogFooter>
-              <Button type="submit">{currentTaxRate?.id ? 'Update' : 'Create'}</Button>
-            </DialogFooter>
-          </form>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Input
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleChange("description", e.target.value)}
+                placeholder="Optional description"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit}>{currentTaxRate ? "Update" : "Create"}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Tax Rate</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete the tax rate "{taxRateToDelete?.name}"? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteTaxRate} className="bg-destructive text-destructive-foreground">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </Card>
+    </div>
   );
 };

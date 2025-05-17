@@ -1,231 +1,223 @@
 
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { FileText, Plus, FileEdit, Trash2, Download, Upload, MoreVertical } from "lucide-react";
-import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Pencil, Trash2, Plus } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
-import { AccountDialog } from "./AccountDialog";
 
-interface Account {
+export interface Account {
   id: string;
-  code: string;
   name: string;
   type: string;
-  subtype: string;
+  number: string;
   balance: number;
+  description?: string;
 }
 
-export function ChartOfAccountsComponent() {
+export const ChartOfAccountsComponent = () => {
   const { currentCompany, addAccount, updateAccount, deleteAccount } = useCompany();
-  const [accounts, setAccounts] = useState<Account[]>(
-    currentCompany.accounts || [
-      { id: "1", code: "1000", name: "Cash", type: "Asset", subtype: "Current Asset", balance: 15000 },
-      { id: "2", code: "1100", name: "Accounts Receivable", type: "Asset", subtype: "Current Asset", balance: 7500 },
-      { id: "3", code: "1500", name: "Office Equipment", type: "Asset", subtype: "Fixed Asset", balance: 12000 },
-      { id: "4", code: "2000", name: "Accounts Payable", type: "Liability", subtype: "Current Liability", balance: 6000 },
-      { id: "5", code: "3000", name: "Common Stock", type: "Equity", subtype: "Equity", balance: 25000 },
-      { id: "6", code: "4000", name: "Sales Revenue", type: "Revenue", subtype: "Income", balance: 50000 },
-      { id: "7", code: "5000", name: "Cost of Goods Sold", type: "Expense", subtype: "Cost of Sales", balance: 20000 },
-      { id: "8", code: "6000", name: "Rent Expense", type: "Expense", subtype: "Operating Expense", balance: 15000 },
-    ]
-  );
-  
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [accounts, setAccounts] = useState<Account[]>(currentCompany.accounts || []);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    type: "Asset",
+    number: "",
+    balance: 0,
+    description: "",
+  });
 
-  const handleDeleteAccount = (account: Account) => {
-    setAccountToDelete(account);
-    setDeleteDialogOpen(true);
-  };
+  const accountTypes = [
+    "Asset",
+    "Liability",
+    "Equity",
+    "Revenue",
+    "Expense",
+  ];
 
-  const confirmDelete = () => {
-    if (accountToDelete) {
-      deleteAccount(accountToDelete.id);
-      setAccounts(accounts.filter(account => account.id !== accountToDelete.id));
-      toast.success(`Account "${accountToDelete.name}" deleted successfully`);
-      setDeleteDialogOpen(false);
-      setAccountToDelete(null);
+  const handleOpenDialog = (account?: Account) => {
+    if (account) {
+      setCurrentAccount(account);
+      setFormData({
+        name: account.name,
+        type: account.type,
+        number: account.number,
+        balance: account.balance,
+        description: account.description || "",
+      });
+    } else {
+      setCurrentAccount(null);
+      setFormData({
+        name: "",
+        type: "Asset",
+        number: "",
+        balance: 0,
+        description: "",
+      });
     }
+    setIsDialogOpen(true);
   };
 
-  const getAccountTypeColor = (type: string) => {
-    switch (type) {
-      case 'Asset':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-      case 'Liability':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-      case 'Equity':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
-      case 'Revenue':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      case 'Expense':
-        return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
-    }
+  const handleChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const handleAddAccount = () => {
-    setCurrentAccount(null);
-    setDialogOpen(true);
-  };
-
-  const handleImportAccounts = () => {
-    toast.info("Opening account import dialog...");
-    // In a real app, this would open a dialog to import accounts
-  };
-
-  const handleExportAccounts = () => {
-    toast.success("Exporting chart of accounts...");
-    // In a real app, this would trigger a download of the chart of accounts
-  };
-
-  const handleEditAccount = (account: Account) => {
-    setCurrentAccount(account);
-    setDialogOpen(true);
-  };
-
-  const handleSaveAccount = (account: Account) => {
+  const handleSubmit = () => {
     if (currentAccount) {
       // Update existing account
-      updateAccount(account.id, account);
-      setAccounts(accounts.map(a => a.id === account.id ? account : a));
-      toast.success(`Account "${account.name}" updated successfully`);
+      const updatedAccount = {
+        ...currentAccount,
+        ...formData
+      };
+      updateAccount(currentAccount.id, updatedAccount);
+      setAccounts(accounts.map(a => a.id === currentAccount.id ? updatedAccount : a));
     } else {
       // Add new account
       const newAccount = {
-        ...account,
-        id: `account-${Date.now()}`,
+        id: `acc${Date.now()}`,
+        ...formData
       };
       addAccount(newAccount);
       setAccounts([...accounts, newAccount]);
-      toast.success(`Account "${account.name}" created successfully`);
     }
-    setDialogOpen(false);
+    setIsDialogOpen(false);
+  };
+
+  const handleDelete = (id: string) => {
+    deleteAccount(id);
+    setAccounts(accounts.filter(a => a.id !== id));
   };
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-primary" />
-          <CardTitle>Chart of Accounts</CardTitle>
-        </div>
-        <CardDescription>Manage your accounting structure and accounts</CardDescription>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Chart of Accounts</CardTitle>
+        <Button size="sm" onClick={() => handleOpenDialog()}>
+          <Plus className="mr-1 h-4 w-4" /> Add Account
+        </Button>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-wrap gap-2 justify-end mb-4">
-          <Button variant="outline" onClick={handleImportAccounts}>
-            <Upload className="mr-2 h-4 w-4" />
-            Import
-          </Button>
-          <Button variant="outline" onClick={handleExportAccounts}>
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-          <Button onClick={handleAddAccount}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Account
-          </Button>
-        </div>
-        
-        <div className="rounded-md border">
-          <div className="grid grid-cols-12 bg-muted py-3 px-4 text-sm font-medium">
-            <div className="col-span-2">Code</div>
-            <div className="col-span-4">Account Name</div>
-            <div className="col-span-2">Type</div>
-            <div className="col-span-3">Balance</div>
-            <div className="col-span-1"></div>
-          </div>
-          
-          {accounts.map((account) => (
-            <div key={account.id} className="grid grid-cols-12 items-center border-t py-3 px-4">
-              <div className="col-span-2 font-mono text-sm">{account.code}</div>
-              <div className="col-span-4">
-                <div className="font-medium">{account.name}</div>
-                <div className="text-xs text-muted-foreground">{account.subtype}</div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Account Number</TableHead>
+              <TableHead>Account Name</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Balance</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {accounts.length > 0 ? (
+              accounts.map((account) => (
+                <TableRow key={account.id}>
+                  <TableCell>{account.number}</TableCell>
+                  <TableCell>{account.name}</TableCell>
+                  <TableCell>{account.type}</TableCell>
+                  <TableCell>${account.balance.toFixed(2)}</TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(account)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(account.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center">
+                  No accounts found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{currentAccount ? "Edit Account" : "Add New Account"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="number">Account Number</Label>
+                <Input
+                  id="number"
+                  value={formData.number}
+                  onChange={(e) => handleChange("number", e.target.value)}
+                  placeholder="e.g., 1000"
+                />
               </div>
-              <div className="col-span-2">
-                <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getAccountTypeColor(account.type)}`}>
-                  {account.type}
-                </span>
-              </div>
-              <div className="col-span-3 font-mono">
-                {account.balance.toLocaleString('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                })}
-              </div>
-              <div className="col-span-1 text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-4 w-4" />
-                      <span className="sr-only">More options</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEditAccount(account)}>
-                      <FileEdit className="mr-2 h-4 w-4" />
-                      Edit Account
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      className="text-destructive" 
-                      onClick={() => handleDeleteAccount(account)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete Account
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              <div>
+                <Label htmlFor="type">Type</Label>
+                <Select 
+                  value={formData.type} 
+                  onValueChange={(value) => handleChange("type", value)}
+                >
+                  <SelectTrigger id="type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accountTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          ))}
-        </div>
-        
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Account</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete the account "{accountToDelete?.name}"? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        <AccountDialog 
-          open={dialogOpen} 
-          onOpenChange={setDialogOpen} 
-          account={currentAccount} 
-          onSave={handleSaveAccount} 
-        />
-      </CardContent>
+            <div>
+              <Label htmlFor="name">Account Name</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+                placeholder="e.g., Cash on Hand"
+              />
+            </div>
+            <div>
+              <Label htmlFor="balance">Initial Balance</Label>
+              <Input
+                id="balance"
+                type="number"
+                value={formData.balance}
+                onChange={(e) => handleChange("balance", parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Input
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleChange("description", e.target.value)}
+                placeholder="Optional description"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit}>{currentAccount ? "Update" : "Create"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
-}
+};

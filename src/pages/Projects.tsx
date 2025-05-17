@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,17 +20,20 @@ interface Project {
   id: string;
   name: string;
   client: string;
-  startDate: string;
-  dueDate: string;
   status: string;
-  description?: string;
-  budget: string; 
-  spent: string;
-  progress: number;
+  dueDate: string;
   manager: string;
   team: string[];
   documents: ProjectDocument[];
-  tasks: any[];
+  budget: string;
+  spent: string;
+  progress: number;
+  startDate: string;
+  totalHours?: number;
+  billedHours?: number;
+  description?: string;
+  notes?: string;
+  remaining?: string;
 }
 
 const Projects: React.FC = () => {

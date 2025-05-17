@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   NavigationMenu,
@@ -9,7 +10,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
-import Link from "next/link";
+import { Link as RouterLink } from "react-router-dom";
 import {
   Home,
   LayoutDashboard,
@@ -32,8 +33,8 @@ const ListItem = React.forwardRef<
   return (
     <li>
       <NavigationMenuLink asChild>
-        <Link
-          ref={ref}
+        <RouterLink
+          ref={ref as any}
           className={`block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground ${className}`}
           {...props}
         >
@@ -41,7 +42,7 @@ const ListItem = React.forwardRef<
           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
             {children}
           </p>
-        </Link>
+        </RouterLink>
       </NavigationMenuLink>
     </li>
   );
@@ -63,7 +64,7 @@ const routes = [
   },
   {
     title: "Invoicing",
-    href: "/invoicing",
+    href: "/invoices",
     icon: FileText,
     submenu: false,
   },
@@ -82,7 +83,7 @@ const routes = [
   {
     title: "Chart of Accounts",
     href: "/chart-of-accounts",
-    icon: FileText, // Use appropriate icon from lucide-react
+    icon: FileText, 
     submenu: false,
   },
   {
@@ -139,18 +140,16 @@ export function Navigation() {
   return (
     <div className="border-b">
       <div className="container flex items-center justify-between py-4">
-        <Link href="/" className="font-bold text-2xl">
+        <RouterLink to="/" className="font-bold text-2xl">
           Acme Corp
-        </Link>
+        </RouterLink>
         <NavigationMenu>
           <NavigationMenuList>
             {routes.map((route) => (
               <NavigationMenuItem key={route.href}>
-                <Link href={route.href} legacyBehavior passHref>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    {route.title}
-                  </NavigationMenuLink>
-                </Link>
+                <RouterLink to={route.href} className={navigationMenuTriggerStyle()}>
+                  {route.title}
+                </RouterLink>
               </NavigationMenuItem>
             ))}
           </NavigationMenuList>
@@ -163,18 +162,18 @@ export function Navigation() {
           </SheetTrigger>
           <SheetContent side="left" className="w-full sm:w-64">
             <div className="p-4">
-              <Link href="/" className="font-bold text-2xl block mb-4">
+              <RouterLink to="/" className="font-bold text-2xl block mb-4">
                 Acme Corp
-              </Link>
+              </RouterLink>
               {routes.map((route) => (
-                <Link
+                <RouterLink
                   key={route.href}
-                  href={route.href}
+                  to={route.href}
                   className="flex items-center space-x-2 py-2 text-sm font-medium hover:underline"
                 >
                   <route.icon className="h-4 w-4" />
                   <span>{route.title}</span>
-                </Link>
+                </RouterLink>
               ))}
             </div>
           </SheetContent>

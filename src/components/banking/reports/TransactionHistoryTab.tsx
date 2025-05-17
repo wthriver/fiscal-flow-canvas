@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { TransactionEditModal } from "./TransactionEditModal";
@@ -10,12 +9,13 @@ import { useCompany } from "@/contexts/CompanyContext";
 interface Transaction {
   id: string;
   date: string;
-  amount: string;
   description: string;
+  amount: string;
   category: string;
+  account: string;
   reconciled: boolean;
-  type: string;
-  bankAccount: string;
+  type: "Deposit" | "Withdrawal" | "Transfer";
+  [key: string]: any; // Add index signature to allow string keys
 }
 
 interface TransactionHistoryTabProps {
@@ -60,12 +60,18 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     return sortableTransactions;
   }, [filteredTransactions, sortConfig]);
 
-  const requestSort = (key: string) => {
-    let direction: "asc" | "desc" = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+  const handleSort = (key: string) => {
+    if (sortConfig && sortConfig.key === key) {
+      setSortConfig({
+        key,
+        direction: sortConfig.direction === 'asc' ? 'desc' : 'asc',
+      });
+    } else {
+      setSortConfig({
+        key,
+        direction: 'asc',
+      });
     }
-    setSortConfig({ key, direction });
   };
 
   const handleShareTransaction = (transaction: Transaction) => {
@@ -156,7 +162,7 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
       <TransactionTable
         transactions={sortedTransactions}
         sortConfig={sortConfig}
-        onRequestSort={requestSort}
+        onRequestSort={handleSort}
         onViewDetails={handleViewDetails}
         onShareTransaction={handleShareTransaction}
         searchTerm={searchTerm}

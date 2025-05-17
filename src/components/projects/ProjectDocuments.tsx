@@ -9,8 +9,9 @@ export interface ProjectDocument {
   name: string;
   type: string;
   size: string;
-  uploadedBy: string;
-  date: string;
+  uploadedBy?: string;
+  date?: string;
+  uploadDate?: string;
 }
 
 export interface ProjectDocumentsProps {
