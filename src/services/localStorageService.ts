@@ -32,11 +32,41 @@ export const loadFromLocalStorage = (): Company | null => {
     return {
       id: parsedData.id || `company-${Date.now()}`,
       name: parsedData.name || "My Company",
+      address: parsedData.address || "",
+      phone: parsedData.phone || "",
+      email: parsedData.email || "",
+      website: parsedData.website || "",
+      taxId: parsedData.taxId || "",
+      industry: parsedData.industry || "",
+      fiscalYearStart: parsedData.fiscalYearStart || "January 1",
       transactions: parsedData.transactions || [],
       accounts: parsedData.accounts || [],
       taxRates: parsedData.taxRates || [],
       bankAccounts: parsedData.bankAccounts || [],
-      ...parsedData
+      customers: parsedData.customers || [],
+      invoices: parsedData.invoices || [],
+      expenses: parsedData.expenses || [],
+      projects: parsedData.projects || [],
+      employees: parsedData.employees || [],
+      timeEntries: parsedData.timeEntries || [],
+      inventory: parsedData.inventory || {
+        items: [],
+        categories: [],
+        locations: [],
+        bundles: [],
+        serialNumbers: [],
+        lotTracking: []
+      },
+      budgets: parsedData.budgets || [],
+      estimates: parsedData.estimates || [],
+      payrollData: parsedData.payrollData || { payPeriods: [] },
+      auditTrail: parsedData.auditTrail || [],
+      integrations: parsedData.integrations || [],
+      sales: parsedData.sales || [],
+      revenue: parsedData.revenue || { current: 0, previous: 0, percentChange: 0 },
+      profitMargin: parsedData.profitMargin || { value: 0, trend: 0, percentChange: 0 },
+      outstandingInvoices: parsedData.outstandingInvoices || { amount: 0, percentChange: 0 },
+      activeCustomers: parsedData.activeCustomers || { count: 0, percentChange: 0 }
     };
   } catch (error) {
     console.error("Error loading from local storage:", error);

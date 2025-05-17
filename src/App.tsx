@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
-import Layout from './components/Layout';
+import AppLayout from './components/layout/AppLayout';
 import { CompanyProvider } from './contexts/CompanyContext';
 
 // Import pages
@@ -24,7 +25,7 @@ const App = () => {
       <Router>
         <Toaster position="top-right" closeButton />
         <Routes>
-          <Route path="/" element={<Layout />}>
+          <Route path="/" element={<AppLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/invoices" element={<Invoices />} />

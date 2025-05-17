@@ -1,16 +1,18 @@
 
 import React from "react";
-import { Navigation } from "./Navigation";
 import { Outlet } from "react-router-dom";
+import Sidebar from "./layout/Sidebar";
+import TopBar from "./layout/TopBar";
 
 const Layout = () => {
   return (
-    <div className="flex min-h-screen">
-      <div className="w-56 border-r">
-        <Navigation />
-      </div>
-      <div className="flex-1 p-6 overflow-auto">
-        <Outlet />
+    <div className="h-screen w-full flex overflow-hidden">
+      <Sidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <TopBar />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 md:p-6">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
