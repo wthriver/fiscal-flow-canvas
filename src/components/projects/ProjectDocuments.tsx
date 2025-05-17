@@ -15,14 +15,14 @@ export const ProjectDocuments: React.FC<ProjectDocumentsProps> = ({
   onViewDocument 
 }) => {
   // Map documents to component format if needed
-  const formattedDocuments = documents.map(doc => ({
+  const formattedDocuments = documents ? documents.map(doc => ({
     id: doc.id,
     name: doc.name,
     type: doc.type,
     size: doc.size,
     uploadedBy: doc.uploadedBy || "Unknown",
     date: doc.date || doc.uploadDate || "Unknown" // Handle both date naming conventions
-  }));
+  })) : [];
 
   if (!formattedDocuments || formattedDocuments.length === 0) {
     return (

@@ -42,13 +42,31 @@ export const loadFromLocalStorage = (): Company | null => {
       transactions: parsedData.transactions || [],
       accounts: parsedData.accounts || [],
       taxRates: parsedData.taxRates || [],
-      bankAccounts: parsedData.bankAccounts || [],
-      customers: parsedData.customers || [],
-      invoices: parsedData.invoices || [],
-      expenses: parsedData.expenses || [],
-      projects: parsedData.projects || [],
-      employees: parsedData.employees || [],
-      timeEntries: parsedData.timeEntries || [],
+      bankAccounts: Array.isArray(parsedData.bankAccounts) ? parsedData.bankAccounts : [
+        {
+          id: 'bank-1',
+          name: 'Checking Account',
+          balance: 1000,
+          transactions: [
+            {
+              id: 'transaction-1',
+              date: '2023-01-01',
+              description: 'Initial Deposit',
+              amount: '+$1000.00',
+              category: 'Deposit',
+              account: 'Checking Account',
+              reconciled: false,
+              type: 'Deposit'
+            }
+          ]
+        }
+      ],
+      customers: Array.isArray(parsedData.customers) ? parsedData.customers : [],
+      invoices: Array.isArray(parsedData.invoices) ? parsedData.invoices : [],
+      expenses: Array.isArray(parsedData.expenses) ? parsedData.expenses : [],
+      projects: Array.isArray(parsedData.projects) ? parsedData.projects : [],
+      employees: Array.isArray(parsedData.employees) ? parsedData.employees : [],
+      timeEntries: Array.isArray(parsedData.timeEntries) ? parsedData.timeEntries : [],
       inventory: parsedData.inventory || {
         items: [],
         categories: [],
@@ -57,12 +75,12 @@ export const loadFromLocalStorage = (): Company | null => {
         serialNumbers: [],
         lotTracking: []
       },
-      budgets: parsedData.budgets || [],
-      estimates: parsedData.estimates || [],
+      budgets: Array.isArray(parsedData.budgets) ? parsedData.budgets : [],
+      estimates: Array.isArray(parsedData.estimates) ? parsedData.estimates : [],
       payrollData: parsedData.payrollData || { payPeriods: [] },
-      auditTrail: parsedData.auditTrail || [],
-      integrations: parsedData.integrations || [],
-      sales: parsedData.sales || [],
+      auditTrail: Array.isArray(parsedData.auditTrail) ? parsedData.auditTrail : [],
+      integrations: Array.isArray(parsedData.integrations) ? parsedData.integrations : [],
+      sales: Array.isArray(parsedData.sales) ? parsedData.sales : [],
       revenue: parsedData.revenue || { current: 0, previous: 0, percentChange: 0 },
       profitMargin: parsedData.profitMargin || { value: 0, trend: 0, percentChange: 0 },
       outstandingInvoices: parsedData.outstandingInvoices || { amount: 0, percentChange: 0 },

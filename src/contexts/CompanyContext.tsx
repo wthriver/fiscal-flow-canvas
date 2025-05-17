@@ -15,6 +15,7 @@ export interface BankAccount {
   name: string;
   balance: number;
   transactions: Transaction[];
+  type?: string;
 }
 
 export interface Transaction {
@@ -25,7 +26,8 @@ export interface Transaction {
   category: string;
   account: string;
   reconciled: boolean;
-  type: string;
+  type: "Deposit" | "Withdrawal" | "Transfer";
+  bankAccount?: string;
 }
 
 export interface Account {
@@ -54,6 +56,7 @@ export interface Invoice {
   items: InvoiceItem[];
   status: string;
   total: number;
+  amount: string;
 }
 
 export interface InvoiceItem {
@@ -121,6 +124,7 @@ export interface InventoryItem {
   price: number;
   cost: number;
   category: string;
+  location?: string;
 }
 
 export interface BudgetCategory {
@@ -138,6 +142,7 @@ export interface Budget {
   endDate: string;
   categories: BudgetCategory[];
   status: string;
+  period?: string;
 }
 
 export interface Estimate {
@@ -156,6 +161,9 @@ export interface PayPeriod {
   endDate: string;
   status: string;
   totalPaid: number;
+  payDate?: string;
+  employees?: any[];
+  totalGross?: number;
 }
 
 export interface PayrollData {
@@ -242,6 +250,9 @@ export interface CompanyContextType {
   addEstimate: (estimate: Estimate) => void;
   updateBudget: (budget: Budget) => void;
   processPayroll: (payrollData: any) => void;
+  addInvoice: (invoice: Invoice) => void;
+  updateTransaction: (transaction: Transaction) => void;
+  addTransaction: (transaction: Transaction, bankAccountId: string) => void;
 }
 
 // Create the context with default values
@@ -268,6 +279,9 @@ const CompanyContext = createContext<CompanyContextType>({
   addEstimate: () => {},
   updateBudget: () => {},
   processPayroll: () => {},
+  addInvoice: () => {},
+  updateTransaction: () => {},
+  addTransaction: () => {},
 });
 
 interface CompanyProviderProps {
@@ -451,6 +465,72 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     updateCompany(updatedCompany);
   };
 
+  // Invoice operations
+  const addInvoice = (invoice: Invoice) => {
+    const invoices = currentCompany.invoices || [];
+    const updatedCompany = {
+      ...currentCompany,
+      invoices: [...invoices, invoice]
+    };
+    
+    updateCompany(updatedCompany);
+  };
+
+  // Transaction operations
+  const updateTransaction = (transaction: Transaction) => {
+    // Find the bank account this transaction belongs to
+    const bankAccount = currentCompany.bankAccounts.find(
+      account => account.transactions.some(t => t.id === transaction.id)
+    );
+
+    if (bankAccount) {
+      // Update the transaction in the bank account
+      const updatedTransactions = bankAccount.transactions.map(
+        t => t.id === transaction.id ? transaction : t
+      );
+
+      // Update the bank account with new transactions list
+      const updatedBankAccounts = currentCompany.bankAccounts.map(account => 
+        account.id === bankAccount.id 
+          ? { ...account, transactions: updatedTransactions }
+          : account
+      );
+
+      // Update company with new bank accounts list
+      const updatedCompany = {
+        ...currentCompany,
+        bankAccounts: updatedBankAccounts
+      };
+
+      updateCompany(updatedCompany);
+    }
+  };
+
+  const addTransaction = (transaction: Transaction, bankAccountId: string) => {
+    // Find the bank account to add the transaction to
+    const bankAccount = currentCompany.bankAccounts.find(account => account.id === bankAccountId);
+
+    if (bankAccount) {
+      // Add the transaction to the bank account
+      const updatedTransactions = [...bankAccount.transactions, transaction];
+
+      // Update the bank account with new transactions list
+      const updatedBankAccounts = currentCompany.bankAccounts.map(account => 
+        account.id === bankAccountId 
+          ? { ...account, transactions: updatedTransactions }
+          : account
+      );
+
+      // Update company with new bank accounts list
+      const updatedCompany = {
+        ...currentCompany,
+        bankAccounts: updatedBankAccounts
+      };
+
+      updateCompany(updatedCompany);
+    }
+  };
+
   // Estimate operations
   const addEstimate = (estimate: Estimate) => {
     const estimates = currentCompany.estimates || [];
@@ -506,9 +586,12 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
         addAccount,
         deleteAccount,
         addExpense,
+        addInvoice,
         addEstimate,
         updateBudget,
-        processPayroll
+        processPayroll,
+        updateTransaction,
+        addTransaction
       }}
     >
       {children}
@@ -516,4 +599,10 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
   );
 };
 
-export const useCompany = () => useContext(CompanyContext);
+export const useCompany = () => {
+  const context = useContext(CompanyContext);
+  if (context === undefined) {
+    throw new Error('useCompany must be used within a CompanyProvider');
+  }
+  return context;
+};

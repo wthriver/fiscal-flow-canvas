@@ -18,6 +18,10 @@ import TimeTracking from './pages/TimeTracking';
 import Settings from './pages/Settings';
 import Taxes from './pages/Taxes';
 import ChartOfAccounts from './pages/ChartOfAccounts';
+import Budgeting from './pages/Budgeting';
+import Expenses from './pages/Expenses';
+import Payroll from './pages/Payroll';
+import Sales from './pages/Sales';
 
 const App = () => {
   return (
@@ -38,6 +42,10 @@ const App = () => {
             <Route path="/taxes" element={<Taxes />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/chart-of-accounts" element={<ChartOfAccounts />} />
+            <Route path="/budgeting" element={<Budgeting />} />
+            <Route path="/expenses" element={<Expenses />} />
+            <Route path="/payroll" element={<Payroll />} />
+            <Route path="/sales" element={<Sales />} />
           </Route>
         </Routes>
       </Router>

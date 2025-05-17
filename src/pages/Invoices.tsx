@@ -35,8 +35,11 @@ const Invoices: React.FC = () => {
     to: undefined
   });
   
+  // Ensure invoices array exists before filtering
+  const invoices = currentCompany?.invoices || [];
+  
   // Filter invoices based on search text, status, and date range
-  const filteredInvoices = currentCompany.invoices.filter(invoice => {
+  const filteredInvoices = invoices.filter(invoice => {
     // Text search
     const matchesSearch = 
       !searchText || 
@@ -108,12 +111,15 @@ const Invoices: React.FC = () => {
     setIsExportOpen(false);
   };
 
+  // Use company name or default if not available
+  const companyName = currentCompany?.name || "Your Company";
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Invoices</h1>
-          <p className="text-muted-foreground">Manage {currentCompany.name}'s customer invoices and payments</p>
+          <p className="text-muted-foreground">Manage {companyName}'s customer invoices and payments</p>
         </div>
         <Button 
           className="flex items-center gap-2"
@@ -205,7 +211,7 @@ const Invoices: React.FC = () => {
         <CardHeader className="pb-2">
           <CardTitle>Recent Invoices</CardTitle>
           <CardDescription>
-            {filteredInvoices.length} of {currentCompany.invoices.length} total invoices
+            {filteredInvoices.length} of {invoices.length} total invoices
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -268,7 +274,7 @@ const Invoices: React.FC = () => {
         open={isNewInvoiceOpen} 
         onOpenChange={setIsNewInvoiceOpen}
         onSubmit={handleCreateInvoice}
-        customers={currentCompany.customers}
+        customers={currentCompany?.customers || []}
       />
       
       <FilterDialog
