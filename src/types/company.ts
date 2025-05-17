@@ -43,9 +43,10 @@ export interface TaxRate {
 export interface BankAccount {
   id: string;
   name: string;
-  balance: number;
+  balance: number | string;
   transactions: Transaction[];
   type?: string;
+  lastTransaction?: string;
 }
 
 export interface Transaction {

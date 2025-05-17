@@ -22,7 +22,13 @@ const Banking = () => {
   // Map through bank accounts and sum up the balances
   const totalBalance = currentCompany.bankAccounts.reduce(
     (sum, account) => {
-      const accountBalance = parseFloat(account.balance.replace(/[^0-9.-]+/g, ""));
+      // Handle both string and number balance types
+      let accountBalance = 0;
+      if (typeof account.balance === 'string') {
+        accountBalance = parseFloat(account.balance.replace(/[^0-9.-]+/g, "") || "0");
+      } else if (typeof account.balance === 'number') {
+        accountBalance = account.balance;
+      }
       return sum + accountBalance;
     },
     0
@@ -40,8 +46,8 @@ const Banking = () => {
       id: `account-${Date.now()}`,
       name: "New Bank Account",
       type: "Checking",
-      balance: "$0.00",
-      lastTransaction: new Date().toISOString().split("T")[0]
+      balance: 0,
+      transactions: []
     };
 
     addBankAccount(newAccount);
@@ -82,7 +88,7 @@ const Banking = () => {
             <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{currentCompany.transactions.length}</div>
+            <div className="text-2xl font-bold">{currentCompany.transactions?.length || 0}</div>
             <p className="text-xs text-muted-foreground">transactions this month</p>
           </CardContent>
         </Card>
@@ -92,7 +98,7 @@ const Banking = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {currentCompany.transactions.filter(t => !t.reconciled).length}
+              {currentCompany.transactions?.filter(t => !t.reconciled)?.length || 0}
             </div>
             <p className="text-xs text-muted-foreground">unreconciled transactions</p>
           </CardContent>
@@ -133,10 +139,14 @@ const Banking = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{account.balance}</div>
+                  <div className="text-2xl font-bold">
+                    ${typeof account.balance === 'number' 
+                      ? account.balance.toLocaleString() 
+                      : parseFloat(account.balance?.replace(/[^0-9.-]+/g, "") || "0").toLocaleString()}
+                  </div>
                   <div className="flex justify-between items-center mt-4 text-sm">
                     <span className="text-muted-foreground">Last transaction:</span>
-                    <span>{account.lastTransaction}</span>
+                    <span>{account.lastTransaction || "No transactions"}</span>
                   </div>
                   <div className="flex justify-between gap-2 mt-4">
                     <Button 
@@ -208,7 +218,7 @@ const Banking = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {currentCompany.transactions.length > 0 ? (
+                {currentCompany.transactions && currentCompany.transactions.length > 0 ? (
                   currentCompany.transactions.map((transaction) => (
                     <tr key={transaction.id}>
                       <td className="px-6 py-4 whitespace-nowrap">{transaction.date}</td>
@@ -216,9 +226,9 @@ const Banking = () => {
                       <td className="px-6 py-4 whitespace-nowrap">{transaction.category}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{transaction.bankAccount}</td>
                       <td className={`px-6 py-4 whitespace-nowrap font-medium ${
-                        transaction.type === "Credit" ? "text-green-600" : "text-red-600"
+                        transaction.type === "Credit" || transaction.type === "Deposit" ? "text-green-600" : "text-red-600"
                       }`}>
-                        {transaction.type === "Credit" ? "+" : "-"}{transaction.amount}
+                        {transaction.type === "Credit" || transaction.type === "Deposit" ? "+" : "-"}{transaction.amount}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs rounded-full ${

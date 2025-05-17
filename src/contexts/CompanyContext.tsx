@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { saveToLocalStorage, loadFromLocalStorage } from '@/services/localStorageService';
-import { Company, TaxRate, Account, Transaction, Invoice, Expense, Estimate, Budget } from '@/types/company';
+import { Company, TaxRate, Account, Transaction, Invoice, Expense, Estimate, Budget, BankAccount } from '@/types/company';
 import { CompanyContextType } from '@/types/context';
 
 // Create the context with default values
@@ -40,6 +39,9 @@ const CompanyContext = createContext<CompanyContextType>({
   updateTransaction: () => {},
   addTransaction: () => {},
   deleteTransaction: () => {},
+  addBankAccount: () => {},
+  updateBankAccount: () => {},
+  deleteBankAccount: () => {},
 });
 
 interface CompanyProviderProps {
@@ -75,13 +77,14 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
                 id: 'transaction-1',
                 date: '2023-01-01',
                 description: 'Initial Deposit',
-                amount: '+$1000.00',
+                amount: '$1000.00',
                 category: 'Deposit',
                 account: 'Checking Account',
                 reconciled: false,
                 type: 'Deposit'
               }
-            ]
+            ],
+            lastTransaction: '2023-01-01'
           }
         ],
         customers: [],
@@ -148,6 +151,38 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     saveToLocalStorage(company);
   };
 
+  // Bank account operations
+  const addBankAccount = (bankAccount: BankAccount) => {
+    const updatedCompany = {
+      ...currentCompany,
+      bankAccounts: [...currentCompany.bankAccounts, bankAccount]
+    };
+    
+    updateCompany(updatedCompany);
+  };
+
+  const updateBankAccount = (bankAccount: BankAccount) => {
+    const updatedBankAccounts = currentCompany.bankAccounts.map(acc => 
+      acc.id === bankAccount.id ? bankAccount : acc
+    );
+    
+    const updatedCompany = {
+      ...currentCompany,
+      bankAccounts: updatedBankAccounts
+    };
+    
+    updateCompany(updatedCompany);
+  };
+
+  const deleteBankAccount = (bankAccountId: string) => {
+    const updatedCompany = {
+      ...currentCompany,
+      bankAccounts: currentCompany.bankAccounts.filter(acc => acc.id !== bankAccountId)
+    };
+    
+    updateCompany(updatedCompany);
+  };
+
   // Tax rate operations
   const updateTaxRate = (taxRate: TaxRate) => {
     const updatedTaxRates = currentCompany.taxRates.map(tr => 
@@ -157,24 +192,6 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     const updatedCompany = {
       ...currentCompany,
       taxRates: updatedTaxRates
-    };
-    
-    updateCompany(updatedCompany);
-  };
-
-  const addTaxRate = (taxRate: TaxRate) => {
-    const updatedCompany = {
-      ...currentCompany,
-      taxRates: [...currentCompany.taxRates, taxRate]
-    };
-    
-    updateCompany(updatedCompany);
-  };
-
-  const deleteTaxRate = (taxRateId: string) => {
-    const updatedCompany = {
-      ...currentCompany,
-      taxRates: currentCompany.taxRates.filter(tr => tr.id !== taxRateId)
     };
     
     updateCompany(updatedCompany);
@@ -295,10 +312,14 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
         t => t.id === transaction.id ? transaction : t
       );
 
-      // Update the bank account with new transactions list
+      // Update the bank account with new transactions list and last transaction date
       const updatedBankAccounts = currentCompany.bankAccounts.map(account => 
         account.id === bankAccount.id 
-          ? { ...account, transactions: updatedTransactions }
+          ? { 
+              ...account, 
+              transactions: updatedTransactions,
+              lastTransaction: transaction.date
+            }
           : account
       );
 
@@ -320,10 +341,14 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
       // Add the transaction to the bank account
       const updatedTransactions = [...bankAccount.transactions, transaction];
 
-      // Update the bank account with new transactions list
+      // Update the bank account with new transactions list and last transaction date
       const updatedBankAccounts = currentCompany.bankAccounts.map(account => 
         account.id === bankAccountId 
-          ? { ...account, transactions: updatedTransactions }
+          ? { 
+              ...account, 
+              transactions: updatedTransactions,
+              lastTransaction: transaction.date
+            }
           : account
       );
 
@@ -345,10 +370,19 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
       // Remove the transaction from the bank account
       const updatedTransactions = bankAccount.transactions.filter(t => t.id !== transactionId);
 
+      // Find the latest transaction date for lastTransaction
+      const latestTransaction = [...updatedTransactions].sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      )[0];
+
       // Update the bank account with new transactions list
       const updatedBankAccounts = currentCompany.bankAccounts.map(account => 
         account.id === bankAccountId 
-          ? { ...account, transactions: updatedTransactions }
+          ? { 
+              ...account, 
+              transactions: updatedTransactions,
+              lastTransaction: latestTransaction?.date || account.lastTransaction
+            }
           : account
       );
 
@@ -475,7 +509,10 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
         processPayroll,
         updateTransaction,
         addTransaction,
-        deleteTransaction
+        deleteTransaction,
+        addBankAccount,
+        updateBankAccount,
+        deleteBankAccount
       }}
     >
       {children}
@@ -492,4 +529,4 @@ export const useCompany = () => {
 };
 
 // Re-export types
-export type { Company, TaxRate, Account, Transaction, Invoice, Expense, Estimate, Budget } from '@/types/company';
+export type { Company, TaxRate, Account, Transaction, Invoice, Expense, Estimate, Budget, BankAccount } from '@/types/company';
