@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pencil, Trash2, Plus } from "lucide-react";
-import { useCompany } from "@/contexts/CompanyContext";
-
-export interface TaxRate {
-  id: string;
-  name: string;
-  rate: number;
-  description?: string;
-  category?: string;
-}
+import { useCompany, TaxRate } from "@/contexts/CompanyContext";
 
 export const TaxCalculator = () => {
   const { currentCompany, addTaxRate, updateTaxRate, deleteTaxRate } = useCompany();
@@ -29,6 +21,11 @@ export const TaxCalculator = () => {
     description: "",
     category: "Sales Tax",
   });
+
+  // Update taxRates when currentCompany changes
+  useEffect(() => {
+    setTaxRates(currentCompany.taxRates || []);
+  }, [currentCompany]);
 
   const taxCategories = [
     "Sales Tax",
@@ -71,15 +68,20 @@ export const TaxCalculator = () => {
       // Update existing tax rate
       const updatedTaxRate = {
         ...currentTaxRate,
-        ...formData
+        ...formData,
+        isDefault: currentTaxRate.isDefault || false
       };
-      updateTaxRate(currentTaxRate.id, updatedTaxRate);
+      updateTaxRate(updatedTaxRate);
       setTaxRates(taxRates.map(tr => tr.id === currentTaxRate.id ? updatedTaxRate : tr));
     } else {
       // Add new tax rate
-      const newTaxRate = {
-        id: `tax${Date.now()}`,
-        ...formData
+      const newTaxRate: TaxRate = {
+        id: `tax-${Date.now()}`,
+        name: formData.name,
+        rate: formData.rate,
+        isDefault: false,
+        description: formData.description,
+        category: formData.category
       };
       addTaxRate(newTaxRate);
       setTaxRates([...taxRates, newTaxRate]);

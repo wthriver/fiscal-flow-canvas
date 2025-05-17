@@ -38,6 +38,8 @@ export interface TaxRate {
   name: string;
   rate: number;
   isDefault: boolean;
+  description?: string;
+  category?: string;
 }
 
 export interface BankAccount {

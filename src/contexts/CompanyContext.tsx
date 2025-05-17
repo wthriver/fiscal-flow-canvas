@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { saveToLocalStorage, loadFromLocalStorage } from '@/services/localStorageService';
 import { Company, TaxRate, Account, Transaction, Invoice, Expense, Estimate, Budget, BankAccount } from '@/types/company';
@@ -184,6 +185,15 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
   };
 
   // Tax rate operations
+  const addTaxRate = (taxRate: TaxRate) => {
+    const updatedCompany = {
+      ...currentCompany,
+      taxRates: [...currentCompany.taxRates, taxRate]
+    };
+    
+    updateCompany(updatedCompany);
+  };
+
   const updateTaxRate = (taxRate: TaxRate) => {
     const updatedTaxRates = currentCompany.taxRates.map(tr => 
       tr.id === taxRate.id ? taxRate : tr
@@ -192,6 +202,15 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     const updatedCompany = {
       ...currentCompany,
       taxRates: updatedTaxRates
+    };
+    
+    updateCompany(updatedCompany);
+  };
+
+  const deleteTaxRate = (taxRateId: string) => {
+    const updatedCompany = {
+      ...currentCompany,
+      taxRates: currentCompany.taxRates.filter(tr => tr.id !== taxRateId)
     };
     
     updateCompany(updatedCompany);
