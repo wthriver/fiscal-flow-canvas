@@ -9,15 +9,18 @@ import { toast } from "sonner";
 
 export const CompanySettings: React.FC = () => {
   const { currentCompany, updateCompany } = useCompany();
+  
+  // Add default values for all fields to prevent undefined errors
   const [formData, setFormData] = useState({
-    name: currentCompany.name,
-    address: currentCompany.address,
-    phone: currentCompany.phone,
-    email: currentCompany.email,
+    name: currentCompany.name || "",
+    address: currentCompany.address || "",
+    phone: currentCompany.phone || "",
+    email: currentCompany.email || "",
     website: currentCompany.website || "",
     taxId: currentCompany.taxId || "",
     industry: currentCompany.industry || "",
-    fiscalYearStart: currentCompany.fiscalYearStart || currentCompany.fiscalYear.split(" - ")[0],
+    fiscalYearStart: currentCompany.fiscalYearStart || 
+      (currentCompany.fiscalYear ? currentCompany.fiscalYear.split(" - ")[0] : "")
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

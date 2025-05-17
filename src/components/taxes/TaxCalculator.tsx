@@ -12,8 +12,11 @@ export const TaxCalculator: React.FC = () => {
   const [calculatedTax, setCalculatedTax] = useState<number | null>(null);
   const [total, setTotal] = useState<number | null>(null);
 
+  // Make sure taxRates exists with a default value
+  const taxRates = currentCompany.taxRates || [];
+
   const calculateTax = (amount: number, taxRateId: string) => {
-    const taxRate = currentCompany.taxRates.find(rate => rate.id === taxRateId);
+    const taxRate = taxRates.find(rate => rate.id === taxRateId);
     if (!taxRate) return 0;
     
     return (amount * taxRate.rate) / 100;
@@ -73,7 +76,7 @@ export const TaxCalculator: React.FC = () => {
               onChange={(e) => setSelectedTaxRate(e.target.value)}
             >
               <option value="">Select Tax Rate</option>
-              {currentCompany.taxRates.map((rate) => (
+              {taxRates.map((rate) => (
                 <option key={rate.id} value={rate.id}>
                   {rate.name} ({rate.rate}%)
                 </option>
@@ -92,7 +95,7 @@ export const TaxCalculator: React.FC = () => {
             </div>
             <div className="flex justify-between mb-2">
               <span className="text-muted-foreground">
-                Tax ({currentCompany.taxRates.find(rate => rate.id === selectedTaxRate)?.rate}%):
+                Tax ({taxRates.find(rate => rate.id === selectedTaxRate)?.rate || 0}%):
               </span>
               <span>${calculatedTax.toFixed(2)}</span>
             </div>
