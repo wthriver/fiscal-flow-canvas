@@ -5,7 +5,7 @@ import { Invoice } from '@/types/company';
 import { toast } from 'sonner';
 
 // This type represents a date range selection
-interface DateRange {
+export interface DateRange {
   from?: Date;
   to?: Date;
 }

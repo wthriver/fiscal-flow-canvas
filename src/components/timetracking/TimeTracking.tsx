@@ -141,10 +141,11 @@ export const TimeTracking: React.FC = () => {
         billable: formData.billable
       };
       
-      // The correct argument count - only pass the TimeEntry
-      updateTimeEntry(updatedEntry);
-      setEditingEntry(null);
-      toast.success("Time entry updated");
+      // Pass the entry and a callback as expected by the function
+      updateTimeEntry(updatedEntry, () => {
+        setEditingEntry(null);
+        toast.success("Time entry updated");
+      });
     } else {
       // Create new time entry
       const newTimeEntry: TimeEntry = {

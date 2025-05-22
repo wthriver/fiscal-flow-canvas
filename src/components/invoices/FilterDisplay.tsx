@@ -1,9 +1,10 @@
 
 import React from "react";
+import { DateRange } from "@/hooks/useInvoices";
 
 interface FilterDisplayProps {
   statusFilter: string | null;
-  dateRange: {from: Date | undefined, to: Date | undefined};
+  dateRange: DateRange;
   clearFilter: (type: "status" | "date" | "all") => void;
 }
 

@@ -10,8 +10,8 @@ import { DateRange } from "react-day-picker";
 interface DateRangeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onApplyDateRange: (range: { from?: Date | undefined; to?: Date | undefined }) => void;
-  currentDateRange: { from?: Date | undefined; to?: Date | undefined };
+  onApplyDateRange: (range: { from?: Date; to?: Date }) => void;
+  currentDateRange: { from?: Date; to?: Date };
 }
 
 export const DateRangeDialog: React.FC<DateRangeDialogProps> = ({
@@ -20,20 +20,26 @@ export const DateRangeDialog: React.FC<DateRangeDialogProps> = ({
   onApplyDateRange,
   currentDateRange
 }) => {
-  const [date, setDate] = useState<DateRange | undefined>(currentDateRange);
+  const [date, setDate] = useState<DateRange | undefined>({
+    from: currentDateRange?.from,
+    to: currentDateRange?.to
+  });
 
   // Reset the date when the dialog opens to match the current range
   React.useEffect(() => {
     if (open) {
-      setDate(currentDateRange);
+      setDate({
+        from: currentDateRange?.from,
+        to: currentDateRange?.to
+      });
     }
   }, [open, currentDateRange]);
 
   const handleApply = () => {
     if (date) {
       onApplyDateRange({ 
-        from: date.from || undefined,
-        to: date.to || undefined 
+        from: date.from,
+        to: date.to 
       });
     } else {
       onApplyDateRange({ from: undefined, to: undefined });
