@@ -29,7 +29,7 @@ export const ReconciliationTab: React.FC<ReconciliationTabProps> = ({ accountId 
       .filter(t => (!accountId || t.bankAccount === accountId) && t.reconciled === reconciled)
       .reduce((sum, t) => {
         const amount = parseFloat(t.amount.replace(/[^0-9.-]+/g, "")) || 0;
-        return t.type === 'Credit' ? sum + amount : sum - amount;
+        return (t.type === 'Credit' || t.type === 'Deposit') ? sum + amount : sum - amount;
       }, 0);
   };
 
@@ -39,7 +39,7 @@ export const ReconciliationTab: React.FC<ReconciliationTabProps> = ({ accountId 
     .filter(t => selectedTransactions.includes(t.id))
     .reduce((sum, t) => {
       const amount = parseFloat(t.amount.replace(/[^0-9.-]+/g, "")) || 0;
-      return t.type === 'Credit' ? sum + amount : sum - amount;
+      return (t.type === 'Credit' || t.type === 'Deposit') ? sum + amount : sum - amount;
     }, 0);
 
   const handleToggleTransaction = (transactionId: string) => {
@@ -156,8 +156,8 @@ export const ReconciliationTab: React.FC<ReconciliationTabProps> = ({ accountId 
                     <TableCell>{t.date}</TableCell>
                     <TableCell>{t.description}</TableCell>
                     <TableCell>{t.category}</TableCell>
-                    <TableCell className={`text-right ${t.type === 'Credit' ? 'text-green-600' : 'text-red-600'}`}>
-                      {t.type === 'Credit' ? '+' : '-'}{t.amount}
+                    <TableCell className={`text-right ${(t.type === 'Credit' || t.type === 'Deposit') ? 'text-green-600' : 'text-red-600'}`}>
+                      {(t.type === 'Credit' || t.type === 'Deposit') ? '+' : '-'}{t.amount}
                     </TableCell>
                   </TableRow>
                 ))

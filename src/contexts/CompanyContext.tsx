@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { saveToLocalStorage, loadFromLocalStorage } from '@/services/localStorageService';
-import { Company, TaxRate, Account, Transaction, Invoice, Expense, Estimate, Budget, BankAccount } from '@/types/company';
+import { Company, TaxRate, Account, Transaction, Invoice, Expense, Estimate, Budget, BankAccount, TimeEntry, Project, ProjectDocument, Customer } from '@/types/company';
 import { CompanyContextType } from '@/types/context';
 
 // Create the context with default values
@@ -43,6 +43,9 @@ const CompanyContext = createContext<CompanyContextType>({
   addBankAccount: () => {},
   updateBankAccount: () => {},
   deleteBankAccount: () => {},
+  addTimeEntry: () => {},
+  updateTimeEntry: () => {},
+  deleteTimeEntry: () => {},
 });
 
 interface CompanyProviderProps {
@@ -319,65 +322,78 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
   };
 
   // Transaction operations
-  const updateTransaction = (transaction: Transaction) => {
+  const updateTransaction = (transactionId: string, updates: Partial<Transaction>) => {
     // Find the bank account this transaction belongs to
     const bankAccount = currentCompany.bankAccounts.find(
-      account => account.transactions.some(t => t.id === transaction.id)
+      account => account.transactions.some(t => t.id === transactionId)
     );
 
     if (bankAccount) {
-      // Update the transaction in the bank account
-      const updatedTransactions = bankAccount.transactions.map(
-        t => t.id === transaction.id ? transaction : t
-      );
+      // Get the transaction
+      const transaction = bankAccount.transactions.find(t => t.id === transactionId);
+      
+      if (transaction) {
+        // Update the transaction with new values
+        const updatedTransaction = { ...transaction, ...updates };
+        
+        // Update the transaction in the bank account
+        const updatedTransactions = bankAccount.transactions.map(
+          t => t.id === transactionId ? updatedTransaction : t
+        );
 
-      // Update the bank account with new transactions list and last transaction date
-      const updatedBankAccounts = currentCompany.bankAccounts.map(account => 
-        account.id === bankAccount.id 
-          ? { 
-              ...account, 
-              transactions: updatedTransactions,
-              lastTransaction: transaction.date
-            }
-          : account
-      );
+        // Update the bank account with new transactions list and last transaction date
+        const updatedBankAccounts = currentCompany.bankAccounts.map(account => 
+          account.id === bankAccount.id 
+            ? { 
+                ...account, 
+                transactions: updatedTransactions,
+                lastTransaction: updatedTransaction.date || account.lastTransaction
+              }
+            : account
+        );
 
-      // Update company with new bank accounts list
-      const updatedCompany = {
-        ...currentCompany,
-        bankAccounts: updatedBankAccounts
-      };
+        // Update company with new bank accounts list
+        const updatedCompany = {
+          ...currentCompany,
+          bankAccounts: updatedBankAccounts
+        };
 
-      updateCompany(updatedCompany);
+        updateCompany(updatedCompany);
+      }
     }
   };
 
-  const addTransaction = (transaction: Transaction, bankAccountId: string) => {
-    // Find the bank account to add the transaction to
-    const bankAccount = currentCompany.bankAccounts.find(account => account.id === bankAccountId);
+  const addTransaction = (transaction: Transaction) => {
+    // Default to the first bank account if none specified
+    const bankAccountId = transaction.bankAccount || currentCompany.bankAccounts[0]?.id;
+    
+    if (bankAccountId) {
+      // Find the bank account to add the transaction to
+      const bankAccount = currentCompany.bankAccounts.find(account => account.id === bankAccountId);
 
-    if (bankAccount) {
-      // Add the transaction to the bank account
-      const updatedTransactions = [...bankAccount.transactions, transaction];
+      if (bankAccount) {
+        // Add the transaction to the bank account
+        const updatedTransactions = [...bankAccount.transactions, transaction];
 
-      // Update the bank account with new transactions list and last transaction date
-      const updatedBankAccounts = currentCompany.bankAccounts.map(account => 
-        account.id === bankAccountId 
-          ? { 
-              ...account, 
-              transactions: updatedTransactions,
-              lastTransaction: transaction.date
-            }
-          : account
-      );
+        // Update the bank account with new transactions list and last transaction date
+        const updatedBankAccounts = currentCompany.bankAccounts.map(account => 
+          account.id === bankAccountId 
+            ? { 
+                ...account, 
+                transactions: updatedTransactions,
+                lastTransaction: transaction.date
+              }
+            : account
+        );
 
-      // Update company with new bank accounts list
-      const updatedCompany = {
-        ...currentCompany,
-        bankAccounts: updatedBankAccounts
-      };
+        // Update company with new bank accounts list
+        const updatedCompany = {
+          ...currentCompany,
+          bankAccounts: updatedBankAccounts
+        };
 
-      updateCompany(updatedCompany);
+        updateCompany(updatedCompany);
+      }
     }
   };
   
@@ -413,6 +429,43 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
 
       updateCompany(updatedCompany);
     }
+  };
+
+  // Time Entry operations
+  const addTimeEntry = (timeEntry: TimeEntry) => {
+    const timeEntries = currentCompany.timeEntries || [];
+    const updatedCompany = {
+      ...currentCompany,
+      timeEntries: [...timeEntries, timeEntry]
+    };
+    
+    updateCompany(updatedCompany);
+  };
+  
+  const updateTimeEntry = (timeEntryId: string, updates: Partial<TimeEntry>) => {
+    const timeEntries = currentCompany.timeEntries || [];
+    
+    const updatedTimeEntries = timeEntries.map(entry => 
+      entry.id === timeEntryId ? { ...entry, ...updates } : entry
+    );
+    
+    const updatedCompany = {
+      ...currentCompany,
+      timeEntries: updatedTimeEntries
+    };
+    
+    updateCompany(updatedCompany);
+  };
+  
+  const deleteTimeEntry = (timeEntryId: string) => {
+    const timeEntries = currentCompany.timeEntries || [];
+    
+    const updatedCompany = {
+      ...currentCompany,
+      timeEntries: timeEntries.filter(entry => entry.id !== timeEntryId)
+    };
+    
+    updateCompany(updatedCompany);
   };
 
   // Estimate operations
@@ -531,7 +584,10 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
         deleteTransaction,
         addBankAccount,
         updateBankAccount,
-        deleteBankAccount
+        deleteBankAccount,
+        addTimeEntry,
+        updateTimeEntry,
+        deleteTimeEntry
       }}
     >
       {children}
@@ -548,4 +604,4 @@ export const useCompany = () => {
 };
 
 // Re-export types
-export type { Company, TaxRate, Account, Transaction, Invoice, Expense, Estimate, Budget, BankAccount } from '@/types/company';
+export type { Company, TaxRate, Account, Transaction, Invoice, Expense, Estimate, Budget, BankAccount, TimeEntry, Project, ProjectDocument, Customer } from '@/types/company';

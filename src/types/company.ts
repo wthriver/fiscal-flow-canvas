@@ -1,3 +1,4 @@
+
 // Company and related types
 export interface Company {
   id: string;
@@ -9,7 +10,7 @@ export interface Company {
   taxId?: string;
   industry?: string;
   fiscalYearStart?: string;
-  fiscalYear?: string; // Adding missing property
+  fiscalYear?: string;
   transactions: Transaction[];
   accounts: Account[];
   taxRates: TaxRate[];
@@ -59,7 +60,7 @@ export interface Transaction {
   category: string;
   account: string;
   reconciled: boolean;
-  type: "Deposit" | "Withdrawal" | "Transfer" | "Credit" | "Debit"; // Updated to include Credit and Debit
+  type: "Deposit" | "Withdrawal" | "Transfer" | "Credit" | "Debit";
   bankAccount?: string;
 }
 
@@ -79,6 +80,13 @@ export interface Customer {
   phone?: string;
   address?: string;
   company?: string;
+  contactName?: string;
+  type?: string;
+  status?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
 }
 
 export interface Invoice {
@@ -105,7 +113,7 @@ export interface Expense {
   date: string;
   vendor: string;
   category: string;
-  amount: number | string; // Updated to allow string
+  amount: number | string;
   description: string;
   status: string;
   paymentMethod?: string;
@@ -121,7 +129,9 @@ export interface Project {
   budget?: number;
   documents: ProjectDocument[];
   tracked?: number;
-  billed?: boolean; // Added missing property
+  billed?: boolean;
+  spent?: number;
+  progress?: number;
 }
 
 export interface ProjectDocument {
@@ -154,7 +164,9 @@ export interface TimeEntry {
   hours: number;
   description: string;
   duration?: number;
-  billable?: boolean; // Added missing property
+  billable?: boolean;
+  startTime?: string;
+  endTime?: string;
 }
 
 export interface InventoryItem {

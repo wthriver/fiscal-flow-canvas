@@ -5,19 +5,7 @@ import { TransactionEditModal } from "./TransactionEditModal";
 import { TransactionSearchBar } from "./TransactionSearchBar";
 import { TransactionTable } from "./TransactionTable";
 import { useCompany } from "@/contexts/CompanyContext";
-
-// Define a Transaction interface that matches the one in CompanyContext
-interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: string;
-  category: string;
-  account: string;
-  reconciled: boolean;
-  type: "Deposit" | "Withdrawal" | "Transfer" | "Credit" | "Debit";
-  [key: string]: any; // Add index signature to allow string keys
-}
+import { Transaction } from "@/types/company";
 
 interface TransactionHistoryTabProps {
   transactions: Transaction[];
@@ -27,7 +15,7 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
   transactions: inputTransactions = []
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: "asc" | "desc" } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   // Filter transactions based on search term
@@ -42,8 +30,8 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     let sortableTransactions = [...filteredTransactions];
     if (sortConfig !== null) {
       sortableTransactions.sort((a, b) => {
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
+        const aValue = a[sortConfig.key as keyof Transaction];
+        const bValue = b[sortConfig.key as keyof Transaction];
         
         if (!aValue && !bValue) return 0;
         if (!aValue) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -61,7 +49,7 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     return sortableTransactions;
   }, [filteredTransactions, sortConfig]);
 
-  const handleSort = (key: keyof Transaction) => {
+  const handleSort = (key: string) => {
     if (sortConfig && sortConfig.key === key) {
       setSortConfig({
         key,
