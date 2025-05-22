@@ -14,13 +14,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCompany } from "@/contexts/CompanyContext";
-import { formatHoursDisplay, formatCurrency, parseCurrency } from "./utils/timeTrackingUtils";
+import { formatHoursDisplay, formatCurrency } from "./utils/timeTrackingUtils";
 import { TimeTrackingControls } from "./TimeTrackingControls";
-import { TimeEntry, Project, ProjectSummary, TimeEntryFormData } from "./TimeTrackingTypes";
+import { TimeEntry, Project, ProjectSummary, TimeEntryFormData, EnhancedTimeEntry } from "./TimeTrackingTypes";
 import { toast } from "sonner";
 
 export const TimeTracking: React.FC = () => {
-  const { currentCompany, addTimeEntry, updateTimeEntry, deleteTimeEntry, projects } = useCompany();
+  const { currentCompany, addTimeEntry, updateTimeEntry, deleteTimeEntry } = useCompany();
   const [activeTab, setActiveTab] = useState("time-entries");
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [projectSummaries, setProjectSummaries] = useState<ProjectSummary[]>([]);
@@ -35,6 +35,9 @@ export const TimeTracking: React.FC = () => {
     description: "",
     billable: true
   });
+  
+  // Get projects from the company context
+  const projects = currentCompany?.projects || [];
   
   // Load time entries from company context
   useEffect(() => {
@@ -55,9 +58,12 @@ export const TimeTracking: React.FC = () => {
       const trackedHours = projectEntries.reduce((total, entry) => 
         total + entry.hours, 0);
       
-      // Calculate billable hours
-      const billableHours = projectEntries.reduce((total, entry) => 
-        total + (entry.billable ? entry.hours : 0), 0);
+      // Calculate billable hours - ensure we handle billable property correctly
+      const billableHours = projectEntries.reduce((total, entry) => {
+        // Safely check if billable is true (not just truthy)
+        const isBillable = entry.billable === true;
+        return total + (isBillable ? entry.hours : 0);
+      }, 0);
       
       return {
         id: project.id,
@@ -75,8 +81,11 @@ export const TimeTracking: React.FC = () => {
   };
   
   const calculateTotalBillableHours = (entries: TimeEntry[]) => {
-    return entries.reduce((total, entry) => 
-      entry.billable ? total + entry.hours : total, 0);
+    return entries.reduce((total, entry) => {
+      // Safely check if billable is true (not just truthy)
+      const isBillable = entry.billable === true;
+      return isBillable ? total + entry.hours : total;
+    }, 0);
   };
   
   const calculateBillableAmount = (entries: TimeEntry[]) => {
@@ -173,14 +182,14 @@ export const TimeTracking: React.FC = () => {
       date: entry.date,
       hours: entry.hours,
       description: entry.description,
-      billable: entry.billable
+      billable: entry.billable === true // Ensure boolean type
     });
     setIsAddingEntry(true);
   };
   
   const handleDeleteEntry = (entry: TimeEntry) => {
     if (confirm("Are you sure you want to delete this time entry?")) {
-      deleteTimeEntry(entry);
+      deleteTimeEntry(entry.id);
       toast.success("Time entry deleted");
     }
   };
@@ -370,7 +379,7 @@ export const TimeTracking: React.FC = () => {
                                 <TableCell className="text-right">
                                   {formatHoursDisplay(entry.hours)}
                                 </TableCell>
-                                <TableCell>{entry.billable ? "Yes" : "No"}</TableCell>
+                                <TableCell>{entry.billable === true ? "Yes" : "No"}</TableCell>
                                 <TableCell className="text-right">
                                   <div className="flex justify-end gap-2">
                                     <Button
@@ -473,3 +482,5 @@ export const TimeTracking: React.FC = () => {
     </div>
   );
 };
+
+export default TimeTracking;

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Download, ArrowUp, ArrowDown, Plus, FileBarChart, Truck, Package2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCompany } from "@/contexts/CompanyContext";
+import { safeReplaceForNumber } from "../timetracking/utils/timeTrackingUtils";
 
 // We need to add a utility function to safely format numbers as strings
 const formatNumberToString = (value: number | string): string => {
@@ -47,7 +49,8 @@ export const InventoryValuation: React.FC = () => {
   
   // Calculate total inventory value
   const totalInventoryValue = filteredItems.reduce((total, item) => {
-    const cost = parseFloat(item.cost.replace(/[^0-9.-]+/g, "") || "0");
+    const costStr = typeof item.cost === 'string' ? item.cost : item.cost.toString();
+    const cost = parseFloat(safeReplaceForNumber(costStr)) || 0;
     return total + (cost * item.quantity);
   }, 0);
   
@@ -191,7 +194,8 @@ export const InventoryValuation: React.FC = () => {
               <TableBody>
                 {filteredItems.length > 0 ? (
                   filteredItems.map((item) => {
-                    const cost = parseFloat(item.cost.replace(/[^0-9.-]+/g, "") || "0");
+                    const costStr = typeof item.cost === 'string' ? item.cost : item.cost.toString();
+                    const cost = parseFloat(safeReplaceForNumber(costStr)) || 0;
                     const totalValue = cost * item.quantity;
                     
                     return (

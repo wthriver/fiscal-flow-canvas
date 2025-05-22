@@ -35,17 +35,6 @@ export const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
     ].join(':');
   };
   
-  // Format time as HH:MM for database
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    
-    return [
-      hours.toString().padStart(2, '0'),
-      minutes.toString().padStart(2, '0')
-    ].join(':');
-  };
-  
   // Update the timer every second when active
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -81,8 +70,6 @@ export const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
     }
     
     const now = new Date();
-    const formattedStartTime = startTime.toTimeString().slice(0, 5); // HH:MM
-    const formattedEndTime = now.toTimeString().slice(0, 5); // HH:MM
     const hours = elapsedTime / 3600; // Convert seconds to hours
     
     const newTimeEntry: TimeEntry = {
@@ -164,3 +151,5 @@ export const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
     </Card>
   );
 };
+
+export default TimeTrackingControls;

@@ -1,6 +1,6 @@
 
 import React from "react";
-import { TimeTracking } from "@/components/timetracking/TimeTracking";
+import TimeTracking from "@/components/timetracking/TimeTracking";
 
 const TimeTrackingPage: React.FC = () => {
   return (

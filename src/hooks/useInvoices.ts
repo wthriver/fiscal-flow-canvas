@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Invoice } from '@/types/company';
@@ -31,10 +32,7 @@ export const useInvoices = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
       addInvoice(invoiceData);
       setInvoices(prevInvoices => [...prevInvoices, invoiceData]);
-      toast({
-        description: "Invoice created successfully",
-        duration: 3000,
-      });
+      toast.success("Invoice created successfully");
     } catch (err) {
       setError('Failed to create invoice');
       toast.error('Failed to create invoice');
@@ -52,10 +50,7 @@ export const useInvoices = () => {
       setInvoices(prevInvoices =>
         prevInvoices.map(invoice => (invoice.id === invoiceData.id ? invoiceData : invoice))
       );
-      toast({
-        description: "Invoice updated successfully",
-        duration: 3000,
-      });
+      toast.success("Invoice updated successfully");
     } catch (err) {
       setError('Failed to update invoice');
       toast.error('Failed to update invoice');

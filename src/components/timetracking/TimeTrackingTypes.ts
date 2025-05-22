@@ -18,3 +18,14 @@ export interface ProjectSummary {
   trackedHours: number;
   billableHours: number;
 }
+
+// Add these interfaces to better support the toast functionality
+export interface ToastOptions {
+  description?: string;
+  duration?: number;
+}
+
+// Enhance our TimeEntry to ensure it works with the calculations
+export interface EnhancedTimeEntry extends TimeEntry {
+  billable: boolean;
+}

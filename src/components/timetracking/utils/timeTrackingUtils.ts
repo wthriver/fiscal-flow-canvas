@@ -59,3 +59,11 @@ export function ensureISODateString(dateInput: string | number | Date): string {
   }
   return dateInput;
 }
+
+// Safely format number to string for display
+export function safeReplaceForNumber(value: string | number): string {
+  if (typeof value === 'number') {
+    return value.toString();
+  }
+  return value.replace(/[^0-9.-]+/g, '') || '0';
+}

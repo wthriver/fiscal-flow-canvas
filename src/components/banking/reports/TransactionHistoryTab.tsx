@@ -11,11 +11,25 @@ interface TransactionHistoryTabProps {
   transactions: Transaction[];
 }
 
+// Define a local Transaction type with the same structure as the imported one
+// This resolves the "keyof Transaction" type mismatch
+interface LocalTransaction {
+  id: string;
+  date: string;
+  description: string;
+  amount: string;
+  category: string;
+  account: string;
+  reconciled: boolean;
+  type: "Deposit" | "Withdrawal" | "Transfer" | "Credit" | "Debit";
+  bankAccount?: string;
+}
+
 export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
   transactions: inputTransactions = []
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: "asc" | "desc" } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof LocalTransaction; direction: "asc" | "desc" } | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   // Filter transactions based on search term
@@ -30,8 +44,8 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     let sortableTransactions = [...filteredTransactions];
     if (sortConfig !== null) {
       sortableTransactions.sort((a, b) => {
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
+        const aValue = a[sortConfig.key as keyof Transaction];
+        const bValue = b[sortConfig.key as keyof Transaction];
         
         if (!aValue && !bValue) return 0;
         if (!aValue) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -49,7 +63,7 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
     return sortableTransactions;
   }, [filteredTransactions, sortConfig]);
 
-  const handleSort = (key: keyof Transaction) => {
+  const handleSort = (key: keyof LocalTransaction) => {
     if (sortConfig && sortConfig.key === key) {
       setSortConfig({
         key,
@@ -150,7 +164,7 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({
 
       <TransactionTable
         transactions={sortedTransactions}
-        sortConfig={sortConfig}
+        sortConfig={sortConfig as any}
         onRequestSort={handleSort}
         onViewDetails={handleViewDetails}
         onShareTransaction={handleShareTransaction}

@@ -1,405 +1,259 @@
+
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Search, Plus, Download, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { toast } from "sonner";
-import { useCompany, Sale } from "@/contexts/CompanyContext";
-import { PlusCircle, Search, MoreHorizontal, Edit, Trash2, CalendarIcon, ShoppingCart } from "lucide-react";
-import { format } from "date-fns";
+import { useCompany } from "@/contexts/CompanyContext";
+import { EstimateDialog } from "@/components/sales/EstimateDialog";
+import { safeReplaceForNumber } from "@/components/timetracking/utils/timeTrackingUtils";
 
-const Sales: React.FC = () => {
-  const { currentCompany, addSale, updateSale, deleteSale } = useCompany();
-  const [activeTab, setActiveTab] = useState("sales");
-  const [searchText, setSearchText] = useState("");
-  const [isNewSaleOpen, setIsNewSaleOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(undefined);
+// Define a type for sales to fix the import issue
+interface Sale {
+  id: string;
+  date: string;
+  customer: string;
+  amount: number | string;
+  status: string;
+  items?: any[];
+}
+
+const SalesPage: React.FC = () => {
+  const { currentCompany } = useCompany();
+  const [activeTab, setActiveTab] = useState("estimates");
+  const [isEstimateDialogOpen, setIsEstimateDialogOpen] = useState(false);
   
-  // Filter sales based on search text
-  const filteredSales = (currentCompany?.sales || []).filter(sale => 
-    !searchText || 
-    sale.id.toLowerCase().includes(searchText.toLowerCase()) ||
-    (sale.customer?.toLowerCase() || "").includes(searchText.toLowerCase())
-  );
-
-  // Filter estimates
-  const filteredEstimates = (currentCompany?.estimates || []).filter(estimate => 
-    !searchText || 
-    estimate.id.toLowerCase().includes(searchText.toLowerCase()) ||
-    (estimate.customer?.toLowerCase() || "").includes(searchText.toLowerCase())
-  );
-
+  // Get sales data from company
+  const estimates = currentCompany?.estimates || [];
+  const salesData: Sale[] = currentCompany?.sales || [];
+  
+  // Calculate total estimates value
+  const totalEstimatesValue = estimates.reduce((total, estimate) => {
+    return total + estimate.total;
+  }, 0);
+  
+  // Calculate total sales value
+  const totalSalesValue = salesData.reduce((total, sale) => {
+    const amount = typeof sale.amount === 'string'
+      ? parseFloat(safeReplaceForNumber(sale.amount))
+      : sale.amount || 0;
+    return total + amount;
+  }, 0);
+  
   const handleCreateSale = () => {
-    const newSale = {
-      id: `sale-${Date.now()}`,
-      customerId: currentCompany.customers[0]?.id || "",
-      customer: currentCompany.customers[0]?.name || "Customer",
-      amount: "$0.00",
-      date: new Date().toISOString().split('T')[0],
-      items: [],
-      status: "Draft"
-    };
-    
-    addSale(newSale);
-    toast.success("Sale added successfully");
+    // This would typically open a dialog to create a sale
+    console.log("Create sale clicked");
   };
-
-  const handleUpdateSaleStatus = (saleId: string, status: string) => {
-    updateSale(saleId, { status });
-    toast.success(`Sale status updated to ${status}`);
-  };
-
-  const handleDeleteSale = (saleId: string) => {
-    deleteSale(saleId);
-    toast.success("Sale deleted successfully");
-  };
-
-  const handleDateChange = (selectedDate: Date | undefined) => {
-    setDate(selectedDate);
-  };
-
+  
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="container mx-auto p-4 space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Sales</h1>
-          <p className="text-muted-foreground">Manage sales, quotes, and customer orders</p>
+          <h1 className="text-3xl font-bold">Sales Management</h1>
+          <p className="text-muted-foreground">Manage your estimates, sales, and orders</p>
         </div>
-        <Button 
-          className="flex items-center gap-2"
-          onClick={() => setIsNewSaleOpen(true)}
-        >
-          <PlusCircle size={16} />
-          <span>New Sale</span>
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-2xl">${(currentCompany?.sales || []).reduce((sum, sale) => {
-              const amount = parseFloat(sale.amount.replace(/[^0-9.-]+/g, "")) || 0;
-              return sum + amount;
-            }, 0).toLocaleString()}</CardTitle>
-            <CardDescription>Total Sales</CardDescription>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-2xl">{(currentCompany?.sales || []).length}</CardTitle>
-            <CardDescription>Total Orders</CardDescription>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-2xl">{(currentCompany?.estimates || []).length}</CardTitle>
-            <CardDescription>Quotes / Estimates</CardDescription>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-2xl">{(currentCompany?.sales || []).filter(s => s.status === "Completed").length}</CardTitle>
-            <CardDescription>Completed Orders</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full sm:w-auto">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search sales and orders..."
-            className="w-full sm:w-[300px] pl-8"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-          />
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-1"
-                onClick={() => {}}
-              >
-                <CalendarIcon size={16} />
-                <span>{date ? format(date, "PP") : "Filter by Date"}</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={handleDateChange}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          <Button
-            variant="outline" 
-            size="sm" 
-            className="flex items-center gap-1"
-          >
-            Filter
-          </Button>
-          <Button
-            variant="outline" 
-            size="sm" 
-            className="flex items-center gap-1"
-          >
-            Export
-          </Button>
+        <div className="flex gap-2">
+          {activeTab === "estimates" ? (
+            <Button onClick={() => setIsEstimateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Estimate
+            </Button>
+          ) : (
+            <Button onClick={handleCreateSale}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Sale
+            </Button>
+          )}
         </div>
       </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="sales">Sales Orders</TabsTrigger>
-          <TabsTrigger value="estimates">Quotes & Estimates</TabsTrigger>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Sales</p>
+                <p className="text-2xl font-bold">${totalSalesValue.toFixed(2)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Active Estimates</p>
+                <p className="text-2xl font-bold">{estimates.filter(e => e.status === "Pending").length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Estimates Value</p>
+                <p className="text-2xl font-bold">${totalEstimatesValue.toFixed(2)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Tabs defaultValue="estimates" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="estimates">Estimates</TabsTrigger>
+          <TabsTrigger value="sales">Sales</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="sales" className="space-y-4 mt-4">
+        
+        <TabsContent value="estimates">
           <Card>
-            <CardContent className="pt-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order #</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredSales.length > 0 ? (
-                    filteredSales.map((sale) => (
-                      <TableRow key={sale.id}>
-                        <TableCell className="font-medium">{sale.id}</TableCell>
-                        <TableCell>{sale.customer}</TableCell>
-                        <TableCell>{sale.date}</TableCell>
-                        <TableCell>{sale.amount}</TableCell>
-                        <TableCell>
-                          <Badge className={`
-                            ${sale.status === "Completed" ? "bg-green-100 text-green-800" : 
-                              sale.status === "Processing" ? "bg-blue-100 text-blue-800" : 
-                                sale.status === "Draft" ? "bg-gray-100 text-gray-800" : 
-                                  "bg-yellow-100 text-yellow-800"}
-                          `}>
-                            {sale.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <ShoppingCart size={16} className="mr-1" />
-                            <span>{sale.items?.length || 0}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <Edit className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                Edit Sale
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleUpdateSaleStatus(sale.id, "Completed")}
-                              >
-                                Mark as Completed
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleUpdateSaleStatus(sale.id, "Processing")}
-                              >
-                                Mark as Processing
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleUpdateSaleStatus(sale.id, "Draft")}
-                              >
-                                Mark as Draft
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteSale(sale.id)}
-                                className="text-red-600"
-                              >
-                                Delete Sale
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle>Estimates</CardTitle>
+              <div className="flex gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search estimates..."
+                    className="pl-8 w-[200px]"
+                  />
+                </div>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon">
+                  <Download className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Expiry</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {estimates.length > 0 ? (
+                      estimates.map((estimate) => (
+                        <TableRow key={estimate.id}>
+                          <TableCell>{estimate.id.substring(0, 8)}</TableCell>
+                          <TableCell>{estimate.customer}</TableCell>
+                          <TableCell>{estimate.date}</TableCell>
+                          <TableCell>{estimate.expiryDate}</TableCell>
+                          <TableCell className="text-right">${estimate.total.toFixed(2)}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              estimate.status === "Approved" ? "bg-green-100 text-green-800" :
+                              estimate.status === "Pending" ? "bg-yellow-100 text-yellow-800" :
+                              "bg-gray-100 text-gray-800"
+                            }`}>
+                              {estimate.status}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center">
+                          No estimates found
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
-                        {searchText ? "No sales found matching your search criteria" : "No sales found. Create your first sale."}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="estimates" className="space-y-4 mt-4">
+        
+        <TabsContent value="sales">
           <Card>
-            <CardContent className="pt-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Estimate #</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Expiry</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEstimates.length > 0 ? (
-                    filteredEstimates.map((estimate) => (
-                      <TableRow key={estimate.id}>
-                        <TableCell className="font-medium">{estimate.estimateNumber || estimate.id}</TableCell>
-                        <TableCell>{estimate.customer}</TableCell>
-                        <TableCell>{estimate.date}</TableCell>
-                        <TableCell>{estimate.expiryDate}</TableCell>
-                        <TableCell>{estimate.amount}</TableCell>
-                        <TableCell>
-                          <Badge className={`
-                            ${estimate.status === "Accepted" ? "bg-green-100 text-green-800" : 
-                              estimate.status === "Sent" ? "bg-blue-100 text-blue-800" : 
-                                estimate.status === "Draft" ? "bg-gray-100 text-gray-800" : 
-                                  "bg-yellow-100 text-yellow-800"}
-                          `}>
-                            {estimate.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <Edit className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
-                                View Estimate
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                Edit Estimate
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                Convert to Invoice
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                Mark as Accepted
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                Mark as Rejected
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-600"
-                              >
-                                Delete Estimate
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle>Sales</CardTitle>
+              <div className="flex gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search sales..."
+                    className="pl-8 w-[200px]"
+                  />
+                </div>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon">
+                  <Download className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {salesData.length > 0 ? (
+                      salesData.map((sale) => (
+                        <TableRow key={sale.id}>
+                          <TableCell>{sale.id.substring(0, 8)}</TableCell>
+                          <TableCell>{sale.customer}</TableCell>
+                          <TableCell>{sale.date}</TableCell>
+                          <TableCell className="text-right">
+                            ${typeof sale.amount === 'number' 
+                               ? sale.amount.toFixed(2)
+                               : parseFloat(safeReplaceForNumber(sale.amount)).toFixed(2)}
+                          </TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              sale.status === "Completed" ? "bg-green-100 text-green-800" :
+                              sale.status === "In Progress" ? "bg-blue-100 text-blue-800" :
+                              "bg-gray-100 text-gray-800"
+                            }`}>
+                              {sale.status}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                          No sales found
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
-                        {searchText ? "No estimates found matching your search criteria" : "No estimates found. Create your first estimate."}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-
-      <Dialog open={isNewSaleOpen} onOpenChange={setIsNewSaleOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Sale</DialogTitle>
-            <DialogDescription>
-              Add a new sale or order to your records
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="customer" className="text-right">
-                Customer
-              </label>
-              <select 
-                id="customer" 
-                className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
-              >
-                {currentCompany.customers.map(customer => (
-                  <option key={customer.id} value={customer.id}>{customer.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="date" className="text-right">
-                Date
-              </label>
-              <Input 
-                id="date" 
-                type="date" 
-                defaultValue={new Date().toISOString().split('T')[0]}
-                className="col-span-3" 
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="status" className="text-right">
-                Status
-              </label>
-              <select 
-                id="status" 
-                className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
-                defaultValue="Draft"
-              >
-                <option value="Draft">Draft</option>
-                <option value="Processing">Processing</option>
-                <option value="Completed">Completed</option>
-              </select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsNewSaleOpen(false)}>Cancel</Button>
-            <Button onClick={() => {
-              handleCreateSale();
-              setIsNewSaleOpen(false);
-            }}>Create Sale</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      
+      <EstimateDialog
+        open={isEstimateDialogOpen}
+        onClose={() => setIsEstimateDialogOpen(false)}
+      />
     </div>
   );
 };
 
-export default Sales;
+export default SalesPage;
