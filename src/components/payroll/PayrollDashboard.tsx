@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,22 +17,27 @@ export const PayrollDashboard: React.FC<PayrollDashboardProps> = ({ onProcessPay
   const [editEmployeeDialogOpen, setEditEmployeeDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
 
+  // Ensure payrollData exists before accessing payPeriods
+  const payrollData = currentCompany.payrollData || { payPeriods: [] };
+  // Ensure employees array exists
+  const employees = currentCompany.employees || [];
+
   // Find the next payroll date
-  const nextPayrollPeriod = currentCompany.payrollData.payPeriods.find(
+  const nextPayrollPeriod = payrollData.payPeriods.find(
     period => new Date(period.payDate) > new Date() && period.status !== "Completed"
   );
 
   // Find the last completed payroll
-  const lastPayroll = [...currentCompany.payrollData.payPeriods]
+  const lastPayroll = [...payrollData.payPeriods]
     .filter(period => period.status === "Completed")
     .sort((a, b) => new Date(b.payDate).getTime() - new Date(a.payDate).getTime())[0];
 
   // Count active employees
-  const activeEmployees = currentCompany.employees.filter(emp => emp.status === "Active");
-  const pendingEmployees = currentCompany.employees.filter(emp => emp.status === "Pending");
+  const activeEmployees = employees.filter(emp => emp.status === "Active");
+  const pendingEmployees = employees.filter(emp => emp.status === "Pending");
 
   const handleEditEmployee = (employeeId: string) => {
-    const employee = currentCompany.employees.find(emp => emp.id === employeeId);
+    const employee = employees.find(emp => emp.id === employeeId);
     if (employee) {
       setSelectedEmployee(employee);
       setEditEmployeeDialogOpen(true);
@@ -43,26 +47,26 @@ export const PayrollDashboard: React.FC<PayrollDashboardProps> = ({ onProcessPay
   const handleUpdateEmployee = () => {
     if (!selectedEmployee) return;
 
-    const updatedEmployees = currentCompany.employees.map(emp => 
+    const updatedEmployees = employees.map(emp => 
       emp.id === selectedEmployee.id ? selectedEmployee : emp
     );
     
-    updateCompany(currentCompany.id, { employees: updatedEmployees });
+    updateCompany({...currentCompany, employees: updatedEmployees});
     toast.success("Employee updated successfully");
     setEditEmployeeDialogOpen(false);
   };
 
   const handleMarkAsPaid = (payrollId: string) => {
-    const updatedPayPeriods = currentCompany.payrollData.payPeriods.map(period => 
+    const updatedPayPeriods = payrollData.payPeriods.map(period => 
       period.id === payrollId ? { ...period, status: "Completed" } : period
     );
     
     const updatedPayrollData = {
-      ...currentCompany.payrollData,
+      ...payrollData,
       payPeriods: updatedPayPeriods
     };
     
-    updateCompany(currentCompany.id, { payrollData: updatedPayrollData });
+    updateCompany({...currentCompany, payrollData: updatedPayrollData});
     toast.success("Payroll marked as completed");
   };
 
@@ -86,7 +90,9 @@ export const PayrollDashboard: React.FC<PayrollDashboardProps> = ({ onProcessPay
             {nextPayrollPeriod ? (
               <>
                 <p className="text-2xl font-bold">{nextPayrollPeriod.payDate}</p>
-                <p className="text-sm text-muted-foreground">{nextPayrollPeriod.employees.length} employees</p>
+                <p className="text-sm text-muted-foreground">
+                  {nextPayrollPeriod.employees?.length || 0} employees
+                </p>
               </>
             ) : (
               <>
@@ -117,7 +123,7 @@ export const PayrollDashboard: React.FC<PayrollDashboardProps> = ({ onProcessPay
           <CardContent>
             {lastPayroll ? (
               <>
-                <p className="text-2xl font-bold">{lastPayroll.totalGross}</p>
+                <p className="text-2xl font-bold">{lastPayroll.totalGross || '$0.00'}</p>
                 <p className="text-sm text-muted-foreground">{lastPayroll.payDate}</p>
               </>
             ) : (
@@ -185,7 +191,7 @@ export const PayrollDashboard: React.FC<PayrollDashboardProps> = ({ onProcessPay
                   </tr>
                 </thead>
                 <tbody>
-                  {currentCompany.employees.map((employee) => (
+                  {employees.map((employee) => (
                     <tr key={employee.id} className="border-b hover:bg-muted/50">
                       <td className="py-3 px-4">{employee.name}</td>
                       <td className="py-3 px-4">{employee.position}</td>
@@ -232,13 +238,13 @@ export const PayrollDashboard: React.FC<PayrollDashboardProps> = ({ onProcessPay
                   </tr>
                 </thead>
                 <tbody>
-                  {currentCompany.payrollData.payPeriods.map((period) => (
+                  {payrollData.payPeriods.map((period) => (
                     <tr key={period.id} className="border-b hover:bg-muted/50">
                       <td className="py-3 px-4">{period.payDate}</td>
                       <td className="py-3 px-4">
                         Payroll {period.startDate} - {period.endDate}
                       </td>
-                      <td className="py-3 px-4">{period.employees.length}</td>
+                      <td className="py-3 px-4">{period.employees?.length || 0}</td>
                       <td className="py-3 px-4">{period.totalGross}</td>
                       <td className="py-3 px-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
