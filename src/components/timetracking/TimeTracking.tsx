@@ -141,7 +141,7 @@ export const TimeTracking: React.FC = () => {
         billable: formData.billable
       };
       
-      // Fix the argument count - just pass the updated entry
+      // The correct argument count - only pass the TimeEntry
       updateTimeEntry(updatedEntry);
       setEditingEntry(null);
       toast.success("Time entry updated");
@@ -189,6 +189,7 @@ export const TimeTracking: React.FC = () => {
   
   const handleDeleteEntry = (entry: TimeEntry) => {
     if (confirm("Are you sure you want to delete this time entry?")) {
+      // Fix for the deleteTimeEntry function - pass only the ID
       deleteTimeEntry(entry.id);
       toast.success("Time entry deleted");
     }

@@ -10,8 +10,8 @@ import { DateRange } from "react-day-picker";
 interface DateRangeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onApplyDateRange: (range: { from: Date | undefined; to: Date | undefined }) => void;
-  currentDateRange: { from: Date | undefined; to: Date | undefined };
+  onApplyDateRange: (range: { from?: Date | undefined; to?: Date | undefined }) => void;
+  currentDateRange: { from?: Date | undefined; to?: Date | undefined };
 }
 
 export const DateRangeDialog: React.FC<DateRangeDialogProps> = ({
