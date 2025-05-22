@@ -1,5 +1,5 @@
 
-import { Project, TimeEntry } from "@/contexts/CompanyContext";
+import { Project, TimeEntry } from "@/types/company";
 
 // Convert a duration string (hh:mm) to hours as a number
 export function durationStringToHours(duration: string | number): number {
@@ -51,11 +51,11 @@ export function parseCurrency(currencyString: string | number): number {
 
 // Ensure project tracked and billed properties are in the expected format
 export function normalizeProject(project: Project): Project {
-  let trackedValue: string | number = typeof project.tracked === 'string' ? 
-    project.tracked : project.tracked?.toString() || '0';
+  const trackedValue = typeof project.tracked === 'string' ? 
+    project.tracked : (project.tracked?.toString() || '0');
     
-  let billedValue: string | number = typeof project.billed === 'string' ? 
-    project.billed : formatCurrency(project.billed || 0);
+  const billedValue = typeof project.billed === 'string' ? 
+    project.billed : (typeof project.billed === 'number' ? formatCurrency(project.billed) : '$0.00');
     
   return {
     ...project,

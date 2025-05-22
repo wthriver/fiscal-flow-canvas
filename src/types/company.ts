@@ -128,10 +128,11 @@ export interface Project {
   endDate?: string;
   budget?: number;
   documents: ProjectDocument[];
-  tracked?: number;
-  billed?: boolean;
-  spent?: number;
+  tracked?: number | string;
+  billed?: number | string | boolean;
+  spent?: number | string;
   progress?: number;
+  team?: string[];
 }
 
 export interface ProjectDocument {
@@ -139,6 +140,7 @@ export interface ProjectDocument {
   name: string;
   type: string;
   size: string;
+  url?: string;
   uploadedBy?: string;
   date?: string;
   uploadDate?: string;
@@ -163,10 +165,11 @@ export interface TimeEntry {
   date: string;
   hours: number;
   description: string;
-  duration?: number;
   billable?: boolean;
+  duration?: number | string;
   startTime?: string;
   endTime?: string;
+  status?: string;
 }
 
 export interface InventoryItem {
@@ -265,4 +268,13 @@ export interface InventoryData {
   bundles: any[];
   serialNumbers: any[];
   lotTracking: any[];
+}
+
+export interface Sale {
+  id: string;
+  date: string;
+  customer: string;
+  amount: number | string;
+  status: string;
+  items?: any[];
 }

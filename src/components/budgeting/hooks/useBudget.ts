@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Budget, BudgetCategory } from "@/types/company";
@@ -93,6 +92,8 @@ export const useBudget = () => {
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
       categories: [],
+      totalBudgeted: "$0.00",
+      totalActual: "$0.00"
     });
   };
 
@@ -119,7 +120,8 @@ export const useBudget = () => {
     setNewCategory({
       name: "",
       type: "expense",
-      budgeted: 0
+      budgeted: 0,
+      budgetedAmount: "$0.00"
     });
   };
 

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Timer, Play, Pause, CheckCircle } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { toast } from "sonner";
-import { TimeEntry } from "@/contexts/CompanyContext";
+import { TimeEntry } from "@/types/company";
 
 interface TimeTrackingControlsProps {
   projectId?: string;
@@ -94,13 +94,16 @@ export const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
       hours: hours,
       description: description,
       billable: true,
-      status: "Pending",
+      duration: duration,
       startTime: formattedStartTime,
       endTime: formattedEndTime,
-      duration: duration
+      status: "Pending"
     };
     
-    addTimeEntry(newTimeEntry);
+    if (addTimeEntry) {
+      addTimeEntry(newTimeEntry);
+    }
+    
     onEntryComplete(newTimeEntry);
     
     // Reset the timer
