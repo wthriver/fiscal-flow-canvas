@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -141,11 +142,17 @@ export const TimeTracking: React.FC = () => {
         billable: formData.billable
       };
       
-      // Pass the entry and a callback as expected by the function
-      updateTimeEntry(updatedEntry, () => {
-        setEditingEntry(null);
-        toast.success("Time entry updated");
+      // Updated: Fix the type mismatch by passing the timeEntryId as string instead of the whole object
+      updateTimeEntry(updatedEntry.id, {
+        projectId: formData.projectId,
+        date: formData.date,
+        hours: formData.hours,
+        description: formData.description,
+        billable: formData.billable
       });
+      
+      setEditingEntry(null);
+      toast.success("Time entry updated");
     } else {
       // Create new time entry
       const newTimeEntry: TimeEntry = {
