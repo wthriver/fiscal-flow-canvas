@@ -119,6 +119,7 @@ export interface Project {
   endDate?: string;
   budget?: number;
   documents: ProjectDocument[];
+  tracked?: number;
 }
 
 export interface ProjectDocument {
@@ -129,6 +130,7 @@ export interface ProjectDocument {
   uploadedBy?: string;
   date?: string;
   uploadDate?: string;
+  lastModified?: string;
 }
 
 export interface Employee {
@@ -138,6 +140,8 @@ export interface Employee {
   salary: number;
   hireDate: string;
   status: string;
+  payRate?: number;
+  payType?: string;
 }
 
 export interface TimeEntry {
@@ -147,6 +151,7 @@ export interface TimeEntry {
   date: string;
   hours: number;
   description: string;
+  duration?: number;
 }
 
 export interface InventoryItem {
@@ -202,6 +207,9 @@ export interface PayPeriod {
   payDate?: string;
   employees?: any[];
   totalGross?: number;
+  totalNet?: number;
+  totalTaxes?: number;
+  totalDeductions?: number;
 }
 
 export interface PayrollData {

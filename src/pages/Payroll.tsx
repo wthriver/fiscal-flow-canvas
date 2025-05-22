@@ -13,8 +13,11 @@ const Payroll: React.FC = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedPayrollId, setSelectedPayrollId] = useState<string | null>(null);
   
+  // Ensure payrollData exists before accessing payPeriods
+  const payrollData = currentCompany.payrollData || { payPeriods: [] };
+  
   // Find the next pending payroll period
-  const pendingPayroll = currentCompany.payrollData.payPeriods.find(
+  const pendingPayroll = payrollData.payPeriods.find(
     period => period.status === "Processing"
   );
   
@@ -85,7 +88,7 @@ const Payroll: React.FC = () => {
             <div className="bg-white p-6 rounded-lg border">
               <h2 className="text-xl font-bold mb-4">Payroll History</h2>
               <div className="divide-y">
-                {currentCompany.payrollData.payPeriods
+                {payrollData.payPeriods
                   .filter(period => period.status === "Completed")
                   .map(period => (
                     <div key={period.id} className="py-4 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -99,7 +102,7 @@ const Payroll: React.FC = () => {
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground">Total Paid</div>
-                        <div>{period.totalNet}</div>
+                        <div>{period.totalPaid}</div>
                       </div>
                       <div className="flex items-end justify-end">
                         <Button 
@@ -116,7 +119,7 @@ const Payroll: React.FC = () => {
                     </div>
                   ))}
                 
-                {currentCompany.payrollData.payPeriods.filter(period => period.status === "Completed").length === 0 && (
+                {payrollData.payPeriods.filter(period => period.status === "Completed").length === 0 && (
                   <div className="py-8 text-center text-muted-foreground">
                     No payroll history available
                   </div>
