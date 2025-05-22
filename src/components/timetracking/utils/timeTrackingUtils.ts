@@ -49,25 +49,6 @@ export function parseCurrency(currencyString: string | number): number {
   return parseFloat(currencyString.replace(/[^0-9.-]+/g, '')) || 0;
 }
 
-// Ensure project tracked and billed properties are in the expected format
-export function normalizeProject(project: Project): Project {
-  // Handle tracked property
-  const trackedValue = typeof project.tracked === 'string' ? 
-    project.tracked : (project.tracked?.toString() || '0');
-  
-  // Handle billed property - convert to string format if it's a number
-  let billedValue: string | number | boolean = project.billed || false;
-  if (typeof project.billed === 'number') {
-    billedValue = formatCurrency(project.billed);
-  }
-    
-  return {
-    ...project,
-    tracked: trackedValue,
-    billed: billedValue
-  };
-}
-
 // Ensure date string is in ISO format (YYYY-MM-DD)
 export function ensureISODateString(dateInput: string | number | Date): string {
   if (typeof dateInput === 'number') {

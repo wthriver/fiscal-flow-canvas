@@ -16,7 +16,7 @@ export const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
   projectId, 
   onEntryComplete 
 }) => {
-  const { currentCompany, addTimeEntry } = useCompany();
+  const { currentCompany } = useCompany();
   const [isTracking, setIsTracking] = useState(false);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0); // in seconds
@@ -83,7 +83,6 @@ export const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
     const now = new Date();
     const formattedStartTime = startTime.toTimeString().slice(0, 5); // HH:MM
     const formattedEndTime = now.toTimeString().slice(0, 5); // HH:MM
-    const duration = formatDuration(elapsedTime);
     const hours = elapsedTime / 3600; // Convert seconds to hours
     
     const newTimeEntry: TimeEntry = {
@@ -94,15 +93,8 @@ export const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
       hours: hours,
       description: description,
       billable: true,
-      duration: duration,
-      startTime: formattedStartTime,
-      endTime: formattedEndTime,
       status: "Pending"
     };
-    
-    if (addTimeEntry) {
-      addTimeEntry(newTimeEntry);
-    }
     
     onEntryComplete(newTimeEntry);
     

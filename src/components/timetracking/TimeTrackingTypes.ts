@@ -1,5 +1,5 @@
 
-import { TimeEntry, Project } from '@/types/company';
+import { Project, TimeEntry } from '@/types/company';
 
 export type { TimeEntry, Project };
 
