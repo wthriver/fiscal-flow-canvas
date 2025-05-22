@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -17,16 +16,16 @@ export const IncomeExpensesTab: React.FC<IncomeExpensesTabProps> = ({ accountId 
 
   // Calculate income and expenses
   const income = transactions
-    .filter(t => t.type === 'Credit')
+    .filter(t => t.type === 'Credit' || t.type === 'Deposit')
     .reduce((sum, t) => sum + parseFloat(t.amount.replace(/[^0-9.-]+/g, "")), 0);
 
   const expenses = transactions
-    .filter(t => t.type === 'Debit')
+    .filter(t => t.type === 'Debit' || t.type === 'Withdrawal')
     .reduce((sum, t) => sum + parseFloat(t.amount.replace(/[^0-9.-]+/g, "")), 0);
 
   // Get income and expense categories
   const incomeByCategory = transactions
-    .filter(t => t.type === 'Credit')
+    .filter(t => t.type === 'Credit' || t.type === 'Deposit')
     .reduce((acc, t) => {
       const category = t.category || 'Uncategorized';
       const amount = parseFloat(t.amount.replace(/[^0-9.-]+/g, "")) || 0;
@@ -35,7 +34,7 @@ export const IncomeExpensesTab: React.FC<IncomeExpensesTabProps> = ({ accountId 
     }, {} as Record<string, number>);
 
   const expensesByCategory = transactions
-    .filter(t => t.type === 'Debit')
+    .filter(t => t.type === 'Debit' || t.type === 'Withdrawal')
     .reduce((acc, t) => {
       const category = t.category || 'Uncategorized';
       const amount = parseFloat(t.amount.replace(/[^0-9.-]+/g, "")) || 0;

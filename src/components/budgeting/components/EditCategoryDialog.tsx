@@ -3,7 +3,7 @@ import React from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { BudgetCategory } from "@/contexts/CompanyContext";
+import { BudgetCategory } from "@/types/company";
 
 interface EditCategoryDialogProps {
   open: boolean;

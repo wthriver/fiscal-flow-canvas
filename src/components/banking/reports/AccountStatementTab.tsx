@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -22,6 +21,12 @@ export const AccountStatementTab: React.FC<AccountStatementTabProps> = ({ accoun
   // Get account info
   const account = currentCompany.bankAccounts.find(acc => acc.id === accountId);
   
+  // Helper function to convert balance to number
+  const parseBalance = (balance: string | number): number => {
+    if (typeof balance === 'number') return balance;
+    return parseFloat(balance.replace(/[^0-9.-]+/g, "")) || 0;
+  };
+  
   // Filter transactions based on accountId and date range
   const transactions = currentCompany.transactions
     .filter(t => !accountId || t.bankAccount === accountId)
@@ -32,13 +37,13 @@ export const AccountStatementTab: React.FC<AccountStatementTabProps> = ({ accoun
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   // Calculate opening and closing balances
-  const openingBalance = account ? parseFloat(account.balance.replace(/[^0-9.-]+/g, "")) - 
+  const openingBalance = account ? parseBalance(account.balance) - 
     transactions.reduce((sum, t) => {
       const amount = parseFloat(t.amount.replace(/[^0-9.-]+/g, ""));
-      return t.type === 'Credit' ? sum + amount : sum - amount;
+      return (t.type === 'Credit' || t.type === 'Deposit') ? sum + amount : sum - amount;
     }, 0) : 0;
 
-  const closingBalance = account ? parseFloat(account.balance.replace(/[^0-9.-]+/g, "")) : 0;
+  const closingBalance = account ? parseBalance(account.balance) : 0;
 
   const handlePrint = () => {
     window.print();
@@ -52,7 +57,7 @@ export const AccountStatementTab: React.FC<AccountStatementTabProps> = ({ accoun
     let runningBalance = openingBalance;
     transactions.forEach(t => {
       const amount = parseFloat(t.amount.replace(/[^0-9.-]+/g, ""));
-      runningBalance = t.type === 'Credit' ? runningBalance + amount : runningBalance - amount;
+      runningBalance = (t.type === 'Credit' || t.type === 'Deposit') ? runningBalance + amount : runningBalance - amount;
       
       const row = [
         t.date,
@@ -173,7 +178,7 @@ export const AccountStatementTab: React.FC<AccountStatementTabProps> = ({ accoun
                       let runningBalance = openingBalance;
                       return transactions.map(t => {
                         const amount = parseFloat(t.amount.replace(/[^0-9.-]+/g, ""));
-                        runningBalance = t.type === 'Credit' ? runningBalance + amount : runningBalance - amount;
+                        runningBalance = (t.type === 'Credit' || t.type === 'Deposit') ? runningBalance + amount : runningBalance - amount;
                         
                         return (
                           <TableRow key={t.id}>
@@ -181,8 +186,8 @@ export const AccountStatementTab: React.FC<AccountStatementTabProps> = ({ accoun
                             <TableCell>{t.description}</TableCell>
                             <TableCell>{t.category}</TableCell>
                             <TableCell>{t.type}</TableCell>
-                            <TableCell className={`text-right ${t.type === 'Credit' ? 'text-green-600' : 'text-red-600'}`}>
-                              {t.type === 'Credit' ? '+' : '-'}{t.amount}
+                            <TableCell className={`text-right ${(t.type === 'Credit' || t.type === 'Deposit') ? 'text-green-600' : 'text-red-600'}`}>
+                              {(t.type === 'Credit' || t.type === 'Deposit') ? '+' : '-'}{t.amount}
                             </TableCell>
                             <TableCell className="text-right">${runningBalance.toLocaleString()}</TableCell>
                           </TableRow>

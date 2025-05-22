@@ -166,6 +166,8 @@ export interface BudgetCategory {
   type: "income" | "expense";
   budgeted: number;
   actual: number;
+  budgetedAmount?: string;
+  actualAmount?: string;
 }
 
 export interface Budget {

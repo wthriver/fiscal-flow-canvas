@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { BudgetCategory } from "@/contexts/CompanyContext";
+import { BudgetCategory } from "@/types/company";
 import { toast } from "sonner";
 
 interface NewBudgetDialogProps {

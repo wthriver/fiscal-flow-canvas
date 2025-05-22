@@ -16,11 +16,14 @@ export const useBudget = () => {
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
     categories: [] as BudgetCategory[],
+    totalBudgeted: "$0.00",
+    totalActual: "$0.00"
   });
   const [newCategory, setNewCategory] = useState({
     name: "",
     type: "expense" as "income" | "expense",
     budgeted: 0,
+    budgetedAmount: "$0.00"
   });
 
   // Calculate budget actuals and variance
@@ -194,9 +197,9 @@ export const useBudget = () => {
   };
 
   // Format currency numbers
-  const formatCurrency = (value: number): string => {
-    if (!value) return "$0.00";
-    return `$${value.toFixed(2)}`;
+  const formatCurrency = (value: string): string => {
+    const numValue = parseFloat(value.replace(/[^0-9.-]+/g, "")) || 0;
+    return `$${numValue.toFixed(2)}`;
   };
 
   return {

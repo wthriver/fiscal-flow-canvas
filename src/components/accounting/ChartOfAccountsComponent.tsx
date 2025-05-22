@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,15 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
-
-export interface Account {
-  id: string;
-  name: string;
-  type: string;
-  number: string;
-  balance: number;
-  description?: string;
-}
+import { Account } from "@/types/company";
 
 export const ChartOfAccountsComponent = () => {
   const { currentCompany, addAccount, updateAccount, deleteAccount } = useCompany();
@@ -77,7 +68,7 @@ export const ChartOfAccountsComponent = () => {
         ...currentAccount,
         ...formData
       };
-      updateAccount(currentAccount.id, updatedAccount);
+      updateAccount(updatedAccount);
       setAccounts(accounts.map(a => a.id === currentAccount.id ? updatedAccount : a));
     } else {
       // Add new account

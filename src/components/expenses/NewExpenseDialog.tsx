@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -29,6 +28,7 @@ export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({
   const [amount, setAmount] = useState("");
   const [status, setStatus] = useState("Pending");
   const [paymentMethod, setPaymentMethod] = useState("Credit Card");
+  const [description, setDescription] = useState("");
 
   const resetForm = () => {
     setDate(new Date());
@@ -37,6 +37,7 @@ export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({
     setAmount("");
     setStatus("Pending");
     setPaymentMethod("Credit Card");
+    setDescription("");
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -72,6 +73,7 @@ export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({
       amount: formattedAmount,
       status,
       paymentMethod,
+      description: description || "No description provided"
     };
 
     addExpense(newExpense);
@@ -231,6 +233,19 @@ export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Input
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="col-span-3"
+                placeholder="Optional description"
+              />
             </div>
           </div>
           
