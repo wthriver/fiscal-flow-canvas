@@ -27,7 +27,7 @@ export interface Company {
   payrollData?: PayrollData;
   auditTrail?: any[];
   integrations?: any[];
-  sales?: any[];
+  sales?: Sale[];
   revenue?: RevenueData;
   profitMargin?: ProfitMarginData;
   outstandingInvoices?: OutstandingInvoicesData;
@@ -177,8 +177,8 @@ export interface InventoryItem {
   name: string;
   sku: string;
   quantity: number;
-  price: number;
-  cost: number;
+  price: number | string;
+  cost: number | string;
   category: string;
   location?: string;
 }

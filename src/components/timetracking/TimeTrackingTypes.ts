@@ -9,7 +9,7 @@ export interface TimeEntryFormData {
   date: string;
   hours: number;
   description: string;
-  billable?: boolean;
+  billable: boolean;
 }
 
 export interface ProjectSummary {

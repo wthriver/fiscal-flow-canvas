@@ -1,119 +1,91 @@
-
-import { useState } from "react";
-import { useCompany } from "@/contexts/CompanyContext";
-import { Invoice } from "@/types/company";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react';
+import { useCompany } from '@/contexts/CompanyContext';
+import { Invoice } from '@/types/company';
+import { toast } from 'sonner';
 
 export const useInvoices = () => {
   const { currentCompany, addInvoice, updateInvoice, deleteInvoice } = useCompany();
-  const [searchText, setSearchText] = useState("");
-  const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
-  const [isExportOpen, setIsExportOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<{from: Date | undefined, to: Date | undefined}>({
-    from: undefined,
-    to: undefined
-  });
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Ensure invoices array exists before filtering
-  const invoices = currentCompany?.invoices || [];
-  
-  // Filter invoices based on search text, status, and date range
-  const filteredInvoices = invoices.filter(invoice => {
-    // Text search
-    const matchesSearch = 
-      !searchText || 
-      invoice.id.toLowerCase().includes(searchText.toLowerCase()) ||
-      invoice.customer.toLowerCase().includes(searchText.toLowerCase());
-    
-    // Status filter
-    const matchesStatus = !statusFilter || invoice.status === statusFilter;
-    
-    // Date range filter
-    let matchesDateRange = true;
-    if (dateRange.from || dateRange.to) {
-      const invoiceDate = new Date(invoice.date);
-      
-      if (dateRange.from && invoiceDate < dateRange.from) {
-        matchesDateRange = false;
-      }
-      
-      if (dateRange.to) {
-        // Add one day to include the end date
-        const endDate = new Date(dateRange.to);
-        endDate.setDate(endDate.getDate() + 1);
-        if (invoiceDate > endDate) {
-          matchesDateRange = false;
-        }
-      }
-    }
-    
-    return matchesSearch && matchesStatus && matchesDateRange;
-  });
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
 
-  // Handler for creating a new invoice
-  const handleCreateInvoice = (invoiceData: any) => {
-    addInvoice(invoiceData);
-    setIsNewInvoiceOpen(false);
-    toast({
-      title: "Invoice Created",
-      description: `Invoice ${invoiceData.id} has been created successfully.`,
-    });
-  };
-  
-  // Handler for applying filters
-  const handleApplyFilter = (status: string | null) => {
-    setStatusFilter(status);
-    setIsFilterOpen(false);
-  };
-  
-  // Handler for applying date range
-  const handleApplyDateRange = (range: {from: Date | undefined, to: Date | undefined}) => {
-    setDateRange(range);
-    setIsDateRangeOpen(false);
-  };
-  
-  // Handler for exporting data
-  const handleExport = (format: string) => {
-    toast({
-      title: "Export Started",
-      description: `Exporting invoices as ${format.toUpperCase()}.`,
-    });
-    
-    // Simulate export process
+    // Simulate fetching invoices from an API
     setTimeout(() => {
+      if (currentCompany?.invoices) {
+        setInvoices(currentCompany.invoices);
+      } else {
+        setInvoices([]);
+      }
+      setLoading(false);
+    }, 200);
+  }, [currentCompany?.invoices]);
+
+  const createInvoice = async (invoiceData: Invoice) => {
+    setLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      addInvoice(invoiceData);
+      setInvoices(prevInvoices => [...prevInvoices, invoiceData]);
       toast({
-        title: "Export Complete",
-        description: `Invoices have been exported as ${format.toUpperCase()}.`,
+        description: "Invoice created successfully",
+        duration: 3000,
       });
-    }, 1500);
-    
-    setIsExportOpen(false);
+    } catch (err) {
+      setError('Failed to create invoice');
+      toast.error('Failed to create invoice');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const editInvoice = async (invoiceData: Invoice) => {
+    setLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      updateInvoice(invoiceData);
+      setInvoices(prevInvoices =>
+        prevInvoices.map(invoice => (invoice.id === invoiceData.id ? invoiceData : invoice))
+      );
+      toast({
+        description: "Invoice updated successfully",
+        duration: 3000,
+      });
+    } catch (err) {
+      setError('Failed to update invoice');
+      toast.error('Failed to update invoice');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteInvoiceById = async (id: string) => {
+    setLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      deleteInvoice(id);
+      setInvoices(prevInvoices => prevInvoices.filter(invoice => invoice.id !== id));
+      toast.success("Invoice deleted successfully");
+    } catch (err) {
+      setError('Failed to delete invoice');
+      toast.error('Failed to delete invoice');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return {
-    currentCompany,
     invoices,
-    filteredInvoices,
-    searchText,
-    setSearchText,
-    isNewInvoiceOpen, 
-    setIsNewInvoiceOpen,
-    isFilterOpen, 
-    setIsFilterOpen,
-    isDateRangeOpen, 
-    setIsDateRangeOpen,
-    isExportOpen, 
-    setIsExportOpen,
-    statusFilter, 
-    setStatusFilter,
-    dateRange, 
-    setDateRange,
-    handleCreateInvoice,
-    handleApplyFilter,
-    handleApplyDateRange,
-    handleExport
+    loading,
+    error,
+    createInvoice,
+    editInvoice,
+    deleteInvoice: deleteInvoiceById,
   };
 };

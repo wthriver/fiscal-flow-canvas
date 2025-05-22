@@ -51,11 +51,15 @@ export function parseCurrency(currencyString: string | number): number {
 
 // Ensure project tracked and billed properties are in the expected format
 export function normalizeProject(project: Project): Project {
+  // Handle tracked property
   const trackedValue = typeof project.tracked === 'string' ? 
     project.tracked : (project.tracked?.toString() || '0');
-    
-  const billedValue = typeof project.billed === 'string' ? 
-    project.billed : (typeof project.billed === 'number' ? formatCurrency(project.billed) : '$0.00');
+  
+  // Handle billed property - convert to string format if it's a number
+  let billedValue: string | number | boolean = project.billed || false;
+  if (typeof project.billed === 'number') {
+    billedValue = formatCurrency(project.billed);
+  }
     
   return {
     ...project,

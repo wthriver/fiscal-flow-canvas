@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,7 +32,7 @@ export const CompanySettings: React.FC = () => {
     
     if (updateCompany) {
       updateCompany(currentCompany.id, formData);
-      toast.success("Company settings updated successfully");
+      toast.success("Company settings updated");
     }
   };
 

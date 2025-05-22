@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Download, ArrowUp, ArrowDown, Plus, FileBarChart, Truck, Package2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCompany } from "@/contexts/CompanyContext";
+
+// We need to add a utility function to safely format numbers as strings
+const formatNumberToString = (value: number | string): string => {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return value.toString();
+};
 
 export const InventoryValuation: React.FC = () => {
   const { currentCompany } = useCompany();

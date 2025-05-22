@@ -68,6 +68,7 @@ const TopBar: React.FC = () => {
     const newCompany = {
       id: `company-${Date.now()}`,
       ...newCompanyData,
+      accounts: [], // Add required accounts field
       customers: [],
       invoices: [],
       products: [],

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,7 +47,7 @@ const Sales: React.FC = () => {
     };
     
     addSale(newSale);
-    toast.success("New sale created successfully");
+    toast.success("Sale added successfully");
   };
 
   const handleUpdateSaleStatus = (saleId: string, status: string) => {

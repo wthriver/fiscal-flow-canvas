@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -131,10 +130,19 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
       return;
     }
     
+    const calculateTotal = (items: EstimateItem[]): number => {
+      return items.reduce((total, item) => {
+        const itemTotal = parseFloat(item.amount.replace(/[^0-9.-]+/g, "") || "0");
+        return total + itemTotal;
+      }, 0);
+    };
+    
     const newEstimate = {
       ...estimate,
       id: `est-${Date.now()}`,
       estimateNumber: `EST-${Date.now().toString().slice(-6)}`,
+      customer: estimate.customerId,
+      total: calculateTotal(estimate.items),
     };
     
     addEstimate(newEstimate);
