@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,13 +25,13 @@ export const PayrollDashboard: React.FC<PayrollDashboardProps> = ({ onProcessPay
 
   // Find the next payroll date
   const nextPayrollPeriod = payrollData.payPeriods.find(
-    period => new Date(period.payDate) > new Date() && period.status !== "Completed"
+    period => new Date(period.payDate || '') > new Date() && period.status !== "Completed"
   );
 
   // Find the last completed payroll
   const lastPayroll = [...payrollData.payPeriods]
     .filter(period => period.status === "Completed")
-    .sort((a, b) => new Date(b.payDate).getTime() - new Date(a.payDate).getTime())[0];
+    .sort((a, b) => new Date((b.payDate || '')).getTime() - new Date((a.payDate || '')).getTime())[0];
 
   // Count active employees
   const activeEmployees = employees.filter(emp => emp.status === "Active");
@@ -91,7 +92,7 @@ export const PayrollDashboard: React.FC<PayrollDashboardProps> = ({ onProcessPay
               <>
                 <p className="text-2xl font-bold">{nextPayrollPeriod.payDate}</p>
                 <p className="text-sm text-muted-foreground">
-                  {nextPayrollPeriod.employees?.length || 0} employees
+                  {(nextPayrollPeriod.employees?.length || 0)} employees
                 </p>
               </>
             ) : (

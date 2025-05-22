@@ -1,4 +1,3 @@
-
 // Company and related types
 export interface Company {
   id: string;
@@ -10,6 +9,7 @@ export interface Company {
   taxId?: string;
   industry?: string;
   fiscalYearStart?: string;
+  fiscalYear?: string; // Adding missing property
   transactions: Transaction[];
   accounts: Account[];
   taxRates: TaxRate[];
@@ -59,7 +59,7 @@ export interface Transaction {
   category: string;
   account: string;
   reconciled: boolean;
-  type: "Deposit" | "Withdrawal" | "Transfer";
+  type: "Deposit" | "Withdrawal" | "Transfer" | "Credit" | "Debit"; // Updated to include Credit and Debit
   bankAccount?: string;
 }
 
@@ -105,9 +105,10 @@ export interface Expense {
   date: string;
   vendor: string;
   category: string;
-  amount: number;
+  amount: number | string; // Updated to allow string
   description: string;
   status: string;
+  paymentMethod?: string;
 }
 
 export interface Project {
@@ -120,6 +121,7 @@ export interface Project {
   budget?: number;
   documents: ProjectDocument[];
   tracked?: number;
+  billed?: boolean; // Added missing property
 }
 
 export interface ProjectDocument {
@@ -137,10 +139,10 @@ export interface Employee {
   id: string;
   name: string;
   position: string;
-  salary: number;
-  hireDate: string;
+  salary?: number;
+  hireDate?: string;
   status: string;
-  payRate?: number;
+  payRate?: string | number;
   payType?: string;
 }
 
@@ -152,6 +154,7 @@ export interface TimeEntry {
   hours: number;
   description: string;
   duration?: number;
+  billable?: boolean; // Added missing property
 }
 
 export interface InventoryItem {
@@ -196,6 +199,11 @@ export interface Estimate {
   items: InvoiceItem[];
   status: string;
   total: number;
+  estimateNumber?: string;
+  customerId?: string;
+  notes?: string;
+  termsAndConditions?: string;
+  amount?: string;
 }
 
 export interface PayPeriod {
@@ -206,7 +214,7 @@ export interface PayPeriod {
   totalPaid: number;
   payDate?: string;
   employees?: any[];
-  totalGross?: number;
+  totalGross?: number | string;
   totalNet?: number;
   totalTaxes?: number;
   totalDeductions?: number;
