@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ interface EstimateItem {
   amount: string;
 }
 
-interface EstimateDialogProps {
+export interface EstimateDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
@@ -137,12 +138,24 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
       }, 0);
     };
     
+    // Convert our estimate items format to InvoiceItem format required by Estimate interface
+    const invoiceItems = estimate.items.map(item => ({
+      id: item.id,
+      description: item.description,
+      quantity: item.quantity,
+      price: parseFloat(item.unitPrice.replace(/[^0-9.-]+/g, "")),
+      total: parseFloat(item.amount.replace(/[^0-9.-]+/g, ""))
+    }));
+    
     const newEstimate = {
-      ...estimate,
       id: `est-${Date.now()}`,
-      estimateNumber: `EST-${Date.now().toString().slice(-6)}`,
       customer: estimate.customerId,
+      date: estimate.date,
+      expiryDate: estimate.expiryDate,
       total: calculateTotal(estimate.items),
+      status: estimate.status,
+      items: invoiceItems,
+      estimateNumber: `EST-${Date.now().toString().slice(-6)}`,
     };
     
     addEstimate(newEstimate);

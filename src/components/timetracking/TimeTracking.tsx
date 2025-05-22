@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -142,6 +141,7 @@ export const TimeTracking: React.FC = () => {
         billable: formData.billable
       };
       
+      // Fix the argument count - just pass the updated entry
       updateTimeEntry(updatedEntry);
       setEditingEntry(null);
       toast.success("Time entry updated");

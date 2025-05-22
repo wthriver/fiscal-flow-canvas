@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,11 @@ export const CompanySettings: React.FC = () => {
     e.preventDefault();
     
     if (updateCompany) {
-      updateCompany(currentCompany.id, formData);
+      // Fix the argument count - just pass the updated company data
+      updateCompany({
+        ...currentCompany,
+        ...formData
+      });
       toast.success("Company settings updated");
     }
   };
