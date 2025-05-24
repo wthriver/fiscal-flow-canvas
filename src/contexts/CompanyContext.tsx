@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { saveToLocalStorage, loadFromLocalStorage } from '@/services/localStorageService';
-import { Company, TaxRate, Account, Transaction, Invoice, Expense, Estimate, Budget, BankAccount, TimeEntry, Project, ProjectDocument, Customer } from '@/types/company';
+import { Company, TaxRate, Account, Transaction, Invoice, Expense, Estimate, Budget, BankAccount, TimeEntry, Project, ProjectDocument, Customer, Employee, Sale } from '@/types/company';
 import { CompanyContextType } from '@/types/context';
 
 // Create the context with default values
@@ -46,17 +45,560 @@ const CompanyContext = createContext<CompanyContextType>({
   addTimeEntry: () => {},
   updateTimeEntry: () => {},
   deleteTimeEntry: () => {},
+  addSale: () => {},
+  updateSale: () => {},
+  deleteSale: () => {},
 });
 
 interface CompanyProviderProps {
   children: ReactNode;
 }
 
+// Demo data generator
+const generateDemoData = (): Company => {
+  const currentDate = new Date();
+  const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, currentDate.getDate());
+  const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, currentDate.getDate());
+
+  return {
+    id: `company-${Date.now()}`,
+    name: 'Acme Corporation',
+    address: '123 Business St, Suite 100, Business City, BC 12345',
+    phone: '+1 (555) 123-4567',
+    email: 'info@acmecorp.com',
+    website: 'www.acmecorp.com',
+    taxId: '12-3456789',
+    industry: 'Technology Services',
+    fiscalYearStart: 'January 1',
+    
+    // Demo customers
+    customers: [
+      {
+        id: 'cust-1',
+        name: 'John Smith',
+        email: 'john.smith@email.com',
+        phone: '+1 (555) 234-5678',
+        address: '456 Customer Ave',
+        company: 'Smith Enterprises',
+        contactName: 'John Smith',
+        type: 'Business',
+        status: 'Active',
+        city: 'Customer City',
+        state: 'CC',
+        postalCode: '54321',
+        country: 'USA'
+      },
+      {
+        id: 'cust-2',
+        name: 'Sarah Johnson',
+        email: 'sarah@techstart.com',
+        phone: '+1 (555) 345-6789',
+        address: '789 Tech Blvd',
+        company: 'TechStart Inc',
+        contactName: 'Sarah Johnson',
+        type: 'Business',
+        status: 'Active',
+        city: 'Tech City',
+        state: 'TC',
+        postalCode: '67890',
+        country: 'USA'
+      },
+      {
+        id: 'cust-3',
+        name: 'Mike Wilson',
+        email: 'mike.wilson@retail.com',
+        phone: '+1 (555) 456-7890',
+        address: '321 Retail Road',
+        company: 'Wilson Retail',
+        contactName: 'Mike Wilson',
+        type: 'Business',
+        status: 'Active',
+        city: 'Retail Town',
+        state: 'RT',
+        postalCode: '13579',
+        country: 'USA'
+      }
+    ],
+
+    // Demo invoices
+    invoices: [
+      {
+        id: 'INV-001',
+        customer: 'Smith Enterprises',
+        date: '2025-05-15',
+        dueDate: '2025-06-15',
+        status: 'Paid',
+        total: 2500.00,
+        amount: '$2,500.00',
+        items: [
+          { id: 'item-1', description: 'Web Development Services', quantity: 40, price: 50, total: 2000 },
+          { id: 'item-2', description: 'Domain Setup', quantity: 1, price: 500, total: 500 }
+        ]
+      },
+      {
+        id: 'INV-002',
+        customer: 'TechStart Inc',
+        date: '2025-05-20',
+        dueDate: '2025-06-20',
+        status: 'Pending',
+        total: 1800.00,
+        amount: '$1,800.00',
+        items: [
+          { id: 'item-3', description: 'Software Consulting', quantity: 20, price: 75, total: 1500 },
+          { id: 'item-4', description: 'Technical Documentation', quantity: 6, price: 50, total: 300 }
+        ]
+      },
+      {
+        id: 'INV-003',
+        customer: 'Wilson Retail',
+        date: '2025-05-22',
+        dueDate: '2025-06-22',
+        status: 'Overdue',
+        total: 3200.00,
+        amount: '$3,200.00',
+        items: [
+          { id: 'item-5', description: 'E-commerce Platform', quantity: 1, price: 2500, total: 2500 },
+          { id: 'item-6', description: 'Payment Integration', quantity: 1, price: 700, total: 700 }
+        ]
+      }
+    ],
+
+    // Demo expenses
+    expenses: [
+      {
+        id: 'exp-1',
+        date: '2025-05-10',
+        vendor: 'Office Supplies Co',
+        category: 'Office Supplies',
+        amount: 250.00,
+        description: 'Monthly office supplies purchase',
+        status: 'Paid',
+        paymentMethod: 'Credit Card'
+      },
+      {
+        id: 'exp-2',
+        date: '2025-05-12',
+        vendor: 'CloudHost Services',
+        category: 'Software & Subscriptions',
+        amount: 150.00,
+        description: 'Monthly hosting fees',
+        status: 'Paid',
+        paymentMethod: 'ACH'
+      },
+      {
+        id: 'exp-3',
+        date: '2025-05-18',
+        vendor: 'Business Travel Inc',
+        category: 'Travel',
+        amount: 800.00,
+        description: 'Client meeting travel expenses',
+        status: 'Pending',
+        paymentMethod: 'Company Card'
+      }
+    ],
+
+    // Demo employees
+    employees: [
+      {
+        id: 'emp-1',
+        name: 'Alice Johnson',
+        position: 'Senior Developer',
+        salary: 85000,
+        hireDate: '2023-01-15',
+        status: 'Active',
+        payRate: 40.87,
+        payType: 'Hourly'
+      },
+      {
+        id: 'emp-2',
+        name: 'Bob Chen',
+        position: 'Project Manager',
+        salary: 75000,
+        hireDate: '2023-03-01',
+        status: 'Active',
+        payRate: 36.06,
+        payType: 'Hourly'
+      },
+      {
+        id: 'emp-3',
+        name: 'Carol Davis',
+        position: 'UX Designer',
+        salary: 65000,
+        hireDate: '2023-06-15',
+        status: 'Active',
+        payRate: 31.25,
+        payType: 'Hourly'
+      }
+    ],
+
+    // Demo projects
+    projects: [
+      {
+        id: 'proj-1',
+        name: 'E-commerce Website',
+        client: 'Smith Enterprises',
+        status: 'In Progress',
+        startDate: '2025-04-01',
+        endDate: '2025-07-01',
+        budget: 15000,
+        tracked: '120 hours',
+        billed: true,
+        spent: 8500,
+        progress: 65,
+        team: ['Alice Johnson', 'Carol Davis'],
+        documents: [
+          {
+            id: 'doc-1',
+            name: 'Project Requirements.pdf',
+            type: 'PDF',
+            size: '2.4 MB',
+            uploadDate: '2025-04-01',
+            uploadedBy: 'Bob Chen'
+          }
+        ]
+      },
+      {
+        id: 'proj-2',
+        name: 'Mobile App Development',
+        client: 'TechStart Inc',
+        status: 'Planning',
+        startDate: '2025-06-01',
+        endDate: '2025-12-01',
+        budget: 25000,
+        tracked: '0 hours',
+        billed: false,
+        spent: 0,
+        progress: 10,
+        team: ['Alice Johnson', 'Bob Chen'],
+        documents: []
+      }
+    ],
+
+    // Demo time entries
+    timeEntries: [
+      {
+        id: 'time-1',
+        employeeId: 'emp-1',
+        projectId: 'proj-1',
+        date: '2025-05-20',
+        hours: 8,
+        description: 'Frontend development work',
+        billable: true,
+        startTime: '09:00',
+        endTime: '17:00',
+        status: 'Approved'
+      },
+      {
+        id: 'time-2',
+        employeeId: 'emp-2',
+        projectId: 'proj-1',
+        date: '2025-05-20',
+        hours: 6,
+        description: 'Project planning and client meetings',
+        billable: true,
+        startTime: '10:00',
+        endTime: '16:00',
+        status: 'Approved'
+      },
+      {
+        id: 'time-3',
+        employeeId: 'emp-3',
+        projectId: 'proj-1',
+        date: '2025-05-21',
+        hours: 7,
+        description: 'UI/UX design and prototyping',
+        billable: true,
+        startTime: '09:30',
+        endTime: '16:30',
+        status: 'Pending'
+      }
+    ],
+
+    // Demo sales
+    sales: [
+      {
+        id: 'sale-1',
+        date: '2025-05-15',
+        customer: 'Smith Enterprises',
+        amount: 2500.00,
+        status: 'Completed',
+        items: [
+          { description: 'Web Development Package', quantity: 1, price: 2500, total: 2500 }
+        ]
+      },
+      {
+        id: 'sale-2',
+        date: '2025-05-20',
+        customer: 'TechStart Inc',
+        amount: 1800.00,
+        status: 'Pending',
+        items: [
+          { description: 'Consulting Services', quantity: 24, price: 75, total: 1800 }
+        ]
+      }
+    ],
+
+    // Demo accounts
+    accounts: [
+      {
+        id: 'acc-1',
+        number: '1000',
+        name: 'Cash',
+        type: 'Asset',
+        balance: 25000,
+        description: 'Primary cash account'
+      },
+      {
+        id: 'acc-2',
+        number: '1200',
+        name: 'Accounts Receivable',
+        type: 'Asset',
+        balance: 8500,
+        description: 'Money owed by customers'
+      },
+      {
+        id: 'acc-3',
+        number: '2000',
+        name: 'Accounts Payable',
+        type: 'Liability',
+        balance: 3200,
+        description: 'Money owed to vendors'
+      },
+      {
+        id: 'acc-4',
+        name: 'Revenue',
+        number: '4000',
+        type: 'Income',
+        balance: 45000,
+        description: 'Service revenue'
+      }
+    ],
+
+    // Demo bank accounts
+    bankAccounts: [
+      {
+        id: 'bank-1',
+        name: 'Business Checking',
+        type: 'Checking',
+        balance: 25000,
+        lastTransaction: '2025-05-22',
+        transactions: [
+          {
+            id: 'trans-1',
+            date: '2025-05-22',
+            description: 'Customer Payment - INV-001',
+            amount: '+$2,500.00',
+            category: 'Income',
+            account: 'Business Checking',
+            reconciled: true,
+            type: 'Deposit'
+          },
+          {
+            id: 'trans-2',
+            date: '2025-05-21',
+            description: 'Office Rent',
+            amount: '-$1,200.00',
+            category: 'Rent',
+            account: 'Business Checking',
+            reconciled: true,
+            type: 'Withdrawal'
+          },
+          {
+            id: 'trans-3',
+            date: '2025-05-20',
+            description: 'Software Subscription',
+            amount: '-$150.00',
+            category: 'Software',
+            account: 'Business Checking',
+            reconciled: false,
+            type: 'Withdrawal'
+          }
+        ]
+      },
+      {
+        id: 'bank-2',
+        name: 'Business Savings',
+        type: 'Savings',
+        balance: 50000,
+        lastTransaction: '2025-05-15',
+        transactions: [
+          {
+            id: 'trans-4',
+            date: '2025-05-15',
+            description: 'Interest Payment',
+            amount: '+$45.50',
+            category: 'Interest',
+            account: 'Business Savings',
+            reconciled: true,
+            type: 'Deposit'
+          }
+        ]
+      }
+    ],
+
+    // Demo tax rates
+    taxRates: [
+      {
+        id: 'tax-1',
+        name: 'Sales Tax',
+        rate: 8.25,
+        isDefault: true,
+        description: 'Standard sales tax rate',
+        category: 'Sales'
+      },
+      {
+        id: 'tax-2',
+        name: 'Service Tax',
+        rate: 6.0,
+        isDefault: false,
+        description: 'Tax rate for services',
+        category: 'Service'
+      }
+    ],
+
+    // Demo budgets
+    budgets: [
+      {
+        id: 'budget-1',
+        name: 'Q2 2025 Budget',
+        period: 'Quarterly',
+        startDate: '2025-04-01',
+        endDate: '2025-06-30',
+        status: 'Active',
+        categories: [
+          {
+            id: 'cat-1',
+            name: 'Revenue',
+            type: 'income',
+            budgeted: 50000,
+            actual: 35000
+          },
+          {
+            id: 'cat-2',
+            name: 'Operating Expenses',
+            type: 'expense',
+            budgeted: 15000,
+            actual: 12500
+          },
+          {
+            id: 'cat-3',
+            name: 'Marketing',
+            type: 'expense',
+            budgeted: 5000,
+            actual: 3200
+          }
+        ]
+      }
+    ],
+
+    // Demo estimates
+    estimates: [
+      {
+        id: 'EST-001',
+        customer: 'Wilson Retail',
+        date: '2025-05-10',
+        expiryDate: '2025-06-10',
+        status: 'Pending',
+        total: 15000,
+        estimateNumber: 'EST-001',
+        notes: 'Comprehensive e-commerce solution',
+        items: [
+          { id: 'est-item-1', description: 'E-commerce Platform Setup', quantity: 1, price: 8000, total: 8000 },
+          { id: 'est-item-2', description: 'Custom Features Development', quantity: 80, price: 75, total: 6000 },
+          { id: 'est-item-3', description: 'Testing & Deployment', quantity: 1, price: 1000, total: 1000 }
+        ]
+      }
+    ],
+
+    // Demo inventory
+    inventory: {
+      items: [
+        {
+          id: 'inv-1',
+          name: 'Software License - Pro',
+          sku: 'SW-PRO-001',
+          quantity: 50,
+          price: 199.99,
+          cost: 120.00,
+          category: 'Software',
+          location: 'Digital'
+        },
+        {
+          id: 'inv-2',
+          name: 'Consulting Hours',
+          sku: 'CONS-HR-001',
+          quantity: 1000,
+          price: 75.00,
+          cost: 45.00,
+          category: 'Services',
+          location: 'Virtual'
+        }
+      ],
+      categories: ['Software', 'Services', 'Hardware'],
+      locations: ['Digital', 'Virtual', 'Office'],
+      bundles: [],
+      serialNumbers: [],
+      lotTracking: []
+    },
+
+    // Demo payroll data
+    payrollData: {
+      payPeriods: [
+        {
+          id: 'pp-1',
+          startDate: '2025-05-01',
+          endDate: '2025-05-15',
+          status: 'Processed',
+          totalPaid: 8500,
+          payDate: '2025-05-20',
+          totalGross: 10000,
+          totalNet: 8500,
+          totalTaxes: 1200,
+          totalDeductions: 300
+        }
+      ]
+    },
+
+    // Demo transactions (general ledger)
+    transactions: [
+      {
+        id: 'gl-trans-1',
+        date: '2025-05-22',
+        description: 'Customer Payment Received',
+        amount: '+$2,500.00',
+        category: 'Revenue',
+        account: 'Accounts Receivable',
+        reconciled: true,
+        type: 'Credit'
+      },
+      {
+        id: 'gl-trans-2',
+        date: '2025-05-21',
+        description: 'Office Rent Payment',
+        amount: '-$1,200.00',
+        category: 'Rent Expense',
+        account: 'Cash',
+        reconciled: true,
+        type: 'Debit'
+      }
+    ],
+
+    // Demo performance metrics
+    revenue: { current: 45000, previous: 38000, percentChange: 18.4 },
+    profitMargin: { value: 22.5, trend: 2.1, percentChange: 5.2 },
+    outstandingInvoices: { amount: 5000, percentChange: -12.3 },
+    activeCustomers: { count: 15, percentChange: 25.0 },
+
+    auditTrail: [],
+    integrations: [],
+  };
+};
+
 export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [currentCompanyId, setCurrentCompanyId] = useState<string>('');
 
-  // Initialize with default company if none exists
+  // Initialize with demo data if none exists
   useEffect(() => {
     const storedData = loadFromLocalStorage();
     
@@ -64,62 +606,11 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
       setCompanies([storedData]);
       setCurrentCompanyId(storedData.id);
     } else {
-      // Create default company
-      const defaultCompany: Company = {
-        id: `company-${Date.now()}`,
-        name: 'My Company',
-        transactions: [],
-        accounts: [],
-        taxRates: [],
-        bankAccounts: [
-          {
-            id: 'bank-1',
-            name: 'Checking Account',
-            balance: 1000,
-            transactions: [
-              {
-                id: 'transaction-1',
-                date: '2023-01-01',
-                description: 'Initial Deposit',
-                amount: '$1000.00',
-                category: 'Deposit',
-                account: 'Checking Account',
-                reconciled: false,
-                type: 'Deposit'
-              }
-            ],
-            lastTransaction: '2023-01-01'
-          }
-        ],
-        customers: [],
-        invoices: [],
-        expenses: [],
-        projects: [],
-        employees: [],
-        timeEntries: [],
-        inventory: {
-          items: [],
-          categories: [],
-          locations: [],
-          bundles: [],
-          serialNumbers: [],
-          lotTracking: []
-        },
-        budgets: [],
-        estimates: [],
-        payrollData: { payPeriods: [] },
-        auditTrail: [],
-        integrations: [],
-        sales: [],
-        revenue: { current: 0, previous: 0, percentChange: 0 },
-        profitMargin: { value: 0, trend: 0, percentChange: 0 },
-        outstandingInvoices: { amount: 0, percentChange: 0 },
-        activeCustomers: { count: 0, percentChange: 0 }
-      };
-      
-      setCompanies([defaultCompany]);
-      setCurrentCompanyId(defaultCompany.id);
-      saveToLocalStorage(defaultCompany);
+      // Create company with comprehensive demo data
+      const demoCompany = generateDemoData();
+      setCompanies([demoCompany]);
+      setCurrentCompanyId(demoCompany.id);
+      saveToLocalStorage(demoCompany);
     }
   }, []);
 
@@ -468,6 +959,41 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     updateCompany(updatedCompany);
   };
 
+  // Sale operations
+  const addSale = (sale: Sale) => {
+    const sales = currentCompany.sales || [];
+    const updatedCompany = {
+      ...currentCompany,
+      sales: [...sales, sale]
+    };
+    
+    updateCompany(updatedCompany);
+  };
+  
+  const updateSale = (sale: Sale) => {
+    const sales = currentCompany.sales || [];
+    const updatedSales = sales.map(s => 
+      s.id === sale.id ? sale : s
+    );
+    
+    const updatedCompany = {
+      ...currentCompany,
+      sales: updatedSales
+    };
+    
+    updateCompany(updatedCompany);
+  };
+  
+  const deleteSale = (saleId: string) => {
+    const sales = currentCompany.sales || [];
+    const updatedCompany = {
+      ...currentCompany,
+      sales: sales.filter(s => s.id !== saleId)
+    };
+    
+    updateCompany(updatedCompany);
+  };
+
   // Estimate operations
   const addEstimate = (estimate: Estimate) => {
     const estimates = currentCompany.estimates || [];
@@ -587,7 +1113,10 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
         deleteBankAccount,
         addTimeEntry,
         updateTimeEntry,
-        deleteTimeEntry
+        deleteTimeEntry,
+        addSale,
+        updateSale,
+        deleteSale
       }}
     >
       {children}
