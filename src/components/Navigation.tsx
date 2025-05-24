@@ -24,6 +24,7 @@ import {
   Package2,
   Activity,
   Settings,
+  CreditCard,
 } from "lucide-react";
 
 const ListItem = React.forwardRef<
@@ -67,6 +68,12 @@ const routes = [
     title: "Invoicing",
     href: "/invoices",
     icon: FileText,
+    submenu: false,
+  },
+  {
+    title: "Payment Processing",
+    href: "/payment-processing",
+    icon: CreditCard,
     submenu: false,
   },
   {

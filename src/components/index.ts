@@ -18,6 +18,12 @@ export { RecurringInvoices } from "./invoices/RecurringInvoices";
 export { AccountsPayableAging } from "./expenses/AccountsPayableAging";
 export { DigitalReceiptCapture } from "./expenses/DigitalReceiptCapture";
 
+// Payment Components
+export { PaymentProcessor } from "./payments/PaymentProcessor";
+export { InvoiceTemplates } from "./invoices/InvoiceTemplates";
+export { PaymentReminders } from "./invoices/PaymentReminders";
+export { LateFeeCalculator } from "./invoices/LateFeeCalculator";
+
 // Banking Components
 export { ReconciliationContent } from "./banking/reconciliation/ReconciliationContent";
 export { ReconciliationHeader } from "./banking/reconciliation/ReconciliationHeader";

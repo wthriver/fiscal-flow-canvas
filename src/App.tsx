@@ -22,6 +22,7 @@ import Budgeting from './pages/Budgeting';
 import Expenses from './pages/Expenses';
 import Payroll from './pages/Payroll';
 import Sales from './pages/Sales';
+import PaymentProcessing from './pages/PaymentProcessing';
 
 const App = () => {
   return (
@@ -33,6 +34,7 @@ const App = () => {
             <Route index element={<Dashboard />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/invoices" element={<Invoices />} />
+            <Route path="/payment-processing" element={<PaymentProcessing />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/reports" element={<Reports />} />
