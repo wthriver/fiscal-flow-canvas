@@ -102,7 +102,18 @@ export const loadFromLocalStorage = (): Company | null => {
       revenue: parsedData.revenue || { current: 0, previous: 0, percentChange: 0 },
       profitMargin: parsedData.profitMargin || { value: 0, trend: 0, percentChange: 0 },
       outstandingInvoices: parsedData.outstandingInvoices || { amount: 0, percentChange: 0 },
-      activeCustomers: parsedData.activeCustomers || { count: 0, percentChange: 0 }
+      activeCustomers: parsedData.activeCustomers || { count: 0, percentChange: 0 },
+      // New features
+      leads: Array.isArray(parsedData.leads) ? parsedData.leads : [],
+      opportunities: Array.isArray(parsedData.opportunities) ? parsedData.opportunities : [],
+      bankConnections: Array.isArray(parsedData.bankConnections) ? parsedData.bankConnections : [],
+      users: Array.isArray(parsedData.users) ? parsedData.users : [],
+      roles: Array.isArray(parsedData.roles) ? parsedData.roles : [],
+      paymentTemplates: Array.isArray(parsedData.paymentTemplates) ? parsedData.paymentTemplates : [],
+      recurringInvoices: Array.isArray(parsedData.recurringInvoices) ? parsedData.recurringInvoices : [],
+      mileageEntries: Array.isArray(parsedData.mileageEntries) ? parsedData.mileageEntries : [],
+      vendorBills: Array.isArray(parsedData.vendorBills) ? parsedData.vendorBills : [],
+      scannedReceipts: Array.isArray(parsedData.scannedReceipts) ? parsedData.scannedReceipts : []
     };
   } catch (error) {
     console.error("Error loading from local storage:", error);

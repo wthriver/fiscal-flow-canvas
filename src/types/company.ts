@@ -1,4 +1,3 @@
-
 // Company and related types
 export interface Company {
   id: string;
@@ -32,6 +31,18 @@ export interface Company {
   profitMargin?: ProfitMarginData;
   outstandingInvoices?: OutstandingInvoicesData;
   activeCustomers?: ActiveCustomersData;
+  
+  // New advanced features
+  leads?: Lead[];
+  opportunities?: Opportunity[];
+  bankConnections?: BankConnection[];
+  users?: User[];
+  roles?: Role[];
+  paymentTemplates?: PaymentTemplate[];
+  recurringInvoices?: RecurringInvoice[];
+  mileageEntries?: MileageEntry[];
+  vendorBills?: VendorBill[];
+  scannedReceipts?: ScannedReceipt[];
 }
 
 export interface TaxRate {
@@ -277,4 +288,113 @@ export interface Sale {
   amount: number | string;
   status: string;
   items?: any[];
+}
+
+// New interfaces for advanced features
+export interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  value: number;
+  stage: "New" | "Qualified" | "Proposal" | "Negotiation" | "Closed Won" | "Closed Lost";
+  source: string;
+  assignedTo: string;
+  lastContact: string;
+}
+
+export interface Opportunity {
+  id: string;
+  name: string;
+  customer: string;
+  value: number;
+  probability: number;
+  stage: string;
+  closeDate: string;
+  description: string;
+}
+
+export interface BankConnection {
+  id: string;
+  bankName: string;
+  accountType: string;
+  accountNumber: string;
+  status: "Connected" | "Disconnected" | "Error";
+  lastSync: string;
+  autoSync: boolean;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: "Owner" | "Admin" | "Manager" | "User" | "Viewer";
+  permissions: string[];
+  status: "Active" | "Inactive" | "Pending";
+  lastLogin: string;
+  department: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  permissions: string[];
+  description: string;
+}
+
+export interface PaymentTemplate {
+  id: string;
+  name: string;
+  description: string;
+  amount: number;
+  frequency: string;
+  isActive: boolean;
+}
+
+export interface RecurringInvoice {
+  id: string;
+  template: string;
+  customer: string;
+  frequency: string;
+  nextDate: string;
+  amount: number;
+  status: string;
+}
+
+export interface MileageEntry {
+  id: string;
+  date: string;
+  startLocation: string;
+  endLocation: string;
+  purpose: string;
+  miles: number;
+  rate: number;
+  amount: number;
+  status: string;
+}
+
+export interface VendorBill {
+  id: string;
+  billNumber: string;
+  vendor: string;
+  date: string;
+  dueDate: string;
+  amount: number;
+  status: "Draft" | "Pending Approval" | "Approved" | "Paid" | "Overdue";
+  category: string;
+  description: string;
+}
+
+export interface ScannedReceipt {
+  id: string;
+  fileName: string;
+  uploadDate: string;
+  status: "Processing" | "Completed" | "Failed";
+  extractedData?: {
+    vendor: string;
+    amount: number;
+    date: string;
+    category: string;
+  };
 }

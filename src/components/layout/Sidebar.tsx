@@ -25,6 +25,10 @@ import {
   Package,
   Globe,
   Plug,
+  CreditCard,
+  Shield,
+  Activity,
+  Target
 } from "lucide-react";
 
 interface SidebarItemProps {
@@ -92,6 +96,12 @@ const Sidebar: React.FC = () => {
               active={pathname === "/customers"}
             />
             <SidebarItem
+              to="/crm"
+              icon={<Activity className="h-4 w-4" />}
+              label="CRM"
+              active={pathname === "/crm"}
+            />
+            <SidebarItem
               to="/invoices"
               icon={<FileText className="h-4 w-4" />}
               label="Invoices"
@@ -117,6 +127,18 @@ const Sidebar: React.FC = () => {
               active={pathname === "/banking"}
             />
             <SidebarItem
+              to="/banking-integration"
+              icon={<Building className="h-4 w-4" />}
+              label="Bank Integration"
+              active={pathname === "/banking-integration"}
+            />
+            <SidebarItem
+              to="/payment-processing"
+              icon={<CreditCard className="h-4 w-4" />}
+              label="Payment Processing"
+              active={pathname === "/payment-processing"}
+            />
+            <SidebarItem
               to="/accounting"
               icon={<Landmark className="h-4 w-4" />}
               label="Accounting"
@@ -140,6 +162,12 @@ const Sidebar: React.FC = () => {
               icon={<ListCheck className="h-4 w-4" />}
               label="Projects"
               active={pathname === "/projects"}
+            />
+            <SidebarItem
+              to="/advanced-projects"
+              icon={<Target className="h-4 w-4" />}
+              label="Advanced Projects"
+              active={pathname === "/advanced-projects"}
             />
             <SidebarItem
               to="/time-tracking"
@@ -197,6 +225,12 @@ const Sidebar: React.FC = () => {
             Advanced Features
           </h2>
           <div className="space-y-1">
+            <SidebarItem
+              to="/user-management"
+              icon={<Shield className="h-4 w-4" />}
+              label="User Management"
+              active={pathname === "/user-management"}
+            />
             <SidebarItem
               to="/audit-trail"
               icon={<Calendar className="h-4 w-4" />}
