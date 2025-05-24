@@ -54,7 +54,7 @@ interface CompanyProviderProps {
   children: ReactNode;
 }
 
-// Demo data generator
+// Demo data generator - Enhanced with more comprehensive data
 const generateDemoData = (): Company => {
   const currentDate = new Date();
   const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, currentDate.getDate());
@@ -71,7 +71,7 @@ const generateDemoData = (): Company => {
     industry: 'Technology Services',
     fiscalYearStart: 'January 1',
     
-    // Demo customers
+    // Enhanced demo customers
     customers: [
       {
         id: 'cust-1',
@@ -117,10 +117,25 @@ const generateDemoData = (): Company => {
         state: 'RT',
         postalCode: '13579',
         country: 'USA'
+      },
+      {
+        id: 'cust-4',
+        name: 'Lisa Chen',
+        email: 'lisa@globalcorp.com',
+        phone: '+1 (555) 567-8901',
+        address: '654 Corporate Dr',
+        company: 'Global Corp',
+        contactName: 'Lisa Chen',
+        type: 'Business',
+        status: 'Active',
+        city: 'Metro City',
+        state: 'MC',
+        postalCode: '24680',
+        country: 'USA'
       }
     ],
 
-    // Demo invoices
+    // Enhanced demo invoices
     invoices: [
       {
         id: 'INV-001',
@@ -160,10 +175,22 @@ const generateDemoData = (): Company => {
           { id: 'item-5', description: 'E-commerce Platform', quantity: 1, price: 2500, total: 2500 },
           { id: 'item-6', description: 'Payment Integration', quantity: 1, price: 700, total: 700 }
         ]
+      },
+      {
+        id: 'INV-004',
+        customer: 'Global Corp',
+        date: '2025-05-24',
+        dueDate: '2025-06-24',
+        status: 'Draft',
+        total: 4500.00,
+        amount: '$4,500.00',
+        items: [
+          { id: 'item-7', description: 'Enterprise Solution', quantity: 60, price: 75, total: 4500 }
+        ]
       }
     ],
 
-    // Demo expenses
+    // Enhanced demo expenses
     expenses: [
       {
         id: 'exp-1',
@@ -194,10 +221,30 @@ const generateDemoData = (): Company => {
         description: 'Client meeting travel expenses',
         status: 'Pending',
         paymentMethod: 'Company Card'
+      },
+      {
+        id: 'exp-4',
+        date: '2025-05-20',
+        vendor: 'Marketing Agency',
+        category: 'Marketing',
+        amount: 2000.00,
+        description: 'Q2 marketing campaign',
+        status: 'Approved',
+        paymentMethod: 'Wire Transfer'
+      },
+      {
+        id: 'exp-5',
+        date: '2025-05-22',
+        vendor: 'Legal Services LLC',
+        category: 'Professional Services',
+        amount: 1500.00,
+        description: 'Contract review and legal consultation',
+        status: 'Paid',
+        paymentMethod: 'Check'
       }
     ],
 
-    // Demo employees
+    // Enhanced demo employees
     employees: [
       {
         id: 'emp-1',
@@ -228,10 +275,30 @@ const generateDemoData = (): Company => {
         status: 'Active',
         payRate: 31.25,
         payType: 'Hourly'
+      },
+      {
+        id: 'emp-4',
+        name: 'David Brown',
+        position: 'Marketing Specialist',
+        salary: 55000,
+        hireDate: '2023-09-01',
+        status: 'Active',
+        payRate: 26.44,
+        payType: 'Hourly'
+      },
+      {
+        id: 'emp-5',
+        name: 'Emma Wilson',
+        position: 'Accountant',
+        salary: 60000,
+        hireDate: '2024-01-15',
+        status: 'Active',
+        payRate: 28.85,
+        payType: 'Hourly'
       }
     ],
 
-    // Demo projects
+    // Enhanced demo projects
     projects: [
       {
         id: 'proj-1',
@@ -274,7 +341,7 @@ const generateDemoData = (): Company => {
       }
     ],
 
-    // Demo time entries
+    // Enhanced demo time entries
     timeEntries: [
       {
         id: 'time-1',
@@ -314,7 +381,7 @@ const generateDemoData = (): Company => {
       }
     ],
 
-    // Demo sales
+    // Enhanced demo sales
     sales: [
       {
         id: 'sale-1',
@@ -338,7 +405,7 @@ const generateDemoData = (): Company => {
       }
     ],
 
-    // Demo accounts
+    // Enhanced demo accounts
     accounts: [
       {
         id: 'acc-1',
@@ -374,18 +441,18 @@ const generateDemoData = (): Company => {
       }
     ],
 
-    // Demo bank accounts
+    // Enhanced demo bank accounts with more transactions
     bankAccounts: [
       {
         id: 'bank-1',
         name: 'Business Checking',
         type: 'Checking',
-        balance: 25000,
-        lastTransaction: '2025-05-22',
+        balance: 45750,
+        lastTransaction: '2025-05-24',
         transactions: [
           {
             id: 'trans-1',
-            date: '2025-05-22',
+            date: '2025-05-24',
             description: 'Customer Payment - INV-001',
             amount: '+$2,500.00',
             category: 'Income',
@@ -395,7 +462,7 @@ const generateDemoData = (): Company => {
           },
           {
             id: 'trans-2',
-            date: '2025-05-21',
+            date: '2025-05-23',
             description: 'Office Rent',
             amount: '-$1,200.00',
             category: 'Rent',
@@ -405,13 +472,33 @@ const generateDemoData = (): Company => {
           },
           {
             id: 'trans-3',
-            date: '2025-05-20',
+            date: '2025-05-22',
             description: 'Software Subscription',
             amount: '-$150.00',
             category: 'Software',
             account: 'Business Checking',
             reconciled: false,
             type: 'Withdrawal'
+          },
+          {
+            id: 'trans-4',
+            date: '2025-05-21',
+            description: 'Marketing Campaign Payment',
+            amount: '-$2,000.00',
+            category: 'Marketing',
+            account: 'Business Checking',
+            reconciled: true,
+            type: 'Withdrawal'
+          },
+          {
+            id: 'trans-5',
+            date: '2025-05-20',
+            description: 'Customer Payment - INV-002',
+            amount: '+$1,800.00',
+            category: 'Income',
+            account: 'Business Checking',
+            reconciled: true,
+            type: 'Deposit'
           }
         ]
       },
@@ -419,16 +506,55 @@ const generateDemoData = (): Company => {
         id: 'bank-2',
         name: 'Business Savings',
         type: 'Savings',
-        balance: 50000,
+        balance: 75000,
         lastTransaction: '2025-05-15',
         transactions: [
           {
-            id: 'trans-4',
+            id: 'trans-6',
             date: '2025-05-15',
             description: 'Interest Payment',
-            amount: '+$45.50',
+            amount: '+$125.50',
             category: 'Interest',
             account: 'Business Savings',
+            reconciled: true,
+            type: 'Deposit'
+          },
+          {
+            id: 'trans-7',
+            date: '2025-05-01',
+            description: 'Emergency Fund Transfer',
+            amount: '+$10,000.00',
+            category: 'Transfer',
+            account: 'Business Savings',
+            reconciled: true,
+            type: 'Deposit'
+          }
+        ]
+      },
+      {
+        id: 'bank-3',
+        name: 'Payroll Account',
+        type: 'Checking',
+        balance: 25000,
+        lastTransaction: '2025-05-15',
+        transactions: [
+          {
+            id: 'trans-8',
+            date: '2025-05-15',
+            description: 'Payroll Processing',
+            amount: '-$8,500.00',
+            category: 'Payroll',
+            account: 'Payroll Account',
+            reconciled: true,
+            type: 'Withdrawal'
+          },
+          {
+            id: 'trans-9',
+            date: '2025-05-01',
+            description: 'Payroll Funding',
+            amount: '+$15,000.00',
+            category: 'Transfer',
+            account: 'Payroll Account',
             reconciled: true,
             type: 'Deposit'
           }
@@ -436,7 +562,7 @@ const generateDemoData = (): Company => {
       }
     ],
 
-    // Demo tax rates
+    // Enhanced demo tax rates
     taxRates: [
       {
         id: 'tax-1',
@@ -456,7 +582,7 @@ const generateDemoData = (): Company => {
       }
     ],
 
-    // Demo budgets
+    // Enhanced demo budgets
     budgets: [
       {
         id: 'budget-1',
@@ -491,7 +617,7 @@ const generateDemoData = (): Company => {
       }
     ],
 
-    // Demo estimates
+    // Enhanced demo estimates
     estimates: [
       {
         id: 'EST-001',
@@ -510,7 +636,7 @@ const generateDemoData = (): Company => {
       }
     ],
 
-    // Demo inventory
+    // Enhanced demo inventory
     inventory: {
       items: [
         {
@@ -541,7 +667,7 @@ const generateDemoData = (): Company => {
       lotTracking: []
     },
 
-    // Demo payroll data
+    // Enhanced demo payroll data
     payrollData: {
       payPeriods: [
         {
@@ -559,7 +685,7 @@ const generateDemoData = (): Company => {
       ]
     },
 
-    // Demo transactions (general ledger)
+    // Enhanced demo transactions (general ledger)
     transactions: [
       {
         id: 'gl-trans-1',
@@ -583,11 +709,162 @@ const generateDemoData = (): Company => {
       }
     ],
 
-    // Demo performance metrics
-    revenue: { current: 45000, previous: 38000, percentChange: 18.4 },
-    profitMargin: { value: 22.5, trend: 2.1, percentChange: 5.2 },
-    outstandingInvoices: { amount: 5000, percentChange: -12.3 },
-    activeCustomers: { count: 15, percentChange: 25.0 },
+    // Enhanced demo performance metrics
+    revenue: { current: 85000, previous: 72000, percentChange: 18.1 },
+    profitMargin: { value: 28.5, trend: 3.2, percentChange: 12.7 },
+    outstandingInvoices: { amount: 8500, percentChange: -15.2 },
+    activeCustomers: { count: 24, percentChange: 33.3 },
+
+    // New advanced features with demo data
+    leads: [
+      {
+        id: 'lead-1',
+        name: 'Jennifer Martinez',
+        email: 'jennifer@newstartup.com',
+        phone: '+1 (555) 123-9876',
+        company: 'New Startup LLC',
+        value: 15000,
+        stage: 'Qualified',
+        source: 'Website',
+        assignedTo: 'Bob Chen',
+        lastContact: '2025-05-23'
+      },
+      {
+        id: 'lead-2',
+        name: 'Robert Taylor',
+        email: 'robert@enterprises.com',
+        phone: '+1 (555) 234-8765',
+        company: 'Taylor Enterprises',
+        value: 25000,
+        stage: 'Proposal',
+        source: 'Referral',
+        assignedTo: 'Alice Johnson',
+        lastContact: '2025-05-22'
+      }
+    ],
+
+    opportunities: [
+      {
+        id: 'opp-1',
+        name: 'Enterprise Software Implementation',
+        customer: 'Global Corp',
+        value: 50000,
+        probability: 75,
+        stage: 'Negotiation',
+        closeDate: '2025-06-30',
+        description: 'Large-scale software implementation project'
+      }
+    ],
+
+    bankConnections: [
+      {
+        id: 'conn-1',
+        bankName: 'First National Bank',
+        accountType: 'Business Checking',
+        accountNumber: '****1234',
+        status: 'Connected',
+        lastSync: '2025-05-24 10:30:00',
+        autoSync: true
+      }
+    ],
+
+    users: [
+      {
+        id: 'user-1',
+        name: 'John Admin',
+        email: 'admin@acmecorp.com',
+        role: 'Owner',
+        permissions: ['all'],
+        status: 'Active',
+        lastLogin: '2025-05-24 09:00:00',
+        department: 'Administration'
+      },
+      {
+        id: 'user-2',
+        name: 'Sarah Manager',
+        email: 'sarah@acmecorp.com',
+        role: 'Manager',
+        permissions: ['accounting', 'invoicing', 'reports'],
+        status: 'Active',
+        lastLogin: '2025-05-24 08:30:00',
+        department: 'Finance'
+      }
+    ],
+
+    roles: [
+      {
+        id: 'role-1',
+        name: 'Accountant',
+        permissions: ['accounting', 'invoicing', 'expenses', 'reports'],
+        description: 'Full access to accounting features'
+      }
+    ],
+
+    paymentTemplates: [
+      {
+        id: 'template-1',
+        name: 'Monthly Service Fee',
+        description: 'Recurring monthly service charges',
+        amount: 500,
+        frequency: 'Monthly',
+        isActive: true
+      }
+    ],
+
+    recurringInvoices: [
+      {
+        id: 'recurring-1',
+        template: 'Monthly Service',
+        customer: 'Smith Enterprises',
+        frequency: 'Monthly',
+        nextDate: '2025-06-01',
+        amount: 500,
+        status: 'Active'
+      }
+    ],
+
+    mileageEntries: [
+      {
+        id: 'mileage-1',
+        date: '2025-05-20',
+        startLocation: 'Office',
+        endLocation: 'Client Site',
+        purpose: 'Project meeting',
+        miles: 25,
+        rate: 0.67,
+        amount: 16.75,
+        status: 'Approved'
+      }
+    ],
+
+    vendorBills: [
+      {
+        id: 'bill-1',
+        billNumber: 'BILL-2025-001',
+        vendor: 'Office Supplies Co',
+        date: '2025-05-20',
+        dueDate: '2025-06-20',
+        amount: 250,
+        status: 'Pending Approval',
+        category: 'Office Supplies',
+        description: 'Monthly office supplies order'
+      }
+    ],
+
+    scannedReceipts: [
+      {
+        id: 'receipt-1',
+        fileName: 'receipt_20250520.jpg',
+        uploadDate: '2025-05-20',
+        status: 'Completed',
+        extractedData: {
+          vendor: 'Office Depot',
+          amount: 89.99,
+          date: '2025-05-20',
+          category: 'Office Supplies'
+        }
+      }
+    ],
 
     auditTrail: [],
     integrations: [],

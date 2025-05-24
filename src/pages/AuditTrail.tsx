@@ -1,143 +1,150 @@
 
-import React, { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileSearch, Download, Filter, Search } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
+import { Shield, Clock, User, FileText } from "lucide-react";
 
 const AuditTrail: React.FC = () => {
   const { currentCompany } = useCompany();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [moduleFilter, setModuleFilter] = useState("all");
-  
-  const auditTrail = currentCompany.auditTrail;
-  
-  const filteredEntries = auditTrail.filter(entry => 
-    (searchTerm === "" || 
-      entry.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.userName.toLowerCase().includes(searchTerm.toLowerCase())
-    ) && 
-    (moduleFilter === "all" || entry.module === moduleFilter)
-  );
-  
+
+  // Demo audit trail data
+  const auditEntries = [
+    {
+      id: 'audit-1',
+      timestamp: '2025-05-24 10:30:00',
+      user: 'John Admin',
+      action: 'Invoice Created',
+      resource: 'INV-001',
+      details: 'Created invoice for Smith Enterprises - $2,500.00',
+      type: 'create'
+    },
+    {
+      id: 'audit-2',
+      timestamp: '2025-05-24 09:15:00',
+      user: 'Sarah Manager',
+      action: 'Customer Updated',
+      resource: 'CUST-002',
+      details: 'Updated contact information for TechStart Inc',
+      type: 'update'
+    },
+    {
+      id: 'audit-3',
+      timestamp: '2025-05-23 16:45:00',
+      user: 'Mike User',
+      action: 'Expense Deleted',
+      resource: 'EXP-045',
+      details: 'Deleted duplicate office supplies expense',
+      type: 'delete'
+    },
+    {
+      id: 'audit-4',
+      timestamp: '2025-05-23 14:20:00',
+      user: 'John Admin',
+      action: 'User Access Granted',
+      resource: 'USER-005',
+      details: 'Granted accounting access to new user',
+      type: 'security'
+    }
+  ];
+
+  const getActionBadge = (type: string) => {
+    const variants = {
+      create: "default",
+      update: "secondary",
+      delete: "destructive",
+      security: "outline"
+    } as const;
+    
+    return <Badge variant={variants[type as keyof typeof variants] || "default"}>{type}</Badge>;
+  };
+
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <div>
-          <h1 className="text-3xl font-bold">Audit Trail</h1>
-          <p className="text-muted-foreground">Track all changes and activities in your system</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter size={16} />
-            <span>Advanced Filters</span>
-          </Button>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Download size={16} />
-            <span>Export</span>
-          </Button>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">Audit Trail</h1>
+        <p className="text-muted-foreground">Complete activity log for {currentCompany?.name || 'Your Company'}</p>
       </div>
-      
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search audit entries..." 
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
-          <Select value={moduleFilter} onValueChange={setModuleFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by module" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Modules</SelectItem>
-              <SelectItem value="Invoices">Invoices</SelectItem>
-              <SelectItem value="Expenses">Expenses</SelectItem>
-              <SelectItem value="Banking">Banking</SelectItem>
-              <SelectItem value="Inventory">Inventory</SelectItem>
-              <SelectItem value="Users">Users & Access</SelectItem>
-              <SelectItem value="Settings">Settings</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select defaultValue="last-30-days">
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Time period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="yesterday">Yesterday</SelectItem>
-              <SelectItem value="last-7-days">Last 7 days</SelectItem>
-              <SelectItem value="last-30-days">Last 30 days</SelectItem>
-              <SelectItem value="this-month">This month</SelectItem>
-              <SelectItem value="last-month">Last month</SelectItem>
-              <SelectItem value="custom">Custom range</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-blue-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total Events</p>
+                <p className="text-xl font-semibold">1,247</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-green-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Today</p>
+                <p className="text-xl font-semibold">23</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <User className="h-5 w-5 text-purple-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Active Users</p>
+                <p className="text-xl font-semibold">8</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-orange-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Critical Events</p>
+                <p className="text-xl font-semibold">3</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-      
+
       <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Timestamp</TableHead>
-              <TableHead>User</TableHead>
-              <TableHead>Module</TableHead>
-              <TableHead>Action</TableHead>
-              <TableHead className="hidden md:table-cell">Details</TableHead>
-              <TableHead className="hidden lg:table-cell">IP Address</TableHead>
-              <TableHead>View</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredEntries.length > 0 ? (
-              filteredEntries.map((entry) => (
-                <TableRow key={entry.id}>
-                  <TableCell className="whitespace-nowrap">
-                    {new Date(entry.timestamp).toLocaleDateString()} {new Date(entry.timestamp).toLocaleTimeString()}
-                  </TableCell>
-                  <TableCell>{entry.userName}</TableCell>
-                  <TableCell>{entry.module}</TableCell>
-                  <TableCell>{entry.action}</TableCell>
-                  <TableCell className="hidden md:table-cell max-w-xs truncate">{entry.details}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{entry.ipAddress}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm">
-                      <FileSearch size={16} />
-                      <span className="sr-only">View details</span>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-4">No audit entries found</TableCell>
+                <TableHead>Timestamp</TableHead>
+                <TableHead>User</TableHead>
+                <TableHead>Action</TableHead>
+                <TableHead>Resource</TableHead>
+                <TableHead>Details</TableHead>
+                <TableHead>Type</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {auditEntries.map((entry) => (
+                <TableRow key={entry.id}>
+                  <TableCell className="font-mono text-sm">{entry.timestamp}</TableCell>
+                  <TableCell>{entry.user}</TableCell>
+                  <TableCell>{entry.action}</TableCell>
+                  <TableCell>{entry.resource}</TableCell>
+                  <TableCell className="max-w-xs truncate">{entry.details}</TableCell>
+                  <TableCell>{getActionBadge(entry.type)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
       </Card>
-      
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-muted-foreground">
-          Showing {filteredEntries.length} of {auditTrail.length} entries
-        </p>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled>Previous</Button>
-          <Button variant="outline" size="sm" disabled>Next</Button>
-        </div>
-      </div>
     </div>
   );
 };

@@ -10,10 +10,11 @@ import Banking from "@/pages/Banking";
 import BankingIntegrationPage from "@/pages/BankingIntegration";
 import PaymentProcessing from "@/pages/PaymentProcessing";
 import Accounting from "@/pages/Accounting";
+import ChartOfAccounts from "@/pages/ChartOfAccounts";
 import Expenses from "@/pages/Expenses";
 import Projects from "@/pages/Projects";
 import AdvancedProjects from "@/pages/AdvancedProjects";
-import TimeTrackingPage from "@/pages/TimeTracking";
+import TimeTracking from "@/pages/TimeTracking";
 import Inventory from "@/pages/Inventory";
 import Payroll from "@/pages/Payroll";
 import Reports from "@/pages/Reports";
@@ -43,12 +44,13 @@ export const AppRoutes: React.FC = () => {
       <Route path="/banking-integration" element={<BankingIntegrationPage />} />
       <Route path="/payment-processing" element={<PaymentProcessing />} />
       <Route path="/accounting" element={<Accounting />} />
+      <Route path="/chart-of-accounts" element={<ChartOfAccounts />} />
       <Route path="/expenses" element={<Expenses />} />
       
       {/* Tracking & Planning */}
       <Route path="/projects" element={<Projects />} />
       <Route path="/advanced-projects" element={<AdvancedProjects />} />
-      <Route path="/time-tracking" element={<TimeTrackingPage />} />
+      <Route path="/time-tracking" element={<TimeTracking />} />
       <Route path="/inventory" element={<Inventory />} />
       <Route path="/payroll" element={<Payroll />} />
       

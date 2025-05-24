@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search } from "lucide-react";
+import { PlusCircle, Search, Calendar, Filter, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useInvoices } from "@/hooks/useInvoices";
 import { NewInvoiceDialog } from "@/components/invoices/NewInvoiceDialog";
@@ -11,7 +11,6 @@ import { DateRangeDialog } from "@/components/invoices/DateRangeDialog";
 import { ExportDialog } from "@/components/invoices/ExportDialog";
 import InvoiceList from "@/components/invoices/InvoiceList";
 import FilterDisplay from "@/components/invoices/FilterDisplay";
-import { DateRangeButton, FilterButton, ExportButton } from "@/components/common/ActionButtons";
 
 const Invoices: React.FC = () => {
   const { 
@@ -85,7 +84,8 @@ const Invoices: React.FC = () => {
             className="flex items-center gap-1"
             onClick={() => setIsDateRangeOpen(true)}
           >
-            <DateRangeButton type="Invoices" />
+            <Calendar className="mr-2 h-4 w-4" />
+            Date Range
           </Button>
           <Button
             variant="outline" 
@@ -93,7 +93,8 @@ const Invoices: React.FC = () => {
             className="flex items-center gap-1"
             onClick={() => setIsFilterOpen(true)}
           >
-            <FilterButton type="Invoices" />
+            <Filter className="mr-2 h-4 w-4" />
+            Filter
           </Button>
           <Button
             variant="outline" 
@@ -101,7 +102,8 @@ const Invoices: React.FC = () => {
             className="flex items-center gap-1"
             onClick={() => setIsExportOpen(true)}
           >
-            <ExportButton type="Invoices" />
+            <Download className="mr-2 h-4 w-4" />
+            Export
           </Button>
         </div>
       </div>

@@ -5,24 +5,33 @@ import { Toaster } from 'sonner';
 import AppLayout from './components/layout/AppLayout';
 import { CompanyProvider } from './contexts/CompanyContext';
 
-// Import pages
+// Import all pages
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
+import CRM from './pages/CRM';
 import Invoices from './pages/Invoices';
-import Inventory from './pages/Inventory';
-import Projects from './pages/Projects';
-import Reports from './pages/Reports';
-import Accounting from './pages/Accounting';
-import Banking from './pages/Banking';
-import TimeTracking from './pages/TimeTracking';
-import Settings from './pages/Settings';
-import Taxes from './pages/Taxes';
-import ChartOfAccounts from './pages/ChartOfAccounts';
-import Budgeting from './pages/Budgeting';
-import Expenses from './pages/Expenses';
-import Payroll from './pages/Payroll';
 import Sales from './pages/Sales';
+import Banking from './pages/Banking';
+import BankingIntegrationPage from './pages/BankingIntegration';
 import PaymentProcessing from './pages/PaymentProcessing';
+import Accounting from './pages/Accounting';
+import Expenses from './pages/Expenses';
+import Projects from './pages/Projects';
+import AdvancedProjects from './pages/AdvancedProjects';
+import TimeTracking from './pages/TimeTracking';
+import Inventory from './pages/Inventory';
+import Payroll from './pages/Payroll';
+import Reports from './pages/Reports';
+import Taxes from './pages/Taxes';
+import Budgeting from './pages/Budgeting';
+import Journal from './pages/Journal';
+import UserManagementPage from './pages/UserManagement';
+import AuditTrail from './pages/AuditTrail';
+import MultiCurrency from './pages/MultiCurrency';
+import Integrations from './pages/Integrations';
+import Settings from './pages/Settings';
+import ChartOfAccounts from './pages/ChartOfAccounts';
+import NotFound from './pages/NotFound';
 
 const App = () => {
   return (
@@ -32,22 +41,45 @@ const App = () => {
         <Routes>
           <Route path="/" element={<AppLayout />}>
             <Route index element={<Dashboard />} />
+            
+            {/* Customers & Sales */}
             <Route path="/customers" element={<Customers />} />
+            <Route path="/crm" element={<CRM />} />
             <Route path="/invoices" element={<Invoices />} />
-            <Route path="/payment-processing" element={<PaymentProcessing />} />
-            <Route path="/inventory" element={<Inventory />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/accounting" element={<Accounting />} />
-            <Route path="/banking" element={<Banking />} />
-            <Route path="/time-tracking" element={<TimeTracking />} />
-            <Route path="/taxes" element={<Taxes />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/chart-of-accounts" element={<ChartOfAccounts />} />
-            <Route path="/budgeting" element={<Budgeting />} />
-            <Route path="/expenses" element={<Expenses />} />
-            <Route path="/payroll" element={<Payroll />} />
             <Route path="/sales" element={<Sales />} />
+            
+            {/* Money Management */}
+            <Route path="/banking" element={<Banking />} />
+            <Route path="/banking-integration" element={<BankingIntegrationPage />} />
+            <Route path="/payment-processing" element={<PaymentProcessing />} />
+            <Route path="/accounting" element={<Accounting />} />
+            <Route path="/chart-of-accounts" element={<ChartOfAccounts />} />
+            <Route path="/expenses" element={<Expenses />} />
+            
+            {/* Tracking & Planning */}
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/advanced-projects" element={<AdvancedProjects />} />
+            <Route path="/time-tracking" element={<TimeTracking />} />
+            <Route path="/inventory" element={<Inventory />} />
+            <Route path="/payroll" element={<Payroll />} />
+            
+            {/* Reports & Taxes */}
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/taxes" element={<Taxes />} />
+            <Route path="/budgeting" element={<Budgeting />} />
+            <Route path="/journal" element={<Journal />} />
+            
+            {/* Advanced Features */}
+            <Route path="/user-management" element={<UserManagementPage />} />
+            <Route path="/audit-trail" element={<AuditTrail />} />
+            <Route path="/multi-currency" element={<MultiCurrency />} />
+            <Route path="/integrations" element={<Integrations />} />
+            
+            {/* Settings */}
+            <Route path="/settings" element={<Settings />} />
+            
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </Router>
