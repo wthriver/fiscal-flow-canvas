@@ -2,257 +2,404 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ProjectDocuments } from "./ProjectDocuments";
 import { 
-  Calendar, 
-  DollarSign, 
+  FolderOpen, 
   Users, 
-  BarChart3, 
+  Clock, 
+  DollarSign, 
+  Calendar, 
+  FileText, 
   Target,
-  Clock,
-  AlertTriangle
+  TrendingUp,
+  AlertCircle
 } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
 
-export const AdvancedProjectManagement = () => {
+export const AdvancedProjectManagement: React.FC = () => {
   const { currentCompany } = useCompany();
+  const [selectedProject, setSelectedProject] = useState<any>(null);
+  
   const projects = currentCompany.projects || [];
-
-  const calculateProfitability = (project: any) => {
-    const budget = typeof project.budget === 'number' ? project.budget : 0;
-    const spent = typeof project.spent === 'string' 
-      ? parseFloat(project.spent.replace(/[^0-9.-]+/g, "") || "0")
-      : typeof project.spent === 'number' ? project.spent : 0;
-    return budget - spent;
+  const timeEntries = currentCompany.timeEntries || [];
+  
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'in progress': return 'bg-blue-100 text-blue-800';
+      case 'planning': return 'bg-yellow-100 text-yellow-800';
+      case 'proposal': return 'bg-purple-100 text-purple-800';
+      case 'on hold': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const getProjectHealth = (project: any) => {
-    const progress = project.progress || 0;
-    const endDate = new Date(project.endDate || Date.now());
-    const today = new Date();
-    const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (progress >= 90) return { status: "Excellent", color: "text-green-600", icon: Target };
-    if (progress >= 70 && daysRemaining > 7) return { status: "Good", color: "text-blue-600", icon: Target };
-    if (progress >= 50 && daysRemaining > 3) return { status: "Warning", color: "text-yellow-600", icon: Clock };
-    return { status: "At Risk", color: "text-red-600", icon: AlertTriangle };
+  const getPriorityColor = (priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'high': return 'bg-red-100 text-red-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const totalBudget = projects.reduce((sum, project) => 
-    sum + (typeof project.budget === 'number' ? project.budget : 0), 0);
-  const totalSpent = projects.reduce((sum, project) => {
-    const spent = typeof project.spent === 'string' 
-      ? parseFloat(project.spent.replace(/[^0-9.-]+/g, "") || "0")
-      : typeof project.spent === 'number' ? project.spent : 0;
-    return sum + spent;
-  }, 0);
-  const totalProfit = totalBudget - totalSpent;
+  const getTotalBudget = () => {
+    return projects.reduce((sum, project) => sum + (project.budget || 0), 0);
+  };
+
+  const getTotalBilled = () => {
+    return projects.reduce((sum, project) => sum + (project.billed || 0), 0);
+  };
+
+  const getTotalTracked = () => {
+    return projects.reduce((sum, project) => sum + (project.tracked || 0), 0);
+  };
+
+  const getActiveProjects = () => {
+    return projects.filter(p => p.status === 'In Progress' || p.status === 'Planning').length;
+  };
+
+  const handleViewDocuments = (document: any) => {
+    console.log('Viewing document:', document);
+  };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Advanced Project Management</h2>
-        <p className="text-muted-foreground">Comprehensive project analytics and management</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Advanced Project Management</h1>
+          <p className="text-muted-foreground">Comprehensive project tracking and management</p>
+        </div>
+        <Button>
+          <FolderOpen className="h-4 w-4 mr-2" />
+          New Project
+        </Button>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-blue-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Active Projects</p>
-                <p className="text-xl font-semibold">{projects.filter(p => p.status === "In Progress").length}</p>
-              </div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
+            <FolderOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{getActiveProjects()}</div>
+            <p className="text-xs text-muted-foreground">Currently running</p>
           </CardContent>
         </Card>
+
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Budget</p>
-                <p className="text-xl font-semibold">${totalBudget.toLocaleString()}</p>
-              </div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${getTotalBudget().toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Across all projects</p>
           </CardContent>
         </Card>
+
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-red-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Spent</p>
-                <p className="text-xl font-semibold">${totalSpent.toLocaleString()}</p>
-              </div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Billed</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${getTotalBilled().toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Revenue generated</p>
           </CardContent>
         </Card>
+
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-purple-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Net Profit</p>
-                <p className={`text-xl font-semibold ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ${totalProfit.toLocaleString()}
-                </p>
-              </div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Hours Tracked</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{getTotalTracked().toFixed(1)}</div>
+            <p className="text-xs text-muted-foreground">Total time logged</p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="profitability">Profitability</TabsTrigger>
-          <TabsTrigger value="resources">Resources</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+      <Tabs defaultValue="projects" className="w-full">
+        <TabsList>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
+          <TabsTrigger value="milestones">Milestones</TabsTrigger>
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="time">Time Tracking</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
-          <div className="grid gap-6">
-            {projects.map((project) => {
-              const health = getProjectHealth(project);
-              const HealthIcon = health.icon;
-              return (
-                <Card key={project.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2">
-                        {project.name}
-                        <Badge variant={project.status === "Completed" ? "default" : "secondary"}>
-                          {project.status}
-                        </Badge>
-                      </CardTitle>
-                      <div className={`flex items-center gap-1 ${health.color}`}>
-                        <HealthIcon className="h-4 w-4" />
-                        <span className="text-sm font-medium">{health.status}</span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Progress</p>
-                        <Progress value={project.progress || 0} className="mt-2" />
-                        <p className="text-sm mt-1">{project.progress || 0}% Complete</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Budget vs Spent</p>
-                        <p className="text-lg font-semibold">
-                          ${typeof project.budget === 'number' ? project.budget.toLocaleString() : '0'} / 
-                          ${typeof project.spent === 'string' 
-                            ? parseFloat(project.spent.replace(/[^0-9.-]+/g, "") || "0").toLocaleString()
-                            : (project.spent || 0).toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Timeline</p>
-                        <p className="text-lg font-semibold">
-                          {project.startDate} - {project.endDate}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="profitability">
+        <TabsContent value="projects" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Project Profitability Analysis</CardTitle>
+              <CardTitle>Project Portfolio</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {projects.map((project) => {
-                  const profitability = calculateProfitability(project);
-                  return (
-                    <div key={project.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-medium">{project.name}</h3>
-                        <Badge variant={profitability >= 0 ? "default" : "destructive"}>
-                          {profitability >= 0 ? 'Profitable' : 'Over Budget'}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Budget</p>
-                          <p className="font-semibold">${(project.budget || 0).toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Spent</p>
-                          <p className="font-semibold">
-                            ${typeof project.spent === 'string' 
-                              ? parseFloat(project.spent.replace(/[^0-9.-]+/g, "") || "0").toLocaleString()
-                              : (project.spent || 0).toLocaleString()}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Profit/Loss</p>
-                          <p className={`font-semibold ${profitability >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            ${profitability.toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              {projects.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Project Name</TableHead>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Progress</TableHead>
+                      <TableHead>Budget</TableHead>
+                      <TableHead>Billed</TableHead>
+                      <TableHead>End Date</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {projects.map((project) => (
+                      <TableRow key={project.id}>
+                        <TableCell className="font-medium">{project.name}</TableCell>
+                        <TableCell>{project.client}</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(project.status)}>
+                            {project.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getPriorityColor(project.priority)}>
+                            {project.priority || 'Medium'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Progress value={project.progress || 0} className="w-16" />
+                            <span className="text-sm">{project.progress || 0}%</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>${(project.budget || 0).toLocaleString()}</TableCell>
+                        <TableCell>${(project.billed || 0).toLocaleString()}</TableCell>
+                        <TableCell>{project.endDate}</TableCell>
+                        <TableCell>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" onClick={() => setSelectedProject(project)}>
+                                <FileText className="h-4 w-4 mr-1" />
+                                Details
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-4xl">
+                              <DialogHeader>
+                                <DialogTitle>{project.name}</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <h4 className="font-semibold mb-2">Project Details</h4>
+                                    <p className="text-sm text-muted-foreground mb-2">{project.description}</p>
+                                    <div className="space-y-1 text-sm">
+                                      <p><strong>Client:</strong> {project.client}</p>
+                                      <p><strong>Start Date:</strong> {project.startDate}</p>
+                                      <p><strong>End Date:</strong> {project.endDate}</p>
+                                      <p><strong>Project Manager:</strong> {project.projectManager}</p>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <h4 className="font-semibold mb-2">Financial Summary</h4>
+                                    <div className="space-y-1 text-sm">
+                                      <p><strong>Budget:</strong> ${(project.budget || 0).toLocaleString()}</p>
+                                      <p><strong>Billed:</strong> ${(project.billed || 0).toLocaleString()}</p>
+                                      <p><strong>Spent:</strong> ${(project.spent || 0).toLocaleString()}</p>
+                                      <p><strong>Hours Tracked:</strong> {project.tracked || 0} hrs</p>
+                                      <p><strong>Billing Rate:</strong> ${project.billingRate || 0}/hr</p>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {project.documents && project.documents.length > 0 && (
+                                  <div>
+                                    <h4 className="font-semibold mb-2">Project Documents</h4>
+                                    <ProjectDocuments 
+                                      documents={project.documents} 
+                                      onViewDocument={handleViewDocuments}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No projects found</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="resources">
+        <TabsContent value="milestones" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Resource Allocation</CardTitle>
+              <CardTitle>Project Milestones</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {projects.map((project) => (
-                  <div key={project.id} className="border rounded-lg p-4">
-                    <h3 className="font-medium mb-2">{project.name}</h3>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      <span className="text-sm">
-                        Team: {project.team?.length || 0} members
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {projects.some(p => p.milestones && p.milestones.length > 0) ? (
+                <div className="space-y-6">
+                  {projects.map((project) => (
+                    project.milestones && project.milestones.length > 0 && (
+                      <div key={project.id} className="border rounded-lg p-4">
+                        <h3 className="font-semibold mb-4">{project.name}</h3>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Milestone</TableHead>
+                              <TableHead>Due Date</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Budget</TableHead>
+                              <TableHead>Description</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {project.milestones.map((milestone: any) => (
+                              <TableRow key={milestone.id}>
+                                <TableCell className="font-medium">{milestone.name}</TableCell>
+                                <TableCell>{milestone.dueDate}</TableCell>
+                                <TableCell>
+                                  <Badge className={getStatusColor(milestone.status)}>
+                                    {milestone.status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>${(milestone.budget || 0).toLocaleString()}</TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                  {milestone.description}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No milestones found</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="timeline">
+        <TabsContent value="tasks" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Project Timeline</CardTitle>
+              <CardTitle>Project Tasks</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {projects.map((project) => (
-                  <div key={project.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium">{project.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span className="text-sm">{project.startDate} - {project.endDate}</span>
+              {projects.some(p => p.tasks && p.tasks.length > 0) ? (
+                <div className="space-y-6">
+                  {projects.map((project) => (
+                    project.tasks && project.tasks.length > 0 && (
+                      <div key={project.id} className="border rounded-lg p-4">
+                        <h3 className="font-semibold mb-4">{project.name}</h3>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Task</TableHead>
+                              <TableHead>Assignee</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Priority</TableHead>
+                              <TableHead>Due Date</TableHead>
+                              <TableHead>Hours</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {project.tasks.map((task: any) => (
+                              <TableRow key={task.id}>
+                                <TableCell className="font-medium">{task.name}</TableCell>
+                                <TableCell>{task.assigneeId}</TableCell>
+                                <TableCell>
+                                  <Badge className={getStatusColor(task.status)}>
+                                    {task.status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge className={getPriorityColor(task.priority)}>
+                                    {task.priority}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>{task.dueDate}</TableCell>
+                                <TableCell>
+                                  <span className="text-sm">
+                                    {task.actualHours || 0} / {task.estimatedHours || 0}
+                                  </span>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
                       </div>
-                    </div>
-                    <Progress value={project.progress || 0} className="mt-2" />
-                  </div>
-                ))}
-              </div>
+                    )
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No tasks found</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="time" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Time Entries</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {timeEntries.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Employee</TableHead>
+                      <TableHead>Project</TableHead>
+                      <TableHead>Hours</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Billable</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Rate</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {timeEntries.map((entry) => {
+                      const project = projects.find(p => p.id === entry.projectId);
+                      return (
+                        <TableRow key={entry.id}>
+                          <TableCell>{entry.date}</TableCell>
+                          <TableCell>{entry.employeeId}</TableCell>
+                          <TableCell>{project?.name || 'Unknown'}</TableCell>
+                          <TableCell>{entry.hours}</TableCell>
+                          <TableCell className="text-sm">{entry.description}</TableCell>
+                          <TableCell>
+                            <Badge variant={entry.billable ? 'default' : 'secondary'}>
+                              {entry.billable ? 'Billable' : 'Non-billable'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(entry.status || 'pending')}>
+                              {entry.status || 'Pending'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>${entry.billingRate || 0}/hr</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No time entries found</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

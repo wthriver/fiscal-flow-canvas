@@ -1,252 +1,301 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Check, Plus, Settings, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
+import { 
+  CreditCard, 
+  DollarSign, 
+  TrendingUp, 
+  TrendingDown, 
+  Banknote,
+  Building,
+  CheckCircle,
+  AlertCircle,
+  Plus
+} from "lucide-react";
+import { useCompany } from "@/contexts/CompanyContext";
 
-interface BankConnection {
-  id: string;
-  bankName: string;
-  accountType: string;
-  accountNumber: string;
-  status: "Connected" | "Disconnected" | "Error";
-  lastSync: string;
-  autoSync: boolean;
-}
-
-export const BankingIntegration = () => {
-  const [connections, setConnections] = useState<BankConnection[]>([
-    {
-      id: "conn-1",
-      bankName: "Chase Bank",
-      accountType: "Checking",
-      accountNumber: "****1234",
-      status: "Connected",
-      lastSync: "2025-05-24 09:30 AM",
-      autoSync: true
-    },
-    {
-      id: "conn-2",
-      bankName: "Wells Fargo",
-      accountType: "Savings",
-      accountNumber: "****5678",
-      status: "Connected",
-      lastSync: "2025-05-24 08:15 AM",
-      autoSync: false
-    }
-  ]);
-
-  const [newConnection, setNewConnection] = useState({
-    bankName: "",
-    accountNumber: "",
-    routingNumber: "",
-    accountType: "checking"
-  });
-
-  const handleAddConnection = () => {
-    if (!newConnection.bankName || !newConnection.accountNumber) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    const connection: BankConnection = {
-      id: `conn-${Date.now()}`,
-      bankName: newConnection.bankName,
-      accountType: newConnection.accountType,
-      accountNumber: `****${newConnection.accountNumber.slice(-4)}`,
-      status: "Connected",
-      lastSync: new Date().toLocaleString(),
-      autoSync: true
-    };
-
-    setConnections(prev => [connection, ...prev]);
-    setNewConnection({
-      bankName: "",
-      accountNumber: "",
-      routingNumber: "",
-      accountType: "checking"
-    });
-    toast.success("Bank account connected successfully");
+export const BankingIntegration: React.FC = () => {
+  const { currentCompany } = useCompany();
+  
+  const bankAccounts = currentCompany.bankAccounts || [];
+  const transactions = currentCompany.transactions || [];
+  
+  const getTotalBalance = () => {
+    return bankAccounts.reduce((sum, account) => sum + (account.balance || 0), 0);
   };
 
-  const handleSync = (connectionId: string) => {
-    setConnections(prev => prev.map(conn => 
-      conn.id === connectionId 
-        ? { ...conn, lastSync: new Date().toLocaleString() }
-        : conn
-    ));
-    toast.success("Account synced successfully");
+  const getRecentTransactions = () => {
+    return transactions.slice(0, 10);
   };
 
-  const toggleAutoSync = (connectionId: string) => {
-    setConnections(prev => prev.map(conn => 
-      conn.id === connectionId 
-        ? { ...conn, autoSync: !conn.autoSync }
-        : conn
-    ));
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Connected": return "default";
-      case "Error": return "destructive";
-      default: return "secondary";
+  const getAccountTypeIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'checking': return <Building className="h-4 w-4" />;
+      case 'savings': return <Banknote className="h-4 w-4" />;
+      case 'credit': return <CreditCard className="h-4 w-4" />;
+      default: return <Building className="h-4 w-4" />;
     }
+  };
+
+  const getTransactionIcon = (type: string) => {
+    return type === 'Deposit' ? 
+      <TrendingUp className="h-4 w-4 text-green-600" /> : 
+      <TrendingDown className="h-4 w-4 text-red-600" />;
+  };
+
+  const getBalanceColor = (balance: number) => {
+    if (balance < 0) return 'text-red-600';
+    if (balance > 100000) return 'text-green-600';
+    return 'text-blue-600';
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Banking Integration</h2>
-        <p className="text-muted-foreground">Connect and manage your bank accounts</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Banking Integration</h1>
+          <p className="text-muted-foreground">Manage your bank accounts and transactions</p>
+        </div>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Connect Account
+        </Button>
       </div>
 
-      <Tabs defaultValue="connections" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="connections">Bank Connections</TabsTrigger>
-          <TabsTrigger value="rules">Bank Rules</TabsTrigger>
-          <TabsTrigger value="feeds">Transaction Feeds</TabsTrigger>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${getBalanceColor(getTotalBalance())}`}>
+              ${getTotalBalance().toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">Across all accounts</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Connected Accounts</CardTitle>
+            <Building className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{bankAccounts.length}</div>
+            <p className="text-xs text-muted-foreground">Active connections</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Recent Transactions</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{transactions.length}</div>
+            <p className="text-xs text-muted-foreground">This period</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Reconciled</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {transactions.filter(t => t.reconciled).length}
+            </div>
+            <p className="text-xs text-muted-foreground">Of {transactions.length} transactions</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="accounts" className="w-full">
+        <TabsList>
+          <TabsTrigger value="accounts">Bank Accounts</TabsTrigger>
+          <TabsTrigger value="transactions">Recent Transactions</TabsTrigger>
+          <TabsTrigger value="reconciliation">Reconciliation</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="connections" className="space-y-6">
+        <TabsContent value="accounts" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                Add Bank Account
-              </CardTitle>
+              <CardTitle>Connected Bank Accounts</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="bankName">Bank Name</Label>
-                  <Input
-                    id="bankName"
-                    value={newConnection.bankName}
-                    onChange={(e) => setNewConnection({...newConnection, bankName: e.target.value})}
-                    placeholder="e.g., Chase Bank"
-                  />
+              {bankAccounts.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Account Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Bank</TableHead>
+                      <TableHead>Account Number</TableHead>
+                      <TableHead>Balance</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Last Updated</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bankAccounts.map((account) => (
+                      <TableRow key={account.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center space-x-2">
+                            {getAccountTypeIcon(account.type || 'checking')}
+                            <span>{account.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{account.type || 'Checking'}</Badge>
+                        </TableCell>
+                        <TableCell>{account.bankName || 'Unknown Bank'}</TableCell>
+                        <TableCell>{account.accountNumber || '****0000'}</TableCell>
+                        <TableCell className={getBalanceColor(account.balance || 0)}>
+                          ${(account.balance || 0).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={account.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                            {account.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{account.openingDate || 'Unknown'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8">
+                  <Building className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No bank accounts connected</p>
+                  <Button className="mt-4">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Connect Your First Account
+                  </Button>
                 </div>
-                <div>
-                  <Label htmlFor="accountType">Account Type</Label>
-                  <select
-                    id="accountType"
-                    value={newConnection.accountType}
-                    onChange={(e) => setNewConnection({...newConnection, accountType: e.target.value})}
-                    className="w-full p-2 border rounded-md"
-                  >
-                    <option value="checking">Checking</option>
-                    <option value="savings">Savings</option>
-                    <option value="credit">Credit Card</option>
-                  </select>
-                </div>
-                <div>
-                  <Label htmlFor="accountNumber">Account Number</Label>
-                  <Input
-                    id="accountNumber"
-                    value={newConnection.accountNumber}
-                    onChange={(e) => setNewConnection({...newConnection, accountNumber: e.target.value})}
-                    placeholder="Account number"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="routingNumber">Routing Number</Label>
-                  <Input
-                    id="routingNumber"
-                    value={newConnection.routingNumber}
-                    onChange={(e) => setNewConnection({...newConnection, routingNumber: e.target.value})}
-                    placeholder="Routing number"
-                  />
-                </div>
-              </div>
-              <Button onClick={handleAddConnection} className="mt-4">
-                Connect Account
-              </Button>
+              )}
             </CardContent>
           </Card>
+        </TabsContent>
 
+        <TabsContent value="transactions" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Connected Accounts</CardTitle>
+              <CardTitle>Recent Transactions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {transactions.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Account</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {getRecentTransactions().map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell>{transaction.date}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            {getTransactionIcon(transaction.type || 'Withdrawal')}
+                            <div>
+                              <div className="font-medium">{transaction.description}</div>
+                              {transaction.memo && (
+                                <div className="text-sm text-muted-foreground">{transaction.memo}</div>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{transaction.category}</Badge>
+                        </TableCell>
+                        <TableCell>{transaction.account}</TableCell>
+                        <TableCell className={transaction.amount?.startsWith('+') ? 'text-green-600' : 'text-red-600'}>
+                          {transaction.amount}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={transaction.reconciled ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                            {transaction.reconciled ? 'Reconciled' : 'Pending'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8">
+                  <TrendingUp className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No transactions found</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="reconciliation" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Reconciliation</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {connections.map((connection) => (
-                  <div key={connection.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <Building2 className="h-5 w-5" />
+                {bankAccounts.map((account) => {
+                  const accountTransactions = transactions.filter(t => t.account === account.name);
+                  const reconciledCount = accountTransactions.filter(t => t.reconciled).length;
+                  const reconciliationRate = accountTransactions.length > 0 ? (reconciledCount / accountTransactions.length) * 100 : 0;
+                  
+                  return (
+                    <div key={account.id} className="p-4 border rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-semibold">{account.name}</h3>
+                        <Badge className={reconciliationRate === 100 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                          {Math.round(reconciliationRate)}% Reconciled
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-4 gap-4 text-sm">
                         <div>
-                          <p className="font-medium">{connection.bankName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {connection.accountType} • {connection.accountNumber}
-                          </p>
+                          <p className="text-muted-foreground">Book Balance</p>
+                          <p className="font-medium">${(account.balance || 0).toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Transactions</p>
+                          <p className="font-medium">{accountTransactions.length}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Reconciled</p>
+                          <p className="font-medium">{reconciledCount}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Pending</p>
+                          <p className="font-medium">{accountTransactions.length - reconciledCount}</p>
                         </div>
                       </div>
-                      <Badge variant={getStatusColor(connection.status)}>
-                        {connection.status === "Connected" && <Check className="h-3 w-3 mr-1" />}
-                        {connection.status === "Error" && <AlertCircle className="h-3 w-3 mr-1" />}
-                        {connection.status}
-                      </Badge>
+                      <Button className="mt-4" variant="outline" size="sm">
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Reconcile Account
+                      </Button>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <p className="text-sm text-muted-foreground">
-                          Last sync: {connection.lastSync}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={connection.autoSync}
-                            onCheckedChange={() => toggleAutoSync(connection.id)}
-                          />
-                          <span className="text-sm">Auto-sync</span>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => handleSync(connection.id)}>
-                          Sync Now
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Settings className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+                  );
+                })}
+                
+                {bankAccounts.length === 0 && (
+                  <div className="text-center py-8">
+                    <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Connect bank accounts to start reconciliation</p>
                   </div>
-                ))}
+                )}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="rules" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Bank Rules</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Set up automatic categorization rules for imported transactions
-              </p>
-              <Button className="mt-4">Create New Rule</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="feeds" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Transaction Feeds</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                View and manage automatic transaction imports
-              </p>
             </CardContent>
           </Card>
         </TabsContent>
