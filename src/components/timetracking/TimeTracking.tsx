@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,7 +23,7 @@ export const TimeTracking: React.FC = () => {
   const [activeTab, setActiveTab] = useState("time-entries");
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [projectSummaries, setProjectSummaries] = useState<ProjectSummary[]>([]);
-  const [selectedProject, setSelectedProject] = useState<string>("");
+  const [selectedProject, setSelectedProject] = useState<string>("all-projects");
   const [isAddingEntry, setIsAddingEntry] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [formData, setFormData] = useState<TimeEntryFormData>({
@@ -226,7 +225,7 @@ export const TimeTracking: React.FC = () => {
     }
   };
   
-  const filteredTimeEntries = selectedProject
+  const filteredTimeEntries = selectedProject && selectedProject !== "all-projects"
     ? timeEntries.filter(entry => entry.projectId === selectedProject)
     : timeEntries;
   
@@ -266,13 +265,14 @@ export const TimeTracking: React.FC = () => {
                           <div>
                             <label className="block text-sm font-medium mb-1">Project</label>
                             <Select 
-                              value={formData.projectId} 
+                              value={formData.projectId || "select-project"} 
                               onValueChange={(value) => handleSelectChange("projectId", value)}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select project" />
                               </SelectTrigger>
                               <SelectContent>
+                                <SelectItem value="select-project" disabled>Select project</SelectItem>
                                 {projects?.map((project) => (
                                   <SelectItem key={project.id} value={project.id}>
                                     {project.name}
@@ -352,7 +352,7 @@ export const TimeTracking: React.FC = () => {
                               <SelectValue placeholder="Filter by project" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">All Projects</SelectItem>
+                              <SelectItem value="all-projects">All Projects</SelectItem>
                               {projects?.map((project) => (
                                 <SelectItem key={project.id} value={project.id}>
                                   {project.name}
@@ -483,7 +483,7 @@ export const TimeTracking: React.FC = () => {
         
         <div className="w-full md:w-1/3">
           <TimeTrackingControls 
-            projectId={selectedProject} 
+            projectId={selectedProject === "all-projects" ? "" : selectedProject} 
             onEntryComplete={handleEntryComplete} 
           />
         </div>

@@ -12,12 +12,12 @@ export const InventorySearch: React.FC = () => {
         <Input placeholder="Search inventory..." className="pl-8" />
       </div>
       <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-        <Select defaultValue="all">
+        <Select defaultValue="all-status">
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="Filter by Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="all-status">All Status</SelectItem>
             <SelectItem value="in-stock">In Stock</SelectItem>
             <SelectItem value="low-stock">Low Stock</SelectItem>
             <SelectItem value="out-of-stock">Out of Stock</SelectItem>
