@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Company, Transaction, Expense, TaxRate, Account, Invoice, Budget, Estimate, BankAccount, TimeEntry, Sale } from '../types/company';
 import { CompanyContextType } from '../types/context';
-import { localStorageService } from '../services/localStorageService';
+import { saveToLocalStorage, loadFromLocalStorage } from '../services/localStorageService';
 import { toast } from 'sonner';
 
 // Create the context with default values
@@ -836,7 +836,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [currentCompany, setCurrentCompany] = useState<Company>(createComprehensiveDemoData());
 
   useEffect(() => {
-    const savedData = localStorageService.loadData();
+    const savedData = loadFromLocalStorage();
     if (savedData && Object.keys(savedData).length > 0) {
       console.log('Data loaded from local storage', savedData);
       setCurrentCompany(savedData);
@@ -844,12 +844,12 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.log('Using comprehensive demo data');
       const demoData = createComprehensiveDemoData();
       setCurrentCompany(demoData);
-      localStorageService.saveData(demoData);
+      saveToLocalStorage(demoData);
     }
   }, []);
 
   useEffect(() => {
-    localStorageService.saveData(currentCompany);
+    saveToLocalStorage(currentCompany);
   }, [currentCompany]);
 
   // Update a company
