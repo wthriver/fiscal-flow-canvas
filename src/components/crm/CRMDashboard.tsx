@@ -3,338 +3,240 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, DollarSign, TrendingUp, Phone, Mail, Plus } from "lucide-react";
-import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useCompany } from "@/contexts/CompanyContext";
+import { Users, TrendingUp, DollarSign, Target, Phone, Mail, Calendar, Plus, Filter, Search } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  company: string;
-  value: number;
-  stage: "New" | "Qualified" | "Proposal" | "Negotiation" | "Closed Won" | "Closed Lost";
-  source: string;
-  assignedTo: string;
-  lastContact: string;
-}
+export const CRMDashboard: React.FC = () => {
+  const { currentCompany } = useCompany();
+  const [activeTab, setActiveTab] = useState("overview");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStage, setFilterStage] = useState("all");
 
-interface Opportunity {
-  id: string;
-  name: string;
-  customer: string;
-  value: number;
-  probability: number;
-  stage: string;
-  closeDate: string;
-  description: string;
-}
+  const leads = currentCompany.leads || [];
+  const opportunities = currentCompany.opportunities || [];
+  const customers = currentCompany.customers || [];
 
-export const CRMDashboard = () => {
-  const [leads, setLeads] = useState<Lead[]>([
-    {
-      id: "lead-1",
-      name: "John Smith",
-      email: "john@example.com",
-      phone: "(555) 123-4567",
-      company: "Tech Corp",
-      value: 15000,
-      stage: "Qualified",
-      source: "Website",
-      assignedTo: "Sales Rep 1",
-      lastContact: "2025-05-22"
-    },
-    {
-      id: "lead-2",
-      name: "Sarah Johnson",
-      email: "sarah@businessinc.com",
-      phone: "(555) 987-6543",
-      company: "Business Inc",
-      value: 25000,
-      stage: "Proposal",
-      source: "Referral",
-      assignedTo: "Sales Rep 2",
-      lastContact: "2025-05-21"
-    }
-  ]);
+  // Calculate metrics
+  const totalLeadsValue = leads.reduce((sum, lead) => sum + lead.value, 0);
+  const totalOpportunityValue = opportunities.reduce((sum, opp) => sum + opp.value, 0);
+  const activeCustomersCount = customers.filter(c => c.status === "Active").length;
+  const conversionRate = leads.length > 0 ? (opportunities.length / leads.length) * 100 : 0;
 
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([
-    {
-      id: "opp-1",
-      name: "Enterprise Software Deal",
-      customer: "Tech Corp",
-      value: 50000,
-      probability: 75,
-      stage: "Negotiation",
-      closeDate: "2025-06-15",
-      description: "Large enterprise software implementation"
-    },
-    {
-      id: "opp-2",
-      name: "Consulting Project",
-      customer: "Business Inc",
-      value: 30000,
-      probability: 60,
-      stage: "Proposal",
-      closeDate: "2025-07-01",
-      description: "6-month consulting engagement"
-    }
-  ]);
-
-  const [newLead, setNewLead] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    company: "",
-    value: "",
-    source: "",
-    assignedTo: ""
-  });
-
-  const [isNewLeadOpen, setIsNewLeadOpen] = useState(false);
-
-  const handleCreateLead = () => {
-    if (!newLead.name || !newLead.email) {
-      toast.error("Please fill in required fields");
-      return;
-    }
-
-    const lead: Lead = {
-      id: `lead-${Date.now()}`,
-      name: newLead.name,
-      email: newLead.email,
-      phone: newLead.phone,
-      company: newLead.company,
-      value: parseFloat(newLead.value) || 0,
-      stage: "New",
-      source: newLead.source,
-      assignedTo: newLead.assignedTo,
-      lastContact: new Date().toISOString().split('T')[0]
-    };
-
-    setLeads(prev => [lead, ...prev]);
-    setNewLead({
-      name: "",
-      email: "",
-      phone: "",
-      company: "",
-      value: "",
-      source: "",
-      assignedTo: ""
-    });
-    setIsNewLeadOpen(false);
-    toast.success("Lead created successfully");
+  // Pipeline stages and their values
+  const pipelineStages = {
+    "New": leads.filter(l => l.stage === "New").reduce((sum, l) => sum + l.value, 0),
+    "Qualified": leads.filter(l => l.stage === "Qualified").reduce((sum, l) => sum + l.value, 0),
+    "Proposal": [...leads.filter(l => l.stage === "Proposal"), ...opportunities.filter(o => o.stage === "Proposal")].reduce((sum, item) => sum + item.value, 0),
+    "Negotiation": [...leads.filter(l => l.stage === "Negotiation"), ...opportunities.filter(o => o.stage === "Negotiation")].reduce((sum, item) => sum + item.value, 0),
+    "Closed Won": leads.filter(l => l.stage === "Closed Won").reduce((sum, l) => sum + l.value, 0)
   };
+
+  const filteredLeads = leads.filter(lead => {
+    const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         lead.company.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStage = filterStage === "all" || lead.stage === filterStage;
+    return matchesSearch && matchesStage;
+  });
 
   const getStageColor = (stage: string) => {
     switch (stage) {
-      case "New": return "secondary";
-      case "Qualified": return "default";
-      case "Proposal": return "default";
-      case "Negotiation": return "default";
-      case "Closed Won": return "default";
-      case "Closed Lost": return "destructive";
-      default: return "secondary";
+      case "New": return "bg-blue-500";
+      case "Qualified": return "bg-green-500";
+      case "Proposal": return "bg-yellow-500";
+      case "Negotiation": return "bg-orange-500";
+      case "Closed Won": return "bg-emerald-500";
+      case "Closed Lost": return "bg-red-500";
+      default: return "bg-gray-500";
     }
   };
 
-  const totalLeadValue = leads.reduce((sum, lead) => sum + lead.value, 0);
-  const totalOpportunityValue = opportunities.reduce((sum, opp) => sum + opp.value, 0);
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">CRM Dashboard</h2>
+          <h1 className="text-3xl font-bold">Customer Relationship Management</h1>
           <p className="text-muted-foreground">Manage leads, opportunities, and customer relationships</p>
         </div>
-        <Dialog open={isNewLeadOpen} onOpenChange={setIsNewLeadOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              New Lead
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Lead</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Name *</Label>
-                  <Input
-                    id="name"
-                    value={newLead.name}
-                    onChange={(e) => setNewLead({...newLead, name: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newLead.email}
-                    onChange={(e) => setNewLead({...newLead, email: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={newLead.phone}
-                    onChange={(e) => setNewLead({...newLead, phone: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="company">Company</Label>
-                  <Input
-                    id="company"
-                    value={newLead.company}
-                    onChange={(e) => setNewLead({...newLead, company: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="value">Potential Value</Label>
-                  <Input
-                    id="value"
-                    type="number"
-                    value={newLead.value}
-                    onChange={(e) => setNewLead({...newLead, value: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="source">Source</Label>
-                  <Select value={newLead.source} onValueChange={(value) => setNewLead({...newLead, source: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select source" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Website">Website</SelectItem>
-                      <SelectItem value="Referral">Referral</SelectItem>
-                      <SelectItem value="Cold Call">Cold Call</SelectItem>
-                      <SelectItem value="Social Media">Social Media</SelectItem>
-                      <SelectItem value="Trade Show">Trade Show</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <Button onClick={handleCreateLead} className="w-full">
-                Create Lead
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Lead
+          </Button>
+          <Button variant="outline">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Opportunity
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* CRM Metrics */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Leads</p>
-                <p className="text-xl font-semibold">{leads.length}</p>
-              </div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Pipeline Value</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalLeadsValue + totalOpportunityValue)}</div>
+            <p className="text-xs text-muted-foreground">
+              +12.5% from last month
+            </p>
           </CardContent>
         </Card>
+        
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Lead Value</p>
-                <p className="text-xl font-semibold">${totalLeadValue.toLocaleString()}</p>
-              </div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Leads</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{leads.length}</div>
+            <p className="text-xs text-muted-foreground">
+              +3 new this week
+            </p>
           </CardContent>
         </Card>
+        
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-purple-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Opportunities</p>
-                <p className="text-xl font-semibold">{opportunities.length}</p>
-              </div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{conversionRate.toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground">
+              +2.1% from last month
+            </p>
           </CardContent>
         </Card>
+        
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-orange-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Pipeline Value</p>
-                <p className="text-xl font-semibold">${totalOpportunityValue.toLocaleString()}</p>
-              </div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{activeCustomersCount}</div>
+            <p className="text-xs text-muted-foreground">
+              92.5% retention rate
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="leads" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="leads">Leads</TabsTrigger>
           <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
-          <TabsTrigger value="pipeline">Sales Pipeline</TabsTrigger>
+          <TabsTrigger value="customers">Customers</TabsTrigger>
+          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="leads">
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Sales Pipeline */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Sales Pipeline</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {Object.entries(pipelineStages).map(([stage, value]) => (
+                  <div key={stage} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-3 h-3 rounded-full ${getStageColor(stage)}`} />
+                      <span className="text-sm font-medium">{stage}</span>
+                    </div>
+                    <span className="text-sm font-bold">{formatCurrency(value)}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Recent Activities */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activities</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <Phone className="h-4 w-4 text-blue-500" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Called Jennifer Wilson</p>
+                      <p className="text-xs text-muted-foreground">2 hours ago</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Mail className="h-4 w-4 text-green-500" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Sent proposal to MegaCorp</p>
+                      <p className="text-xs text-muted-foreground">1 day ago</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="h-4 w-4 text-orange-500" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Meeting scheduled with TechCorp</p>
+                      <p className="text-xs text-muted-foreground">2 days ago</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Top Opportunities */}
           <Card>
             <CardHeader>
-              <CardTitle>Lead Management</CardTitle>
+              <CardTitle>Top Opportunities</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Contact</TableHead>
+                    <TableHead>Opportunity</TableHead>
+                    <TableHead>Customer</TableHead>
                     <TableHead>Value</TableHead>
+                    <TableHead>Probability</TableHead>
+                    <TableHead>Close Date</TableHead>
                     <TableHead>Stage</TableHead>
-                    <TableHead>Last Contact</TableHead>
-                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leads.map((lead) => (
-                    <TableRow key={lead.id}>
-                      <TableCell className="font-medium">{lead.name}</TableCell>
-                      <TableCell>{lead.company}</TableCell>
+                  {opportunities.slice(0, 5).map((opportunity) => (
+                    <TableRow key={opportunity.id}>
+                      <TableCell className="font-medium">{opportunity.name}</TableCell>
+                      <TableCell>{opportunity.customer}</TableCell>
+                      <TableCell>{formatCurrency(opportunity.value)}</TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            <span className="text-sm">{lead.email}</span>
-                          </div>
-                          {lead.phone && (
-                            <div className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              <span className="text-sm">{lead.phone}</span>
-                            </div>
-                          )}
+                        <div className="flex items-center space-x-2">
+                          <Progress value={opportunity.probability} className="w-16" />
+                          <span className="text-sm">{opportunity.probability}%</span>
                         </div>
                       </TableCell>
-                      <TableCell>${lead.value.toLocaleString()}</TableCell>
+                      <TableCell>{opportunity.closeDate}</TableCell>
                       <TableCell>
-                        <Badge variant={getStageColor(lead.stage)}>
-                          {lead.stage}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{lead.lastContact}</TableCell>
-                      <TableCell>
-                        <Button size="sm" variant="outline">
-                          Edit
-                        </Button>
+                        <Badge variant="outline">{opportunity.stage}</Badge>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -344,10 +246,85 @@ export const CRMDashboard = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="opportunities">
+        <TabsContent value="leads" className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search leads..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <Select value={filterStage} onValueChange={setFilterStage}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by stage" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Stages</SelectItem>
+                <SelectItem value="New">New</SelectItem>
+                <SelectItem value="Qualified">Qualified</SelectItem>
+                <SelectItem value="Proposal">Proposal</SelectItem>
+                <SelectItem value="Negotiation">Negotiation</SelectItem>
+                <SelectItem value="Closed Won">Closed Won</SelectItem>
+                <SelectItem value="Closed Lost">Closed Lost</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Value</TableHead>
+                    <TableHead>Stage</TableHead>
+                    <TableHead>Score</TableHead>
+                    <TableHead>Last Contact</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLeads.map((lead) => (
+                    <TableRow key={lead.id}>
+                      <TableCell className="font-medium">{lead.name}</TableCell>
+                      <TableCell>{lead.company}</TableCell>
+                      <TableCell>{lead.email}</TableCell>
+                      <TableCell>{lead.phone}</TableCell>
+                      <TableCell>{formatCurrency(lead.value)}</TableCell>
+                      <TableCell>
+                        <Badge className={getStageColor(lead.stage)}>{lead.stage}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Progress value={lead.score || 0} className="w-16" />
+                          <span className="text-sm">{lead.score || 0}/100</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{lead.lastContact}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm">Edit</Button>
+                          <Button variant="outline" size="sm">Convert</Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="opportunities" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Sales Opportunities</CardTitle>
+              <CardTitle>Active Opportunities</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
@@ -359,24 +336,34 @@ export const CRMDashboard = () => {
                     <TableHead>Probability</TableHead>
                     <TableHead>Stage</TableHead>
                     <TableHead>Close Date</TableHead>
+                    <TableHead>Sales Rep</TableHead>
+                    <TableHead>Next Action</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {opportunities.map((opp) => (
-                    <TableRow key={opp.id}>
-                      <TableCell className="font-medium">{opp.name}</TableCell>
-                      <TableCell>{opp.customer}</TableCell>
-                      <TableCell>${opp.value.toLocaleString()}</TableCell>
-                      <TableCell>{opp.probability}%</TableCell>
+                  {opportunities.map((opportunity) => (
+                    <TableRow key={opportunity.id}>
+                      <TableCell className="font-medium">{opportunity.name}</TableCell>
+                      <TableCell>{opportunity.customer}</TableCell>
+                      <TableCell>{formatCurrency(opportunity.value)}</TableCell>
                       <TableCell>
-                        <Badge variant="default">{opp.stage}</Badge>
+                        <div className="flex items-center space-x-2">
+                          <Progress value={opportunity.probability} className="w-16" />
+                          <span className="text-sm">{opportunity.probability}%</span>
+                        </div>
                       </TableCell>
-                      <TableCell>{opp.closeDate}</TableCell>
                       <TableCell>
-                        <Button size="sm" variant="outline">
-                          Edit
-                        </Button>
+                        <Badge variant="outline">{opportunity.stage}</Badge>
+                      </TableCell>
+                      <TableCell>{opportunity.closeDate}</TableCell>
+                      <TableCell>{opportunity.salesRep}</TableCell>
+                      <TableCell className="text-sm">{opportunity.nextAction}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm">Edit</Button>
+                          <Button variant="outline" size="sm">Close</Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -386,26 +373,88 @@ export const CRMDashboard = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="pipeline">
+        <TabsContent value="customers" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Sales Pipeline</CardTitle>
+              <CardTitle>Customer Database</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                {["New", "Qualified", "Proposal", "Negotiation", "Closed Won"].map((stage) => (
-                  <div key={stage} className="border rounded-lg p-4">
-                    <h3 className="font-medium mb-2">{stage}</h3>
-                    <div className="space-y-2">
-                      {leads.filter(lead => lead.stage === stage).map((lead) => (
-                        <div key={lead.id} className="bg-muted p-2 rounded text-sm">
-                          <p className="font-medium">{lead.name}</p>
-                          <p className="text-muted-foreground">${lead.value.toLocaleString()}</p>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Total Sales</TableHead>
+                    <TableHead>Last Order</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {customers.map((customer) => (
+                    <TableRow key={customer.id}>
+                      <TableCell className="font-medium">{customer.company || customer.name}</TableCell>
+                      <TableCell>{customer.contactName || customer.name}</TableCell>
+                      <TableCell>{customer.email}</TableCell>
+                      <TableCell>{customer.phone}</TableCell>
+                      <TableCell>{formatCurrency(customer.totalSales || 0)}</TableCell>
+                      <TableCell>{customer.lastOrderDate || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Badge variant={customer.status === 'Active' ? 'default' : 'secondary'}>
+                          {customer.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm">View</Button>
+                          <Button variant="outline" size="sm">Edit</Button>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="pipeline" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-5">
+            {Object.entries(pipelineStages).map(([stage, value]) => (
+              <Card key={stage}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">{stage}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{formatCurrency(value)}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {leads.filter(l => l.stage === stage).length + opportunities.filter(o => o.stage === stage).length} items
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Pipeline Forecast</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Expected Revenue (This Quarter)</span>
+                  <span className="text-lg font-bold">{formatCurrency(totalOpportunityValue * 0.65)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Best Case Scenario</span>
+                  <span className="text-lg font-bold">{formatCurrency(totalOpportunityValue * 0.85)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Worst Case Scenario</span>
+                  <span className="text-lg font-bold">{formatCurrency(totalOpportunityValue * 0.35)}</span>
+                </div>
               </div>
             </CardContent>
           </Card>

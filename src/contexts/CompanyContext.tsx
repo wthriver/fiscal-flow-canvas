@@ -1,1401 +1,1206 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { saveToLocalStorage, loadFromLocalStorage } from '@/services/localStorageService';
-import { Company, TaxRate, Account, Transaction, Invoice, Expense, Estimate, Budget, BankAccount, TimeEntry, Project, ProjectDocument, Customer, Employee, Sale } from '@/types/company';
-import { CompanyContextType } from '@/types/context';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Company, Transaction, Expense, TaxRate, Account, Invoice, Budget, Estimate, BankAccount, TimeEntry, Sale } from '../types/company';
+import { CompanyContextType } from '../types/context';
+import { localStorageService } from '../services/localStorageService';
+import { toast } from 'sonner';
 
 // Create the context with default values
-const CompanyContext = createContext<CompanyContextType>({
-  currentCompany: {
-    id: '',
-    name: '',
-    transactions: [],
-    accounts: [],
-    taxRates: [],
-    bankAccounts: []
-  },
-  companies: [],
-  updateCompany: () => {},
-  switchCompany: () => {},
-  addCompany: () => {},
-  updateTaxRate: () => {},
-  addTaxRate: () => {},
-  deleteTaxRate: () => {},
-  updateAccount: () => {},
-  addAccount: () => {},
-  deleteAccount: () => {},
-  addExpense: () => {},
-  updateExpense: () => {},
-  deleteExpense: () => {},
-  addInvoice: () => {},
-  updateInvoice: () => {},
-  deleteInvoice: () => {},
-  addEstimate: () => {},
-  updateEstimate: () => {},
-  deleteEstimate: () => {},
-  updateBudget: () => {},
-  addBudget: () => {},
-  deleteBudget: () => {},
-  processPayroll: () => {},
-  updateTransaction: () => {},
-  addTransaction: () => {},
-  deleteTransaction: () => {},
-  addBankAccount: () => {},
-  updateBankAccount: () => {},
-  deleteBankAccount: () => {},
-  addTimeEntry: () => {},
-  updateTimeEntry: () => {},
-  deleteTimeEntry: () => {},
-  addSale: () => {},
-  updateSale: () => {},
-  deleteSale: () => {},
-});
+const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
-interface CompanyProviderProps {
-  children: ReactNode;
-}
-
-// Demo data generator - Enhanced with more comprehensive data
-const generateDemoData = (): Company => {
-  const currentDate = new Date();
-  const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, currentDate.getDate());
-  const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, currentDate.getDate());
+// Enhanced demo data with comprehensive information
+const createComprehensiveDemoData = (): Company => {
+  const currentDate = new Date().toISOString().split('T')[0];
+  const lastMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0];
+  const nextMonth = new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0];
 
   return {
-    id: `company-${Date.now()}`,
-    name: 'Acme Corporation',
-    address: '123 Business St, Suite 100, Business City, BC 12345',
-    phone: '+1 (555) 123-4567',
-    email: 'info@acmecorp.com',
-    website: 'www.acmecorp.com',
-    taxId: '12-3456789',
-    industry: 'Technology Services',
-    fiscalYearStart: 'January 1',
+    id: "company-1",
+    name: "Acme Corp",
+    address: "123 Business Street, Suite 100, Business City, BC 12345",
+    phone: "+1 (555) 123-4567",
+    email: "info@acmecorp.com",
+    website: "https://www.acmecorp.com",
+    taxId: "12-3456789",
+    industry: "Technology Services",
+    fiscalYearStart: "January",
+    fiscalYear: "2025",
     
-    // Enhanced demo customers
-    customers: [
+    transactions: [
       {
-        id: 'cust-1',
-        name: 'John Smith',
-        email: 'john.smith@email.com',
-        phone: '+1 (555) 234-5678',
-        address: '456 Customer Ave',
-        company: 'Smith Enterprises',
-        contactName: 'John Smith',
-        type: 'Business',
-        status: 'Active',
-        city: 'Customer City',
-        state: 'CC',
-        postalCode: '54321',
-        country: 'USA'
+        id: "txn-001",
+        date: currentDate,
+        description: "Software License Revenue",
+        amount: "+$5,250.00",
+        category: "Revenue",
+        account: "Software Sales",
+        reconciled: true,
+        type: "Deposit",
+        bankAccount: "bank-1",
+        reference: "INV-2025-001",
+        memo: "Annual software license renewal",
+        tags: ["software", "recurring"],
+        merchant: "Acme Corp"
       },
       {
-        id: 'cust-2',
-        name: 'Sarah Johnson',
-        email: 'sarah@techstart.com',
-        phone: '+1 (555) 345-6789',
-        address: '789 Tech Blvd',
-        company: 'TechStart Inc',
-        contactName: 'Sarah Johnson',
-        type: 'Business',
-        status: 'Active',
-        city: 'Tech City',
-        state: 'TC',
-        postalCode: '67890',
-        country: 'USA'
+        id: "txn-002",
+        date: lastMonth,
+        description: "Office Rent Payment",
+        amount: "-$2,500.00",
+        category: "Office Expenses",
+        account: "Operating Expenses",
+        reconciled: true,
+        type: "Withdrawal",
+        bankAccount: "bank-1",
+        reference: "RENT-JAN-2025",
+        memo: "Monthly office rent",
+        tags: ["rent", "office"]
       },
       {
-        id: 'cust-3',
-        name: 'Mike Wilson',
-        email: 'mike.wilson@retail.com',
-        phone: '+1 (555) 456-7890',
-        address: '321 Retail Road',
-        company: 'Wilson Retail',
-        contactName: 'Mike Wilson',
-        type: 'Business',
-        status: 'Active',
-        city: 'Retail Town',
-        state: 'RT',
-        postalCode: '13579',
-        country: 'USA'
-      },
-      {
-        id: 'cust-4',
-        name: 'Lisa Chen',
-        email: 'lisa@globalcorp.com',
-        phone: '+1 (555) 567-8901',
-        address: '654 Corporate Dr',
-        company: 'Global Corp',
-        contactName: 'Lisa Chen',
-        type: 'Business',
-        status: 'Active',
-        city: 'Metro City',
-        state: 'MC',
-        postalCode: '24680',
-        country: 'USA'
+        id: "txn-003",
+        date: currentDate,
+        description: "Consulting Services",
+        amount: "+$8,750.00",
+        category: "Consulting Revenue",
+        account: "Service Revenue",
+        reconciled: false,
+        type: "Deposit",
+        bankAccount: "bank-1",
+        reference: "INV-2025-002",
+        memo: "Q1 consulting project completion",
+        tags: ["consulting", "project"]
       }
     ],
 
-    // Enhanced demo invoices
-    invoices: [
-      {
-        id: 'INV-001',
-        customer: 'Smith Enterprises',
-        date: '2025-05-15',
-        dueDate: '2025-06-15',
-        status: 'Paid',
-        total: 2500.00,
-        amount: '$2,500.00',
-        items: [
-          { id: 'item-1', description: 'Web Development Services', quantity: 40, price: 50, total: 2000 },
-          { id: 'item-2', description: 'Domain Setup', quantity: 1, price: 500, total: 500 }
-        ]
-      },
-      {
-        id: 'INV-002',
-        customer: 'TechStart Inc',
-        date: '2025-05-20',
-        dueDate: '2025-06-20',
-        status: 'Pending',
-        total: 1800.00,
-        amount: '$1,800.00',
-        items: [
-          { id: 'item-3', description: 'Software Consulting', quantity: 20, price: 75, total: 1500 },
-          { id: 'item-4', description: 'Technical Documentation', quantity: 6, price: 50, total: 300 }
-        ]
-      },
-      {
-        id: 'INV-003',
-        customer: 'Wilson Retail',
-        date: '2025-05-22',
-        dueDate: '2025-06-22',
-        status: 'Overdue',
-        total: 3200.00,
-        amount: '$3,200.00',
-        items: [
-          { id: 'item-5', description: 'E-commerce Platform', quantity: 1, price: 2500, total: 2500 },
-          { id: 'item-6', description: 'Payment Integration', quantity: 1, price: 700, total: 700 }
-        ]
-      },
-      {
-        id: 'INV-004',
-        customer: 'Global Corp',
-        date: '2025-05-24',
-        dueDate: '2025-06-24',
-        status: 'Draft',
-        total: 4500.00,
-        amount: '$4,500.00',
-        items: [
-          { id: 'item-7', description: 'Enterprise Solution', quantity: 60, price: 75, total: 4500 }
-        ]
-      }
-    ],
-
-    // Enhanced demo expenses
-    expenses: [
-      {
-        id: 'exp-1',
-        date: '2025-05-10',
-        vendor: 'Office Supplies Co',
-        category: 'Office Supplies',
-        amount: 250.00,
-        description: 'Monthly office supplies purchase',
-        status: 'Paid',
-        paymentMethod: 'Credit Card'
-      },
-      {
-        id: 'exp-2',
-        date: '2025-05-12',
-        vendor: 'CloudHost Services',
-        category: 'Software & Subscriptions',
-        amount: 150.00,
-        description: 'Monthly hosting fees',
-        status: 'Paid',
-        paymentMethod: 'ACH'
-      },
-      {
-        id: 'exp-3',
-        date: '2025-05-18',
-        vendor: 'Business Travel Inc',
-        category: 'Travel',
-        amount: 800.00,
-        description: 'Client meeting travel expenses',
-        status: 'Pending',
-        paymentMethod: 'Company Card'
-      },
-      {
-        id: 'exp-4',
-        date: '2025-05-20',
-        vendor: 'Marketing Agency',
-        category: 'Marketing',
-        amount: 2000.00,
-        description: 'Q2 marketing campaign',
-        status: 'Approved',
-        paymentMethod: 'Wire Transfer'
-      },
-      {
-        id: 'exp-5',
-        date: '2025-05-22',
-        vendor: 'Legal Services LLC',
-        category: 'Professional Services',
-        amount: 1500.00,
-        description: 'Contract review and legal consultation',
-        status: 'Paid',
-        paymentMethod: 'Check'
-      }
-    ],
-
-    // Enhanced demo employees
-    employees: [
-      {
-        id: 'emp-1',
-        name: 'Alice Johnson',
-        position: 'Senior Developer',
-        salary: 85000,
-        hireDate: '2023-01-15',
-        status: 'Active',
-        payRate: 40.87,
-        payType: 'Hourly'
-      },
-      {
-        id: 'emp-2',
-        name: 'Bob Chen',
-        position: 'Project Manager',
-        salary: 75000,
-        hireDate: '2023-03-01',
-        status: 'Active',
-        payRate: 36.06,
-        payType: 'Hourly'
-      },
-      {
-        id: 'emp-3',
-        name: 'Carol Davis',
-        position: 'UX Designer',
-        salary: 65000,
-        hireDate: '2023-06-15',
-        status: 'Active',
-        payRate: 31.25,
-        payType: 'Hourly'
-      },
-      {
-        id: 'emp-4',
-        name: 'David Brown',
-        position: 'Marketing Specialist',
-        salary: 55000,
-        hireDate: '2023-09-01',
-        status: 'Active',
-        payRate: 26.44,
-        payType: 'Hourly'
-      },
-      {
-        id: 'emp-5',
-        name: 'Emma Wilson',
-        position: 'Accountant',
-        salary: 60000,
-        hireDate: '2024-01-15',
-        status: 'Active',
-        payRate: 28.85,
-        payType: 'Hourly'
-      }
-    ],
-
-    // Enhanced demo projects
-    projects: [
-      {
-        id: 'proj-1',
-        name: 'E-commerce Website',
-        client: 'Smith Enterprises',
-        status: 'In Progress',
-        startDate: '2025-04-01',
-        endDate: '2025-07-01',
-        budget: 15000,
-        tracked: '120 hours',
-        billed: true,
-        spent: 8500,
-        progress: 65,
-        team: ['Alice Johnson', 'Carol Davis'],
-        documents: [
-          {
-            id: 'doc-1',
-            name: 'Project Requirements.pdf',
-            type: 'PDF',
-            size: '2.4 MB',
-            uploadDate: '2025-04-01',
-            uploadedBy: 'Bob Chen'
-          }
-        ]
-      },
-      {
-        id: 'proj-2',
-        name: 'Mobile App Development',
-        client: 'TechStart Inc',
-        status: 'Planning',
-        startDate: '2025-06-01',
-        endDate: '2025-12-01',
-        budget: 25000,
-        tracked: '0 hours',
-        billed: false,
-        spent: 0,
-        progress: 10,
-        team: ['Alice Johnson', 'Bob Chen'],
-        documents: []
-      }
-    ],
-
-    // Enhanced demo time entries
-    timeEntries: [
-      {
-        id: 'time-1',
-        employeeId: 'emp-1',
-        projectId: 'proj-1',
-        date: '2025-05-20',
-        hours: 8,
-        description: 'Frontend development work',
-        billable: true,
-        startTime: '09:00',
-        endTime: '17:00',
-        status: 'Approved'
-      },
-      {
-        id: 'time-2',
-        employeeId: 'emp-2',
-        projectId: 'proj-1',
-        date: '2025-05-20',
-        hours: 6,
-        description: 'Project planning and client meetings',
-        billable: true,
-        startTime: '10:00',
-        endTime: '16:00',
-        status: 'Approved'
-      },
-      {
-        id: 'time-3',
-        employeeId: 'emp-3',
-        projectId: 'proj-1',
-        date: '2025-05-21',
-        hours: 7,
-        description: 'UI/UX design and prototyping',
-        billable: true,
-        startTime: '09:30',
-        endTime: '16:30',
-        status: 'Pending'
-      }
-    ],
-
-    // Enhanced demo sales
-    sales: [
-      {
-        id: 'sale-1',
-        date: '2025-05-15',
-        customer: 'Smith Enterprises',
-        amount: 2500.00,
-        status: 'Completed',
-        items: [
-          { description: 'Web Development Package', quantity: 1, price: 2500, total: 2500 }
-        ]
-      },
-      {
-        id: 'sale-2',
-        date: '2025-05-20',
-        customer: 'TechStart Inc',
-        amount: 1800.00,
-        status: 'Pending',
-        items: [
-          { description: 'Consulting Services', quantity: 24, price: 75, total: 1800 }
-        ]
-      }
-    ],
-
-    // Enhanced demo accounts
-    accounts: [
-      {
-        id: 'acc-1',
-        number: '1000',
-        name: 'Cash',
-        type: 'Asset',
-        balance: 25000,
-        description: 'Primary cash account'
-      },
-      {
-        id: 'acc-2',
-        number: '1200',
-        name: 'Accounts Receivable',
-        type: 'Asset',
-        balance: 8500,
-        description: 'Money owed by customers'
-      },
-      {
-        id: 'acc-3',
-        number: '2000',
-        name: 'Accounts Payable',
-        type: 'Liability',
-        balance: 3200,
-        description: 'Money owed to vendors'
-      },
-      {
-        id: 'acc-4',
-        name: 'Revenue',
-        number: '4000',
-        type: 'Income',
-        balance: 45000,
-        description: 'Service revenue'
-      }
-    ],
-
-    // Enhanced demo bank accounts with more transactions
     bankAccounts: [
       {
-        id: 'bank-1',
-        name: 'Business Checking',
-        type: 'Checking',
-        balance: 45750,
-        lastTransaction: '2025-05-24',
+        id: "bank-1",
+        name: "Business Checking",
+        balance: 45250.75,
+        type: "Checking",
+        accountNumber: "****1234",
+        routingNumber: "021000021",
+        bankName: "First Business Bank",
+        isActive: true,
+        openingDate: "2023-01-15",
+        interestRate: 0.25,
         transactions: [
           {
-            id: 'trans-1',
-            date: '2025-05-24',
-            description: 'Customer Payment - INV-001',
-            amount: '+$2,500.00',
-            category: 'Income',
-            account: 'Business Checking',
+            id: "transaction-1",
+            date: currentDate,
+            description: "Client Payment - TechCorp",
+            amount: "+$12,500.00",
+            category: "Revenue",
+            account: "Business Checking",
             reconciled: true,
-            type: 'Deposit'
-          },
-          {
-            id: 'trans-2',
-            date: '2025-05-23',
-            description: 'Office Rent',
-            amount: '-$1,200.00',
-            category: 'Rent',
-            account: 'Business Checking',
-            reconciled: true,
-            type: 'Withdrawal'
-          },
-          {
-            id: 'trans-3',
-            date: '2025-05-22',
-            description: 'Software Subscription',
-            amount: '-$150.00',
-            category: 'Software',
-            account: 'Business Checking',
-            reconciled: false,
-            type: 'Withdrawal'
-          },
-          {
-            id: 'trans-4',
-            date: '2025-05-21',
-            description: 'Marketing Campaign Payment',
-            amount: '-$2,000.00',
-            category: 'Marketing',
-            account: 'Business Checking',
-            reconciled: true,
-            type: 'Withdrawal'
-          },
-          {
-            id: 'trans-5',
-            date: '2025-05-20',
-            description: 'Customer Payment - INV-002',
-            amount: '+$1,800.00',
-            category: 'Income',
-            account: 'Business Checking',
-            reconciled: true,
-            type: 'Deposit'
+            type: "Deposit",
+            reference: "WIRE-2025-001",
+            memo: "Project milestone payment"
           }
         ]
       },
       {
-        id: 'bank-2',
-        name: 'Business Savings',
-        type: 'Savings',
-        balance: 75000,
-        lastTransaction: '2025-05-15',
-        transactions: [
-          {
-            id: 'trans-6',
-            date: '2025-05-15',
-            description: 'Interest Payment',
-            amount: '+$125.50',
-            category: 'Interest',
-            account: 'Business Savings',
-            reconciled: true,
-            type: 'Deposit'
-          },
-          {
-            id: 'trans-7',
-            date: '2025-05-01',
-            description: 'Emergency Fund Transfer',
-            amount: '+$10,000.00',
-            category: 'Transfer',
-            account: 'Business Savings',
-            reconciled: true,
-            type: 'Deposit'
-          }
-        ]
-      },
-      {
-        id: 'bank-3',
-        name: 'Payroll Account',
-        type: 'Checking',
-        balance: 25000,
-        lastTransaction: '2025-05-15',
-        transactions: [
-          {
-            id: 'trans-8',
-            date: '2025-05-15',
-            description: 'Payroll Processing',
-            amount: '-$8,500.00',
-            category: 'Payroll',
-            account: 'Payroll Account',
-            reconciled: true,
-            type: 'Withdrawal'
-          },
-          {
-            id: 'trans-9',
-            date: '2025-05-01',
-            description: 'Payroll Funding',
-            amount: '+$15,000.00',
-            category: 'Transfer',
-            account: 'Payroll Account',
-            reconciled: true,
-            type: 'Deposit'
-          }
-        ]
+        id: "bank-2",
+        name: "Business Savings",
+        balance: 125000.00,
+        type: "Savings",
+        accountNumber: "****5678",
+        routingNumber: "021000021",
+        bankName: "First Business Bank",
+        isActive: true,
+        openingDate: "2023-01-15",
+        interestRate: 2.1,
+        transactions: []
       }
     ],
 
-    // Enhanced demo tax rates
+    accounts: [
+      {
+        id: "acc-1000",
+        number: "1000",
+        name: "Cash and Cash Equivalents",
+        type: "Asset",
+        balance: 170250.75,
+        description: "Primary business checking and savings accounts",
+        isActive: true,
+        taxType: "None"
+      },
+      {
+        id: "acc-1200",
+        number: "1200",
+        name: "Accounts Receivable",
+        type: "Asset",
+        balance: 45680.00,
+        description: "Money owed by customers for services rendered",
+        isActive: true,
+        taxType: "None"
+      },
+      {
+        id: "acc-4000",
+        number: "4000",
+        name: "Service Revenue",
+        type: "Income",
+        balance: 287500.00,
+        description: "Revenue from consulting and software services",
+        isActive: true,
+        taxType: "Taxable Income"
+      },
+      {
+        id: "acc-5000",
+        number: "5000",
+        name: "Operating Expenses",
+        type: "Expense",
+        balance: 145250.00,
+        description: "General business operating expenses",
+        isActive: true,
+        taxType: "Deductible Expense"
+      }
+    ],
+
     taxRates: [
       {
-        id: 'tax-1',
-        name: 'Sales Tax',
+        id: "tax-1",
+        name: "Standard Sales Tax",
         rate: 8.25,
         isDefault: true,
-        description: 'Standard sales tax rate',
-        category: 'Sales'
+        description: "Standard state sales tax rate",
+        category: "Sales Tax",
+        jurisdiction: "California",
+        effectiveDate: "2025-01-01"
       },
       {
-        id: 'tax-2',
-        name: 'Service Tax',
+        id: "tax-2",
+        name: "Professional Services Tax",
         rate: 6.0,
         isDefault: false,
-        description: 'Tax rate for services',
-        category: 'Service'
+        description: "Tax rate for professional services",
+        category: "Service Tax",
+        jurisdiction: "California",
+        effectiveDate: "2025-01-01"
       }
     ],
 
-    // Enhanced demo budgets
-    budgets: [
+    customers: [
       {
-        id: 'budget-1',
-        name: 'Q2 2025 Budget',
-        period: 'Quarterly',
-        startDate: '2025-04-01',
-        endDate: '2025-06-30',
-        status: 'Active',
-        categories: [
+        id: "cust-001",
+        name: "TechCorp Solutions",
+        email: "billing@techcorp.com",
+        phone: "+1 (555) 987-6543",
+        company: "TechCorp Solutions Inc.",
+        contactName: "Sarah Johnson",
+        type: "Business",
+        status: "Active",
+        address: "456 Tech Avenue",
+        city: "San Francisco",
+        state: "CA",
+        postalCode: "94105",
+        country: "USA",
+        website: "https://techcorp.com",
+        taxId: "98-7654321",
+        paymentTerms: "Net 30",
+        creditLimit: 50000,
+        totalSales: 125000,
+        lastOrderDate: currentDate,
+        customerSince: "2023-03-15",
+        notes: "Premium client with enterprise contract",
+        billingAddress: {
+          street: "456 Tech Avenue",
+          city: "San Francisco",
+          state: "CA",
+          postalCode: "94105",
+          country: "USA"
+        },
+        contacts: [
           {
-            id: 'cat-1',
-            name: 'Revenue',
-            type: 'income',
-            budgeted: 50000,
-            actual: 35000
+            id: "contact-1",
+            name: "Sarah Johnson",
+            email: "sarah.johnson@techcorp.com",
+            phone: "+1 (555) 987-6543",
+            role: "Procurement Manager",
+            isPrimary: true
+          }
+        ]
+      },
+      {
+        id: "cust-002",
+        name: "Global Dynamics",
+        email: "accounts@globaldynamics.com",
+        phone: "+1 (555) 456-7890",
+        company: "Global Dynamics LLC",
+        contactName: "Michael Chen",
+        type: "Business",
+        status: "Active",
+        address: "789 Business Boulevard",
+        city: "Los Angeles",
+        state: "CA",
+        postalCode: "90210",
+        country: "USA",
+        paymentTerms: "Net 15",
+        creditLimit: 75000,
+        totalSales: 89500,
+        lastOrderDate: lastMonth,
+        customerSince: "2023-06-20",
+        notes: "Fast-growing client with monthly recurring services"
+      }
+    ],
+
+    invoices: [
+      {
+        id: "inv-001",
+        invoiceNumber: "INV-2025-001",
+        customer: "TechCorp Solutions",
+        customerId: "cust-001",
+        date: currentDate,
+        dueDate: nextMonth,
+        status: "Paid",
+        total: 12500,
+        amount: "$12,500.00",
+        subtotal: 11574.07,
+        taxAmount: 925.93,
+        notes: "Software development services - Phase 1",
+        terms: "Payment due within 30 days",
+        poNumber: "PO-TC-2025-001",
+        paymentStatus: "Paid",
+        paymentDate: currentDate,
+        paymentMethod: "Bank Transfer",
+        items: [
+          {
+            id: "item-1",
+            description: "Custom Software Development",
+            quantity: 80,
+            price: 125,
+            total: 10000,
+            sku: "DEV-001",
+            unit: "hours",
+            taxRate: 8.25
           },
           {
-            id: 'cat-2',
-            name: 'Operating Expenses',
-            type: 'expense',
-            budgeted: 15000,
-            actual: 12500
-          },
+            id: "item-2",
+            description: "Project Management",
+            quantity: 20,
+            price: 95,
+            total: 1900,
+            sku: "PM-001",
+            unit: "hours",
+            taxRate: 8.25
+          }
+        ]
+      },
+      {
+        id: "inv-002",
+        invoiceNumber: "INV-2025-002",
+        customer: "Global Dynamics",
+        customerId: "cust-002",
+        date: lastMonth,
+        dueDate: currentDate,
+        status: "Overdue",
+        total: 8750,
+        amount: "$8,750.00",
+        subtotal: 8101.85,
+        taxAmount: 648.15,
+        notes: "Monthly consulting retainer",
+        terms: "Payment due within 15 days",
+        items: [
           {
-            id: 'cat-3',
-            name: 'Marketing',
-            type: 'expense',
-            budgeted: 5000,
-            actual: 3200
+            id: "item-3",
+            description: "Business Consulting",
+            quantity: 70,
+            price: 115,
+            total: 8050,
+            sku: "CONS-001",
+            unit: "hours",
+            taxRate: 8.25
           }
         ]
       }
     ],
 
-    // Enhanced demo estimates
+    expenses: [
+      {
+        id: "exp-001",
+        date: currentDate,
+        vendor: "Office Supplies Inc.",
+        category: "Office Supplies",
+        amount: 485.75,
+        description: "Monthly office supplies and equipment",
+        status: "Paid",
+        paymentMethod: "Credit Card",
+        billNumber: "OSI-2025-001",
+        accountId: "acc-5000",
+        taxAmount: 38.86,
+        tags: ["office", "supplies", "monthly"]
+      },
+      {
+        id: "exp-002",
+        date: lastMonth,
+        vendor: "CloudHost Services",
+        category: "Software & Subscriptions",
+        amount: 299.99,
+        description: "Cloud hosting and backup services",
+        status: "Paid",
+        paymentMethod: "Auto-Pay",
+        billNumber: "CHS-2025-001",
+        accountId: "acc-5000",
+        isBillable: false,
+        tags: ["cloud", "hosting", "recurring"]
+      },
+      {
+        id: "exp-003",
+        date: currentDate,
+        vendor: "Business Travel Corp",
+        category: "Travel",
+        amount: 1250.00,
+        description: "Client meeting travel expenses",
+        status: "Pending",
+        paymentMethod: "Credit Card",
+        isBillable: true,
+        projectId: "proj-001",
+        tags: ["travel", "client", "billable"]
+      }
+    ],
+
+    projects: [
+      {
+        id: "proj-001",
+        name: "TechCorp Digital Transformation",
+        client: "TechCorp Solutions",
+        clientId: "cust-001",
+        status: "In Progress",
+        startDate: "2025-01-01",
+        endDate: "2025-06-30",
+        budget: 75000,
+        progress: 65,
+        description: "Complete digital transformation including new CRM and automation systems",
+        priority: "High",
+        billingRate: 125,
+        currency: "USD",
+        projectManager: "emp-001",
+        tracked: 234.5,
+        billed: 28750,
+        spent: 15420,
+        team: ["emp-001", "emp-002", "emp-003"],
+        documents: [
+          {
+            id: "doc-001",
+            name: "Project Charter.pdf",
+            type: "document",
+            size: "2.4 MB",
+            uploadedBy: "emp-001",
+            uploadDate: "2025-01-05",
+            category: "Planning"
+          }
+        ],
+        milestones: [
+          {
+            id: "mile-001",
+            name: "Requirements Analysis",
+            dueDate: "2025-02-15",
+            status: "Completed",
+            description: "Complete business requirements gathering and analysis",
+            budget: 15000
+          },
+          {
+            id: "mile-002",
+            name: "System Design",
+            dueDate: "2025-03-30",
+            status: "In Progress",
+            description: "Technical architecture and system design",
+            budget: 20000
+          }
+        ],
+        tasks: [
+          {
+            id: "task-001",
+            name: "Database Design",
+            assigneeId: "emp-002",
+            status: "In Progress",
+            priority: "High",
+            dueDate: "2025-03-15",
+            estimatedHours: 40,
+            actualHours: 28,
+            milestoneId: "mile-002"
+          }
+        ]
+      },
+      {
+        id: "proj-002",
+        name: "Global Dynamics Process Automation",
+        client: "Global Dynamics",
+        clientId: "cust-002",
+        status: "Planning",
+        startDate: "2025-03-01",
+        endDate: "2025-08-31",
+        budget: 45000,
+        progress: 15,
+        description: "Automate key business processes to improve efficiency",
+        priority: "Medium",
+        billingRate: 115,
+        currency: "USD",
+        projectManager: "emp-001",
+        tracked: 45.5,
+        billed: 5225,
+        spent: 2100,
+        team: ["emp-001", "emp-003"],
+        documents: [],
+        milestones: [],
+        tasks: []
+      }
+    ],
+
+    timeEntries: [
+      {
+        id: "time-001",
+        employeeId: "emp-001",
+        projectId: "proj-001",
+        date: currentDate,
+        hours: 8,
+        description: "Client requirements meeting and documentation",
+        billable: true,
+        startTime: "09:00",
+        endTime: "17:00",
+        status: "Approved",
+        billingRate: 125,
+        location: "Client Site",
+        approvedBy: "emp-001"
+      },
+      {
+        id: "time-002",
+        employeeId: "emp-002",
+        projectId: "proj-001",
+        date: lastMonth,
+        hours: 6.5,
+        description: "Database schema design and optimization",
+        billable: true,
+        startTime: "10:00",
+        endTime: "16:30",
+        status: "Approved",
+        billingRate: 110,
+        taskId: "task-001"
+      }
+    ],
+
+    employees: [
+      {
+        id: "emp-001",
+        name: "John Smith",
+        position: "Senior Project Manager",
+        email: "john.smith@acmecorp.com",
+        phone: "+1 (555) 123-4567",
+        salary: 95000,
+        hireDate: "2023-01-15",
+        status: "Active",
+        payRate: 125,
+        payType: "Hourly",
+        department: "Project Management",
+        skills: ["Project Management", "Agile", "Scrum", "Client Relations"],
+        benefits: ["Health Insurance", "401k", "PTO"],
+        performanceRating: 4.8
+      },
+      {
+        id: "emp-002",
+        name: "Sarah Davis",
+        position: "Senior Developer",
+        email: "sarah.davis@acmecorp.com",
+        phone: "+1 (555) 234-5678",
+        salary: 85000,
+        hireDate: "2023-03-20",
+        status: "Active",
+        payRate: 110,
+        payType: "Hourly",
+        department: "Development",
+        manager: "emp-001",
+        skills: ["React", "Node.js", "Python", "Database Design"],
+        benefits: ["Health Insurance", "401k", "PTO"],
+        performanceRating: 4.6
+      },
+      {
+        id: "emp-003",
+        name: "Mike Johnson",
+        position: "Business Analyst",
+        email: "mike.johnson@acmecorp.com",
+        phone: "+1 (555) 345-6789",
+        salary: 75000,
+        hireDate: "2023-06-10",
+        status: "Active",
+        payRate: 95,
+        payType: "Hourly",
+        department: "Analysis",
+        manager: "emp-001",
+        skills: ["Business Analysis", "Requirements Gathering", "Process Design"],
+        benefits: ["Health Insurance", "401k", "PTO"],
+        performanceRating: 4.2
+      }
+    ],
+
+    budgets: [
+      {
+        id: "budget-001",
+        name: "Q1 2025 Operating Budget",
+        period: "Quarterly",
+        startDate: "2025-01-01",
+        endDate: "2025-03-31",
+        status: "Active",
+        owner: "emp-001",
+        department: "Operations",
+        categories: [
+          {
+            id: "cat-001",
+            name: "Software Revenue",
+            type: "income",
+            budgeted: 150000,
+            actual: 125000,
+            isActive: true
+          },
+          {
+            id: "cat-002",
+            name: "Consulting Revenue",
+            type: "income",
+            budgeted: 100000,
+            actual: 89500,
+            isActive: true
+          },
+          {
+            id: "cat-003",
+            name: "Salaries & Benefits",
+            type: "expense",
+            budgeted: 65000,
+            actual: 58500,
+            isActive: true
+          },
+          {
+            id: "cat-004",
+            name: "Office & Administrative",
+            type: "expense",
+            budgeted: 15000,
+            actual: 12750,
+            isActive: true
+          }
+        ],
+        totalBudgeted: "$185,000.00",
+        totalActual: "$156,750.00",
+        variance: "$28,250.00"
+      }
+    ],
+
     estimates: [
       {
-        id: 'EST-001',
-        customer: 'Wilson Retail',
-        date: '2025-05-10',
-        expiryDate: '2025-06-10',
-        status: 'Pending',
-        total: 15000,
-        estimateNumber: 'EST-001',
-        notes: 'Comprehensive e-commerce solution',
+        id: "est-001",
+        estimateNumber: "EST-2025-001",
+        customer: "Startup Inc.",
+        date: currentDate,
+        expiryDate: nextMonth,
+        status: "Pending",
+        total: 25000,
+        amount: "$25,000.00",
+        validUntil: nextMonth,
+        probability: 75,
+        followUpDate: "2025-02-15",
+        notes: "Custom mobile app development project",
         items: [
-          { id: 'est-item-1', description: 'E-commerce Platform Setup', quantity: 1, price: 8000, total: 8000 },
-          { id: 'est-item-2', description: 'Custom Features Development', quantity: 80, price: 75, total: 6000 },
-          { id: 'est-item-3', description: 'Testing & Deployment', quantity: 1, price: 1000, total: 1000 }
+          {
+            id: "est-item-1",
+            description: "Mobile App Development",
+            quantity: 200,
+            price: 115,
+            total: 23000,
+            sku: "MOBILE-001",
+            unit: "hours"
+          },
+          {
+            id: "est-item-2",
+            description: "Testing & QA",
+            quantity: 20,
+            price: 95,
+            total: 1900,
+            sku: "QA-001",
+            unit: "hours"
+          }
         ]
       }
     ],
 
-    // Enhanced demo inventory
+    sales: [
+      {
+        id: "sale-001",
+        date: currentDate,
+        customer: "TechCorp Solutions",
+        customerId: "cust-001",
+        amount: 12500,
+        status: "Completed",
+        paymentMethod: "Bank Transfer",
+        salesRep: "emp-001",
+        channel: "Direct",
+        items: [
+          {
+            id: "sale-item-1",
+            itemId: "srv-001",
+            quantity: 1,
+            unitPrice: 12500,
+            total: 12500
+          }
+        ]
+      }
+    ],
+
     inventory: {
       items: [
         {
-          id: 'inv-1',
-          name: 'Software License - Pro',
-          sku: 'SW-PRO-001',
+          id: "inv-001",
+          name: "Enterprise Software License",
+          sku: "ESL-001",
           quantity: 50,
-          price: 199.99,
-          cost: 120.00,
-          category: 'Software',
-          location: 'Digital'
+          price: 2500,
+          cost: 800,
+          category: "Software",
+          location: "Digital",
+          supplier: "Software Vendor Inc.",
+          reorderLevel: 10,
+          maxStock: 100,
+          unit: "license",
+          description: "Annual enterprise software license"
         },
         {
-          id: 'inv-2',
-          name: 'Consulting Hours',
-          sku: 'CONS-HR-001',
-          quantity: 1000,
-          price: 75.00,
-          cost: 45.00,
-          category: 'Services',
-          location: 'Virtual'
+          id: "inv-002",
+          name: "Professional Services Package",
+          sku: "PSP-001",
+          quantity: 25,
+          price: 5000,
+          cost: 2000,
+          category: "Services",
+          location: "Virtual",
+          unit: "package",
+          description: "Comprehensive professional services package"
         }
       ],
-      categories: ['Software', 'Services', 'Hardware'],
-      locations: ['Digital', 'Virtual', 'Office'],
+      categories: ["Software", "Services", "Hardware", "Consulting"],
+      locations: ["Digital", "Virtual", "Office", "Warehouse"],
       bundles: [],
       serialNumbers: [],
-      lotTracking: []
-    },
-
-    // Enhanced demo payroll data
-    payrollData: {
-      payPeriods: [
+      lotTracking: [],
+      suppliers: [
         {
-          id: 'pp-1',
-          startDate: '2025-05-01',
-          endDate: '2025-05-15',
-          status: 'Processed',
-          totalPaid: 8500,
-          payDate: '2025-05-20',
-          totalGross: 10000,
-          totalNet: 8500,
-          totalTaxes: 1200,
-          totalDeductions: 300
+          id: "sup-001",
+          name: "Software Vendor Inc.",
+          email: "sales@softwarevendor.com",
+          phone: "+1 (555) 777-8888",
+          address: "123 Software Street, Tech City, TC 12345",
+          contactPerson: "Alex Thompson",
+          paymentTerms: "Net 30",
+          rating: 4.5
         }
       ]
     },
 
-    // Enhanced demo transactions (general ledger)
-    transactions: [
-      {
-        id: 'gl-trans-1',
-        date: '2025-05-22',
-        description: 'Customer Payment Received',
-        amount: '+$2,500.00',
-        category: 'Revenue',
-        account: 'Accounts Receivable',
-        reconciled: true,
-        type: 'Credit'
-      },
-      {
-        id: 'gl-trans-2',
-        date: '2025-05-21',
-        description: 'Office Rent Payment',
-        amount: '-$1,200.00',
-        category: 'Rent Expense',
-        account: 'Cash',
-        reconciled: true,
-        type: 'Debit'
+    payrollData: {
+      payPeriods: [
+        {
+          id: "pay-001",
+          startDate: "2025-01-01",
+          endDate: "2025-01-15",
+          status: "Completed",
+          totalPaid: 18500,
+          payDate: "2025-01-20",
+          totalGross: 22500,
+          totalNet: 18500,
+          totalTaxes: 3200,
+          totalDeductions: 800,
+          employees: [
+            {
+              id: "pe-001",
+              employeeId: "emp-001",
+              hoursWorked: 80,
+              grossPay: 9500,
+              netPay: 7800,
+              federalTax: 1200,
+              stateTax: 400,
+              socialSecurity: 589,
+              medicare: 138
+            }
+          ]
+        }
+      ],
+      taxSettings: {
+        federalRate: 12.0,
+        stateRate: 4.0,
+        socialSecurityRate: 6.2,
+        medicareRate: 1.45,
+        unemploymentRate: 0.6
       }
-    ],
+    },
 
-    // Enhanced demo performance metrics
-    revenue: { current: 85000, previous: 72000, percentChange: 18.1 },
-    profitMargin: { value: 28.5, trend: 3.2, percentChange: 12.7 },
-    outstandingInvoices: { amount: 8500, percentChange: -15.2 },
-    activeCustomers: { count: 24, percentChange: 33.3 },
+    revenue: {
+      current: 287500,
+      previous: 245000,
+      percentChange: 17.3,
+      monthlyData: [
+        { month: "Jan", revenue: 95000, expenses: 45000, profit: 50000 },
+        { month: "Feb", revenue: 87500, expenses: 42000, profit: 45500 },
+        { month: "Mar", revenue: 105000, expenses: 48000, profit: 57000 }
+      ]
+    },
 
-    // New advanced features with demo data
+    profitMargin: {
+      value: 32.5,
+      trend: 5.2,
+      percentChange: 8.1,
+      grossMargin: 68.5,
+      netMargin: 32.5,
+      operatingMargin: 35.2
+    },
+
+    outstandingInvoices: {
+      amount: 23450,
+      percentChange: -12.5,
+      count: 3,
+      averageDaysOverdue: 8
+    },
+
+    activeCustomers: {
+      count: 24,
+      percentChange: 15.4,
+      newCustomers: 4,
+      retentionRate: 92.5,
+      averageOrderValue: 12850
+    },
+
     leads: [
       {
-        id: 'lead-1',
-        name: 'Jennifer Martinez',
-        email: 'jennifer@newstartup.com',
-        phone: '+1 (555) 123-9876',
-        company: 'New Startup LLC',
-        value: 15000,
-        stage: 'Qualified',
-        source: 'Website',
-        assignedTo: 'Bob Chen',
-        lastContact: '2025-05-23'
-      },
-      {
-        id: 'lead-2',
-        name: 'Robert Taylor',
-        email: 'robert@enterprises.com',
-        phone: '+1 (555) 234-8765',
-        company: 'Taylor Enterprises',
-        value: 25000,
-        stage: 'Proposal',
-        source: 'Referral',
-        assignedTo: 'Alice Johnson',
-        lastContact: '2025-05-22'
+        id: "lead-001",
+        name: "Jennifer Wilson",
+        email: "jennifer@innovatetech.com",
+        phone: "+1 (555) 999-0000",
+        company: "InnovateTech Solutions",
+        value: 35000,
+        stage: "Qualified",
+        source: "Website",
+        assignedTo: "emp-001",
+        lastContact: currentDate,
+        nextFollowUp: "2025-02-10",
+        score: 85,
+        industry: "Healthcare Technology",
+        employees: 150,
+        pain_points: ["Manual processes", "Scalability issues"],
+        interests: ["Cloud migration", "Process automation"]
       }
     ],
 
     opportunities: [
       {
-        id: 'opp-1',
-        name: 'Enterprise Software Implementation',
-        customer: 'Global Corp',
-        value: 50000,
-        probability: 75,
-        stage: 'Negotiation',
-        closeDate: '2025-06-30',
-        description: 'Large-scale software implementation project'
+        id: "opp-001",
+        name: "Enterprise CRM Implementation",
+        customer: "MegaCorp Industries",
+        value: 125000,
+        probability: 65,
+        stage: "Proposal",
+        closeDate: "2025-03-15",
+        description: "Large-scale CRM implementation with custom integrations",
+        salesRep: "emp-001",
+        source: "Referral",
+        nextAction: "Present final proposal"
       }
     ],
 
-    bankConnections: [
+    auditTrail: [
       {
-        id: 'conn-1',
-        bankName: 'First National Bank',
-        accountType: 'Business Checking',
-        accountNumber: '****1234',
-        status: 'Connected',
-        lastSync: '2025-05-24 10:30:00',
-        autoSync: true
+        id: "audit-001",
+        timestamp: new Date().toISOString(),
+        userId: "user-001",
+        action: "Invoice Created",
+        entity: "Invoice",
+        entityId: "inv-001",
+        changes: { status: "Draft" }
       }
     ],
 
-    users: [
+    integrations: [
       {
-        id: 'user-1',
-        name: 'John Admin',
-        email: 'admin@acmecorp.com',
-        role: 'Owner',
-        permissions: ['all'],
-        status: 'Active',
-        lastLogin: '2025-05-24 09:00:00',
-        department: 'Administration'
+        id: "int-001",
+        name: "Stripe Payment Gateway",
+        type: "Payment",
+        status: "Connected",
+        lastSync: currentDate,
+        syncFrequency: "Real-time"
       },
       {
-        id: 'user-2',
-        name: 'Sarah Manager',
-        email: 'sarah@acmecorp.com',
-        role: 'Manager',
-        permissions: ['accounting', 'invoicing', 'reports'],
-        status: 'Active',
-        lastLogin: '2025-05-24 08:30:00',
-        department: 'Finance'
+        id: "int-002",
+        name: "QuickBooks Sync",
+        type: "Accounting",
+        status: "Disconnected",
+        syncFrequency: "Daily"
       }
-    ],
-
-    roles: [
-      {
-        id: 'role-1',
-        name: 'Accountant',
-        permissions: ['accounting', 'invoicing', 'expenses', 'reports'],
-        description: 'Full access to accounting features'
-      }
-    ],
-
-    paymentTemplates: [
-      {
-        id: 'template-1',
-        name: 'Monthly Service Fee',
-        description: 'Recurring monthly service charges',
-        amount: 500,
-        frequency: 'Monthly',
-        isActive: true
-      }
-    ],
-
-    recurringInvoices: [
-      {
-        id: 'recurring-1',
-        template: 'Monthly Service',
-        customer: 'Smith Enterprises',
-        frequency: 'Monthly',
-        nextDate: '2025-06-01',
-        amount: 500,
-        status: 'Active'
-      }
-    ],
-
-    mileageEntries: [
-      {
-        id: 'mileage-1',
-        date: '2025-05-20',
-        startLocation: 'Office',
-        endLocation: 'Client Site',
-        purpose: 'Project meeting',
-        miles: 25,
-        rate: 0.67,
-        amount: 16.75,
-        status: 'Approved'
-      }
-    ],
-
-    vendorBills: [
-      {
-        id: 'bill-1',
-        billNumber: 'BILL-2025-001',
-        vendor: 'Office Supplies Co',
-        date: '2025-05-20',
-        dueDate: '2025-06-20',
-        amount: 250,
-        status: 'Pending Approval',
-        category: 'Office Supplies',
-        description: 'Monthly office supplies order'
-      }
-    ],
-
-    scannedReceipts: [
-      {
-        id: 'receipt-1',
-        fileName: 'receipt_20250520.jpg',
-        uploadDate: '2025-05-20',
-        status: 'Completed',
-        extractedData: {
-          vendor: 'Office Depot',
-          amount: 89.99,
-          date: '2025-05-20',
-          category: 'Office Supplies'
-        }
-      }
-    ],
-
-    auditTrail: [],
-    integrations: [],
+    ]
   };
 };
 
-export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) => {
+export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [currentCompanyId, setCurrentCompanyId] = useState<string>('');
+  const [currentCompany, setCurrentCompany] = useState<Company>(createComprehensiveDemoData());
 
-  // Initialize with demo data if none exists
   useEffect(() => {
-    const storedData = loadFromLocalStorage();
-    
-    if (storedData) {
-      setCompanies([storedData]);
-      setCurrentCompanyId(storedData.id);
+    const savedData = localStorageService.loadData();
+    if (savedData && Object.keys(savedData).length > 0) {
+      console.log('Data loaded from local storage', savedData);
+      setCurrentCompany(savedData);
     } else {
-      // Create company with comprehensive demo data
-      const demoCompany = generateDemoData();
-      setCompanies([demoCompany]);
-      setCurrentCompanyId(demoCompany.id);
-      saveToLocalStorage(demoCompany);
+      console.log('Using comprehensive demo data');
+      const demoData = createComprehensiveDemoData();
+      setCurrentCompany(demoData);
+      localStorageService.saveData(demoData);
     }
   }, []);
 
-  // Get current company object
-  const currentCompany = companies.find(c => c.id === currentCompanyId) || companies[0] || {
-    id: '',
-    name: '',
-    transactions: [],
-    accounts: [],
-    taxRates: [],
-    bankAccounts: []
-  };
+  useEffect(() => {
+    localStorageService.saveData(currentCompany);
+  }, [currentCompany]);
 
   // Update a company
   const updateCompany = (updatedCompany: Company) => {
-    const updatedCompanies = companies.map(company => 
+    setCurrentCompany(updatedCompany);
+    setCompanies(prev => prev.map(company => 
       company.id === updatedCompany.id ? updatedCompany : company
-    );
-    
-    setCompanies(updatedCompanies);
-    saveToLocalStorage(updatedCompany);
+    ));
+    toast.success("Company updated successfully");
   };
 
   // Switch active company
   const switchCompany = (companyId: string) => {
-    setCurrentCompanyId(companyId);
+    const company = companies.find(c => c.id === companyId);
+    if (company) {
+      setCurrentCompany(company);
+      toast.success(`Switched to ${company.name}`);
+    }
   };
 
   // Add a new company
   const addCompany = (company: Company) => {
-    setCompanies([...companies, company]);
-    setCurrentCompanyId(company.id);
-    saveToLocalStorage(company);
+    setCompanies(prev => [...prev, company]);
+    toast.success("Company added successfully");
   };
 
   // Bank account operations
   const addBankAccount = (bankAccount: BankAccount) => {
-    const updatedCompany = {
-      ...currentCompany,
-      bankAccounts: [...currentCompany.bankAccounts, bankAccount]
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      bankAccounts: [...prev.bankAccounts, bankAccount]
+    }));
+    toast.success("Bank account added");
   };
 
   const updateBankAccount = (bankAccount: BankAccount) => {
-    const updatedBankAccounts = currentCompany.bankAccounts.map(acc => 
-      acc.id === bankAccount.id ? bankAccount : acc
-    );
-    
-    const updatedCompany = {
-      ...currentCompany,
-      bankAccounts: updatedBankAccounts
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      bankAccounts: prev.bankAccounts.map(acc => 
+        acc.id === bankAccount.id ? bankAccount : acc
+      )
+    }));
+    toast.success("Bank account updated");
   };
 
   const deleteBankAccount = (bankAccountId: string) => {
-    const updatedCompany = {
-      ...currentCompany,
-      bankAccounts: currentCompany.bankAccounts.filter(acc => acc.id !== bankAccountId)
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      bankAccounts: prev.bankAccounts.filter(acc => acc.id !== bankAccountId)
+    }));
+    toast.success("Bank account deleted");
   };
 
   // Tax rate operations
   const addTaxRate = (taxRate: TaxRate) => {
-    const updatedCompany = {
-      ...currentCompany,
-      taxRates: [...currentCompany.taxRates, taxRate]
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      taxRates: [...prev.taxRates, taxRate]
+    }));
+    toast.success("Tax rate added");
   };
 
   const updateTaxRate = (taxRate: TaxRate) => {
-    const updatedTaxRates = currentCompany.taxRates.map(tr => 
-      tr.id === taxRate.id ? taxRate : tr
-    );
-    
-    const updatedCompany = {
-      ...currentCompany,
-      taxRates: updatedTaxRates
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      taxRates: prev.taxRates.map(rate => 
+        rate.id === taxRate.id ? taxRate : rate
+      )
+    }));
+    toast.success("Tax rate updated");
   };
 
   const deleteTaxRate = (taxRateId: string) => {
-    const updatedCompany = {
-      ...currentCompany,
-      taxRates: currentCompany.taxRates.filter(tr => tr.id !== taxRateId)
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      taxRates: prev.taxRates.filter(rate => rate.id !== taxRateId)
+    }));
+    toast.success("Tax rate deleted");
   };
 
   // Account operations
   const updateAccount = (account: Account) => {
-    const updatedAccounts = currentCompany.accounts.map(acc => 
-      acc.id === account.id ? account : acc
-    );
-    
-    const updatedCompany = {
-      ...currentCompany,
-      accounts: updatedAccounts
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      accounts: prev.accounts.map(acc => 
+        acc.id === account.id ? account : acc
+      )
+    }));
+    toast.success("Account updated");
   };
 
   const addAccount = (account: Account) => {
-    const updatedCompany = {
-      ...currentCompany,
-      accounts: [...currentCompany.accounts, account]
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      accounts: [...prev.accounts, account]
+    }));
+    toast.success("Account added");
   };
 
   const deleteAccount = (accountId: string) => {
-    const updatedCompany = {
-      ...currentCompany,
-      accounts: currentCompany.accounts.filter(acc => acc.id !== accountId)
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      accounts: prev.accounts.filter(acc => acc.id !== accountId)
+    }));
+    toast.success("Account deleted");
   };
 
   // Expense operations
   const addExpense = (expense: Expense) => {
-    const expenses = currentCompany.expenses || [];
-    const updatedCompany = {
-      ...currentCompany,
-      expenses: [...expenses, expense]
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      expenses: [...(prev.expenses || []), expense]
+    }));
+    toast.success("Expense added");
   };
-  
+
   const updateExpense = (expense: Expense) => {
-    const expenses = currentCompany.expenses || [];
-    const updatedExpenses = expenses.map(exp => 
-      exp.id === expense.id ? expense : exp
-    );
-    
-    const updatedCompany = {
-      ...currentCompany,
-      expenses: updatedExpenses
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      expenses: (prev.expenses || []).map(exp => 
+        exp.id === expense.id ? expense : exp
+      )
+    }));
+    toast.success("Expense updated");
   };
-  
+
   const deleteExpense = (expenseId: string) => {
-    const expenses = currentCompany.expenses || [];
-    const updatedCompany = {
-      ...currentCompany,
-      expenses: expenses.filter(exp => exp.id !== expenseId)
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      expenses: (prev.expenses || []).filter(exp => exp.id !== expenseId)
+    }));
+    toast.success("Expense deleted");
   };
 
   // Invoice operations
   const addInvoice = (invoice: Invoice) => {
-    const invoices = currentCompany.invoices || [];
-    const updatedCompany = {
-      ...currentCompany,
-      invoices: [...invoices, invoice]
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      invoices: [...(prev.invoices || []), invoice]
+    }));
+    toast.success("Invoice added");
   };
-  
+
   const updateInvoice = (invoice: Invoice) => {
-    const invoices = currentCompany.invoices || [];
-    const updatedInvoices = invoices.map(inv => 
-      inv.id === invoice.id ? invoice : inv
-    );
-    
-    const updatedCompany = {
-      ...currentCompany,
-      invoices: updatedInvoices
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      invoices: (prev.invoices || []).map(inv => 
+        inv.id === invoice.id ? invoice : inv
+      )
+    }));
+    toast.success("Invoice updated");
   };
-  
+
   const deleteInvoice = (invoiceId: string) => {
-    const invoices = currentCompany.invoices || [];
-    const updatedCompany = {
-      ...currentCompany,
-      invoices: invoices.filter(inv => inv.id !== invoiceId)
-    };
-    
-    updateCompany(updatedCompany);
-  };
-
-  // Transaction operations
-  const updateTransaction = (transactionId: string, updates: Partial<Transaction>) => {
-    // Find the bank account this transaction belongs to
-    const bankAccount = currentCompany.bankAccounts.find(
-      account => account.transactions.some(t => t.id === transactionId)
-    );
-
-    if (bankAccount) {
-      // Get the transaction
-      const transaction = bankAccount.transactions.find(t => t.id === transactionId);
-      
-      if (transaction) {
-        // Update the transaction with new values
-        const updatedTransaction = { ...transaction, ...updates };
-        
-        // Update the transaction in the bank account
-        const updatedTransactions = bankAccount.transactions.map(
-          t => t.id === transactionId ? updatedTransaction : t
-        );
-
-        // Update the bank account with new transactions list and last transaction date
-        const updatedBankAccounts = currentCompany.bankAccounts.map(account => 
-          account.id === bankAccount.id 
-            ? { 
-                ...account, 
-                transactions: updatedTransactions,
-                lastTransaction: updatedTransaction.date || account.lastTransaction
-              }
-            : account
-        );
-
-        // Update company with new bank accounts list
-        const updatedCompany = {
-          ...currentCompany,
-          bankAccounts: updatedBankAccounts
-        };
-
-        updateCompany(updatedCompany);
-      }
-    }
-  };
-
-  const addTransaction = (transaction: Transaction) => {
-    // Default to the first bank account if none specified
-    const bankAccountId = transaction.bankAccount || currentCompany.bankAccounts[0]?.id;
-    
-    if (bankAccountId) {
-      // Find the bank account to add the transaction to
-      const bankAccount = currentCompany.bankAccounts.find(account => account.id === bankAccountId);
-
-      if (bankAccount) {
-        // Add the transaction to the bank account
-        const updatedTransactions = [...bankAccount.transactions, transaction];
-
-        // Update the bank account with new transactions list and last transaction date
-        const updatedBankAccounts = currentCompany.bankAccounts.map(account => 
-          account.id === bankAccountId 
-            ? { 
-                ...account, 
-                transactions: updatedTransactions,
-                lastTransaction: transaction.date
-              }
-            : account
-        );
-
-        // Update company with new bank accounts list
-        const updatedCompany = {
-          ...currentCompany,
-          bankAccounts: updatedBankAccounts
-        };
-
-        updateCompany(updatedCompany);
-      }
-    }
-  };
-  
-  const deleteTransaction = (transactionId: string, bankAccountId: string) => {
-    // Find the bank account
-    const bankAccount = currentCompany.bankAccounts.find(account => account.id === bankAccountId);
-
-    if (bankAccount) {
-      // Remove the transaction from the bank account
-      const updatedTransactions = bankAccount.transactions.filter(t => t.id !== transactionId);
-
-      // Find the latest transaction date for lastTransaction
-      const latestTransaction = [...updatedTransactions].sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-      )[0];
-
-      // Update the bank account with new transactions list
-      const updatedBankAccounts = currentCompany.bankAccounts.map(account => 
-        account.id === bankAccountId 
-          ? { 
-              ...account, 
-              transactions: updatedTransactions,
-              lastTransaction: latestTransaction?.date || account.lastTransaction
-            }
-          : account
-      );
-
-      // Update company with new bank accounts list
-      const updatedCompany = {
-        ...currentCompany,
-        bankAccounts: updatedBankAccounts
-      };
-
-      updateCompany(updatedCompany);
-    }
-  };
-
-  // Time Entry operations
-  const addTimeEntry = (timeEntry: TimeEntry) => {
-    const timeEntries = currentCompany.timeEntries || [];
-    const updatedCompany = {
-      ...currentCompany,
-      timeEntries: [...timeEntries, timeEntry]
-    };
-    
-    updateCompany(updatedCompany);
-  };
-  
-  const updateTimeEntry = (timeEntryId: string, updates: Partial<TimeEntry>) => {
-    const timeEntries = currentCompany.timeEntries || [];
-    
-    const updatedTimeEntries = timeEntries.map(entry => 
-      entry.id === timeEntryId ? { ...entry, ...updates } : entry
-    );
-    
-    const updatedCompany = {
-      ...currentCompany,
-      timeEntries: updatedTimeEntries
-    };
-    
-    updateCompany(updatedCompany);
-  };
-  
-  const deleteTimeEntry = (timeEntryId: string) => {
-    const timeEntries = currentCompany.timeEntries || [];
-    
-    const updatedCompany = {
-      ...currentCompany,
-      timeEntries: timeEntries.filter(entry => entry.id !== timeEntryId)
-    };
-    
-    updateCompany(updatedCompany);
-  };
-
-  // Sale operations
-  const addSale = (sale: Sale) => {
-    const sales = currentCompany.sales || [];
-    const updatedCompany = {
-      ...currentCompany,
-      sales: [...sales, sale]
-    };
-    
-    updateCompany(updatedCompany);
-  };
-  
-  const updateSale = (sale: Sale) => {
-    const sales = currentCompany.sales || [];
-    const updatedSales = sales.map(s => 
-      s.id === sale.id ? sale : s
-    );
-    
-    const updatedCompany = {
-      ...currentCompany,
-      sales: updatedSales
-    };
-    
-    updateCompany(updatedCompany);
-  };
-  
-  const deleteSale = (saleId: string) => {
-    const sales = currentCompany.sales || [];
-    const updatedCompany = {
-      ...currentCompany,
-      sales: sales.filter(s => s.id !== saleId)
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      invoices: (prev.invoices || []).filter(inv => inv.id !== invoiceId)
+    }));
+    toast.success("Invoice deleted");
   };
 
   // Estimate operations
   const addEstimate = (estimate: Estimate) => {
-    const estimates = currentCompany.estimates || [];
-    const updatedCompany = {
-      ...currentCompany,
-      estimates: [...estimates, estimate]
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      estimates: [...(prev.estimates || []), estimate]
+    }));
+    toast.success("Estimate added");
   };
-  
+
   const updateEstimate = (estimate: Estimate) => {
-    const estimates = currentCompany.estimates || [];
-    const updatedEstimates = estimates.map(est => 
-      est.id === estimate.id ? estimate : est
-    );
-    
-    const updatedCompany = {
-      ...currentCompany,
-      estimates: updatedEstimates
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      estimates: (prev.estimates || []).map(est => 
+        est.id === estimate.id ? estimate : est
+      )
+    }));
+    toast.success("Estimate updated");
   };
-  
+
   const deleteEstimate = (estimateId: string) => {
-    const estimates = currentCompany.estimates || [];
-    const updatedCompany = {
-      ...currentCompany,
-      estimates: estimates.filter(est => est.id !== estimateId)
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      estimates: (prev.estimates || []).filter(est => est.id !== estimateId)
+    }));
+    toast.success("Estimate deleted");
   };
 
   // Budget operations
   const addBudget = (budget: Budget) => {
-    const budgets = currentCompany.budgets || [];
-    const updatedCompany = {
-      ...currentCompany,
-      budgets: [...budgets, budget]
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      budgets: [...(prev.budgets || []), budget]
+    }));
+    toast.success("Budget added");
   };
-  
+
   const updateBudget = (budget: Budget) => {
-    const budgets = currentCompany.budgets || [];
-    const updatedBudgets = budgets.map(b => 
-      b.id === budget.id ? budget : b
-    );
-    
-    const updatedCompany = {
-      ...currentCompany,
-      budgets: updatedBudgets
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      budgets: (prev.budgets || []).map(bud => 
+        bud.id === budget.id ? budget : bud
+      )
+    }));
+    toast.success("Budget updated");
   };
-  
+
   const deleteBudget = (budgetId: string) => {
-    const budgets = currentCompany.budgets || [];
-    const updatedCompany = {
-      ...currentCompany,
-      budgets: budgets.filter(b => b.id !== budgetId)
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      budgets: (prev.budgets || []).filter(bud => bud.id !== budgetId)
+    }));
+    toast.success("Budget deleted");
+  };
+
+  // Transaction operations
+  const updateTransaction = (transactionId: string, updates: Partial<Transaction>) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      transactions: prev.transactions.map(txn => 
+        txn.id === transactionId ? { ...txn, ...updates } : txn
+      )
+    }));
+    toast.success("Transaction updated");
+  };
+
+  const addTransaction = (transaction: Transaction) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      transactions: [...prev.transactions, transaction]
+    }));
+    toast.success("Transaction added");
+  };
+
+  const deleteTransaction = (transactionId: string, bankAccountId: string) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      transactions: prev.transactions.filter(txn => txn.id !== transactionId),
+      bankAccounts: prev.bankAccounts.map(account => 
+        account.id === bankAccountId 
+          ? { ...account, transactions: account.transactions.filter(txn => txn.id !== transactionId) }
+          : account
+      )
+    }));
+    toast.success("Transaction deleted");
+  };
+
+  // Time Entry operations
+  const addTimeEntry = (timeEntry: TimeEntry) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      timeEntries: [...(prev.timeEntries || []), timeEntry]
+    }));
+    toast.success("Time entry added");
+  };
+
+  const updateTimeEntry = (timeEntryId: string, updates: Partial<TimeEntry>) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      timeEntries: (prev.timeEntries || []).map(entry => 
+        entry.id === timeEntryId ? { ...entry, ...updates } : entry
+      )
+    }));
+    toast.success("Time entry updated");
+  };
+
+  const deleteTimeEntry = (timeEntryId: string) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      timeEntries: (prev.timeEntries || []).filter(entry => entry.id !== timeEntryId)
+    }));
+    toast.success("Time entry deleted");
+  };
+
+  // Sale operations
+  const addSale = (sale: Sale) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      sales: [...(prev.sales || []), sale]
+    }));
+    toast.success("Sale added");
+  };
+
+  const updateSale = (sale: Sale) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      sales: (prev.sales || []).map(s => 
+        s.id === sale.id ? sale : s
+      )
+    }));
+    toast.success("Sale updated");
+  };
+
+  const deleteSale = (saleId: string) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      sales: (prev.sales || []).filter(s => s.id !== saleId)
+    }));
+    toast.success("Sale deleted");
   };
 
   // Payroll operations
   const processPayroll = (payrollData: any) => {
-    const currentPayrollData = currentCompany.payrollData || { payPeriods: [] };
-    const updatedCompany = {
-      ...currentCompany,
-      payrollData: {
-        ...currentPayrollData,
-        payPeriods: [...currentPayrollData.payPeriods, payrollData]
-      }
-    };
-    
-    updateCompany(updatedCompany);
+    setCurrentCompany(prev => ({
+      ...prev,
+      payrollData: payrollData
+    }));
+    toast.success("Payroll processed");
+  };
+
+  const value: CompanyContextType = {
+    currentCompany,
+    companies,
+    updateCompany,
+    switchCompany,
+    addCompany,
+    updateTaxRate,
+    addTaxRate,
+    deleteTaxRate,
+    updateAccount,
+    addAccount,
+    deleteAccount,
+    addBankAccount,
+    updateBankAccount,
+    deleteBankAccount,
+    addExpense,
+    updateExpense,
+    deleteExpense,
+    addInvoice,
+    updateInvoice,
+    deleteInvoice,
+    addEstimate,
+    updateEstimate,
+    deleteEstimate,
+    addBudget,
+    updateBudget,
+    deleteBudget,
+    updateTransaction,
+    addTransaction,
+    deleteTransaction,
+    addTimeEntry,
+    updateTimeEntry,
+    deleteTimeEntry,
+    addSale,
+    updateSale,
+    deleteSale,
+    processPayroll
   };
 
   return (
-    <CompanyContext.Provider 
-      value={{ 
-        currentCompany, 
-        companies, 
-        updateCompany, 
-        switchCompany, 
-        addCompany,
-        updateTaxRate,
-        addTaxRate,
-        deleteTaxRate,
-        updateAccount,
-        addAccount,
-        deleteAccount,
-        addExpense,
-        updateExpense,
-        deleteExpense,
-        addInvoice,
-        updateInvoice,
-        deleteInvoice,
-        addEstimate,
-        updateEstimate,
-        deleteEstimate,
-        addBudget,
-        updateBudget,
-        deleteBudget,
-        processPayroll,
-        updateTransaction,
-        addTransaction,
-        deleteTransaction,
-        addBankAccount,
-        updateBankAccount,
-        deleteBankAccount,
-        addTimeEntry,
-        updateTimeEntry,
-        deleteTimeEntry,
-        addSale,
-        updateSale,
-        deleteSale
-      }}
-    >
+    <CompanyContext.Provider value={value}>
       {children}
     </CompanyContext.Provider>
   );
