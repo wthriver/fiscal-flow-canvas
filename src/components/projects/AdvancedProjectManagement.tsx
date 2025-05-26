@@ -49,19 +49,40 @@ export const AdvancedProjectManagement: React.FC = () => {
   };
 
   const getTotalBudget = () => {
-    return projects.reduce((sum, project) => sum + (project.budget || 0), 0);
+    return projects.reduce((sum, project) => {
+      const budget = typeof project.budget === 'number' ? project.budget : parseFloat(String(project.budget)) || 0;
+      return sum + budget;
+    }, 0);
   };
 
   const getTotalBilled = () => {
-    return projects.reduce((sum, project) => sum + (project.billed || 0), 0);
+    return projects.reduce((sum, project) => {
+      const billed = typeof project.billed === 'number' ? project.billed : parseFloat(String(project.billed)) || 0;
+      return sum + billed;
+    }, 0);
   };
 
   const getTotalTracked = () => {
-    return projects.reduce((sum, project) => sum + (project.tracked || 0), 0);
+    return projects.reduce((sum, project) => {
+      const tracked = typeof project.tracked === 'number' ? project.tracked : parseFloat(String(project.tracked)) || 0;
+      return sum + tracked;
+    }, 0);
   };
 
   const getActiveProjects = () => {
     return projects.filter(p => p.status === 'In Progress' || p.status === 'Planning').length;
+  };
+
+  const getProjectBudget = (project: any) => {
+    return typeof project.budget === 'number' ? project.budget : parseFloat(String(project.budget)) || 0;
+  };
+
+  const getProjectBilled = (project: any) => {
+    return typeof project.billed === 'number' ? project.billed : parseFloat(String(project.billed)) || 0;
+  };
+
+  const getProjectSpent = (project: any) => {
+    return typeof project.spent === 'number' ? project.spent : parseFloat(String(project.spent)) || 0;
   };
 
   const handleViewDocuments = (document: any) => {
@@ -178,8 +199,8 @@ export const AdvancedProjectManagement: React.FC = () => {
                             <span className="text-sm">{project.progress || 0}%</span>
                           </div>
                         </TableCell>
-                        <TableCell>${(project.budget || 0).toLocaleString()}</TableCell>
-                        <TableCell>${(project.billed || 0).toLocaleString()}</TableCell>
+                        <TableCell>${getProjectBudget(project).toLocaleString()}</TableCell>
+                        <TableCell>${getProjectBilled(project).toLocaleString()}</TableCell>
                         <TableCell>{project.endDate}</TableCell>
                         <TableCell>
                           <Dialog>
@@ -208,9 +229,9 @@ export const AdvancedProjectManagement: React.FC = () => {
                                   <div>
                                     <h4 className="font-semibold mb-2">Financial Summary</h4>
                                     <div className="space-y-1 text-sm">
-                                      <p><strong>Budget:</strong> ${(project.budget || 0).toLocaleString()}</p>
-                                      <p><strong>Billed:</strong> ${(project.billed || 0).toLocaleString()}</p>
-                                      <p><strong>Spent:</strong> ${(project.spent || 0).toLocaleString()}</p>
+                                      <p><strong>Budget:</strong> ${getProjectBudget(project).toLocaleString()}</p>
+                                      <p><strong>Billed:</strong> ${getProjectBilled(project).toLocaleString()}</p>
+                                      <p><strong>Spent:</strong> ${getProjectSpent(project).toLocaleString()}</p>
                                       <p><strong>Hours Tracked:</strong> {project.tracked || 0} hrs</p>
                                       <p><strong>Billing Rate:</strong> ${project.billingRate || 0}/hr</p>
                                     </div>

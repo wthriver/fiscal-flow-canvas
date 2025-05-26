@@ -25,7 +25,10 @@ export const BankingIntegration: React.FC = () => {
   const transactions = currentCompany.transactions || [];
   
   const getTotalBalance = () => {
-    return bankAccounts.reduce((sum, account) => sum + (account.balance || 0), 0);
+    return bankAccounts.reduce((sum, account) => {
+      const balance = typeof account.balance === 'number' ? account.balance : parseFloat(String(account.balance)) || 0;
+      return sum + balance;
+    }, 0);
   };
 
   const getRecentTransactions = () => {
@@ -51,6 +54,10 @@ export const BankingIntegration: React.FC = () => {
     if (balance < 0) return 'text-red-600';
     if (balance > 100000) return 'text-green-600';
     return 'text-blue-600';
+  };
+
+  const getAccountBalance = (account: any) => {
+    return typeof account.balance === 'number' ? account.balance : parseFloat(String(account.balance)) || 0;
   };
 
   return (
@@ -144,30 +151,33 @@ export const BankingIntegration: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {bankAccounts.map((account) => (
-                      <TableRow key={account.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center space-x-2">
-                            {getAccountTypeIcon(account.type || 'checking')}
-                            <span>{account.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{account.type || 'Checking'}</Badge>
-                        </TableCell>
-                        <TableCell>{account.bankName || 'Unknown Bank'}</TableCell>
-                        <TableCell>{account.accountNumber || '****0000'}</TableCell>
-                        <TableCell className={getBalanceColor(account.balance || 0)}>
-                          ${(account.balance || 0).toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={account.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                            {account.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{account.openingDate || 'Unknown'}</TableCell>
-                      </TableRow>
-                    ))}
+                    {bankAccounts.map((account) => {
+                      const balance = getAccountBalance(account);
+                      return (
+                        <TableRow key={account.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center space-x-2">
+                              {getAccountTypeIcon(account.type || 'checking')}
+                              <span>{account.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{account.type || 'Checking'}</Badge>
+                          </TableCell>
+                          <TableCell>{account.bankName || 'Unknown Bank'}</TableCell>
+                          <TableCell>{account.accountNumber || '****0000'}</TableCell>
+                          <TableCell className={getBalanceColor(balance)}>
+                            ${balance.toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={account.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                              {account.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{account.openingDate || 'Unknown'}</TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               ) : (
@@ -254,6 +264,7 @@ export const BankingIntegration: React.FC = () => {
                   const accountTransactions = transactions.filter(t => t.account === account.name);
                   const reconciledCount = accountTransactions.filter(t => t.reconciled).length;
                   const reconciliationRate = accountTransactions.length > 0 ? (reconciledCount / accountTransactions.length) * 100 : 0;
+                  const balance = getAccountBalance(account);
                   
                   return (
                     <div key={account.id} className="p-4 border rounded-lg">
@@ -266,7 +277,7 @@ export const BankingIntegration: React.FC = () => {
                       <div className="grid grid-cols-4 gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground">Book Balance</p>
-                          <p className="font-medium">${(account.balance || 0).toLocaleString()}</p>
+                          <p className="font-medium">${balance.toLocaleString()}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Transactions</p>
