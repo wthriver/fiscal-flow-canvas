@@ -7,6 +7,8 @@ import { RecurringInvoices } from "@/components/invoices/RecurringInvoices";
 import { AccountsPayableAging } from "@/components/expenses/AccountsPayableAging";
 import { DigitalReceiptCapture } from "@/components/expenses/DigitalReceiptCapture";
 import { ChartOfAccountsComponent } from "@/components/accounting/ChartOfAccountsComponent";
+import { FixedAssetsTracking } from "@/components/accounting/FixedAssetsTracking";
+import { AccountsReceivableAging } from "@/components/accounting/AccountsReceivableAging";
 
 const Accounting = () => {
   return (
@@ -17,13 +19,11 @@ const Accounting = () => {
       </div>
 
       <Tabs defaultValue="general-ledger" className="space-y-6">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="general-ledger">General Ledger</TabsTrigger>
           <TabsTrigger value="chart-of-accounts">Chart of Accounts</TabsTrigger>
-          <TabsTrigger value="recurring">Recurring Invoices</TabsTrigger>
-          <TabsTrigger value="accounts-payable">Accounts Payable</TabsTrigger>
-          <TabsTrigger value="receipts">Receipt Management</TabsTrigger>
-          <TabsTrigger value="taxes">Tax Management</TabsTrigger>
+          <TabsTrigger value="fixed-assets">Fixed Assets</TabsTrigger>
+          <TabsTrigger value="receivables">A/R Aging</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general-ledger">
@@ -34,20 +34,12 @@ const Accounting = () => {
           <ChartOfAccountsComponent />
         </TabsContent>
 
-        <TabsContent value="recurring">
-          <RecurringInvoices />
+        <TabsContent value="fixed-assets">
+          <FixedAssetsTracking />
         </TabsContent>
 
-        <TabsContent value="accounts-payable">
-          <AccountsPayableAging />
-        </TabsContent>
-
-        <TabsContent value="receipts">
-          <DigitalReceiptCapture />
-        </TabsContent>
-
-        <TabsContent value="taxes">
-          <TaxCalculator />
+        <TabsContent value="receivables">
+          <AccountsReceivableAging />
         </TabsContent>
       </Tabs>
     </div>

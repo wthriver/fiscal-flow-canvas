@@ -31,6 +31,8 @@ import MultiCurrency from './pages/MultiCurrency';
 import Integrations from './pages/Integrations';
 import Settings from './pages/Settings';
 import ChartOfAccounts from './pages/ChartOfAccounts';
+import PurchaseOrders from './pages/PurchaseOrders';
+import FixedAssets from './pages/FixedAssets';
 import NotFound from './pages/NotFound';
 
 const App = () => {
@@ -55,6 +57,8 @@ const App = () => {
             <Route path="/accounting" element={<Accounting />} />
             <Route path="/chart-of-accounts" element={<ChartOfAccounts />} />
             <Route path="/expenses" element={<Expenses />} />
+            <Route path="/purchase-orders" element={<PurchaseOrders />} />
+            <Route path="/fixed-assets" element={<FixedAssets />} />
             
             {/* Tracking & Planning */}
             <Route path="/projects" element={<Projects />} />
