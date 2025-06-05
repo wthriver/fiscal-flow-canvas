@@ -3,6 +3,8 @@ import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FinancialReports } from "@/components/reports/FinancialReports";
 import { CashFlowStatement } from "@/components/reports/CashFlowStatement";
+import { BalanceSheet } from "@/components/reports/BalanceSheet";
+import { ProfitLossStatement } from "@/components/reports/ProfitLossStatement";
 import { AccountsReceivableAging } from "@/components/accounting/AccountsReceivableAging";
 
 const Reports: React.FC = () => {
@@ -14,8 +16,10 @@ const Reports: React.FC = () => {
       </div>
 
       <Tabs defaultValue="financial" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="financial">Financial Reports</TabsTrigger>
+          <TabsTrigger value="profit-loss">P&L Statement</TabsTrigger>
+          <TabsTrigger value="balance-sheet">Balance Sheet</TabsTrigger>
           <TabsTrigger value="cashflow">Cash Flow</TabsTrigger>
           <TabsTrigger value="aging">A/R Aging</TabsTrigger>
           <TabsTrigger value="custom">Custom Reports</TabsTrigger>
@@ -23,6 +27,14 @@ const Reports: React.FC = () => {
 
         <TabsContent value="financial">
           <FinancialReports />
+        </TabsContent>
+
+        <TabsContent value="profit-loss">
+          <ProfitLossStatement />
+        </TabsContent>
+
+        <TabsContent value="balance-sheet">
+          <BalanceSheet />
         </TabsContent>
 
         <TabsContent value="cashflow">

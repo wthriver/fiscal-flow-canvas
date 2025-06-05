@@ -26,13 +26,14 @@ import Taxes from './pages/Taxes';
 import Budgeting from './pages/Budgeting';
 import Journal from './pages/Journal';
 import UserManagementPage from './pages/UserManagement';
-import AuditTrail from './pages/AuditTrail';
+import AuditTrailPage from './pages/AuditTrail';
 import MultiCurrency from './pages/MultiCurrency';
 import Integrations from './pages/Integrations';
 import Settings from './pages/Settings';
 import ChartOfAccounts from './pages/ChartOfAccounts';
 import PurchaseOrders from './pages/PurchaseOrders';
 import FixedAssets from './pages/FixedAssets';
+import VendorBills from './pages/VendorBills';
 import NotFound from './pages/NotFound';
 
 const App = () => {
@@ -58,6 +59,7 @@ const App = () => {
             <Route path="/chart-of-accounts" element={<ChartOfAccounts />} />
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/purchase-orders" element={<PurchaseOrders />} />
+            <Route path="/vendor-bills" element={<VendorBills />} />
             <Route path="/fixed-assets" element={<FixedAssets />} />
             
             {/* Tracking & Planning */}
@@ -75,7 +77,7 @@ const App = () => {
             
             {/* Advanced Features */}
             <Route path="/user-management" element={<UserManagementPage />} />
-            <Route path="/audit-trail" element={<AuditTrail />} />
+            <Route path="/audit-trail" element={<AuditTrailPage />} />
             <Route path="/multi-currency" element={<MultiCurrency />} />
             <Route path="/integrations" element={<Integrations />} />
             
