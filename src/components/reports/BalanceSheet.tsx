@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Download, Calendar } from "lucide-react";
-import { toast } from "sonner";
+import { exportToCSV, exportToPDF } from "@/utils/exportUtils";
 
 export const BalanceSheet = () => {
   const { currentCompany } = useCompany();
@@ -83,7 +82,32 @@ export const BalanceSheet = () => {
   };
 
   const exportReport = () => {
-    toast.success("Balance sheet exported successfully");
+    const exportData = [
+      { Category: 'ASSETS', Account: '', Amount: '' },
+      { Category: 'Current Assets', Account: 'Cash and Cash Equivalents', Amount: balanceSheetData.assets.current.cash },
+      { Category: 'Current Assets', Account: 'Accounts Receivable', Amount: balanceSheetData.assets.current.accountsReceivable },
+      { Category: 'Current Assets', Account: 'Inventory', Amount: balanceSheetData.assets.current.inventory },
+      { Category: 'Current Assets', Account: 'Total Current Assets', Amount: balanceSheetData.assets.current.total },
+      { Category: 'Fixed Assets', Account: 'Equipment and Property', Amount: balanceSheetData.assets.fixed.equipment },
+      { Category: 'Fixed Assets', Account: 'Total Fixed Assets', Amount: balanceSheetData.assets.fixed.total },
+      { Category: 'TOTAL ASSETS', Account: '', Amount: balanceSheetData.assets.total },
+      { Category: '', Account: '', Amount: '' },
+      { Category: 'LIABILITIES', Account: '', Amount: '' },
+      { Category: 'Current Liabilities', Account: 'Accounts Payable', Amount: balanceSheetData.liabilities.current.accountsPayable },
+      { Category: 'Current Liabilities', Account: 'Short-term Debt', Amount: balanceSheetData.liabilities.current.shortTermDebt },
+      { Category: 'Current Liabilities', Account: 'Total Current Liabilities', Amount: balanceSheetData.liabilities.current.total },
+      { Category: 'Long-term Liabilities', Account: 'Long-term Debt', Amount: balanceSheetData.liabilities.longTerm.longTermDebt },
+      { Category: 'Long-term Liabilities', Account: 'Total Long-term Liabilities', Amount: balanceSheetData.liabilities.longTerm.total },
+      { Category: 'TOTAL LIABILITIES', Account: '', Amount: balanceSheetData.liabilities.total },
+      { Category: '', Account: '', Amount: '' },
+      { Category: 'EQUITY', Account: '', Amount: '' },
+      { Category: 'Equity', Account: 'Owner\'s Equity', Amount: balanceSheetData.equity.ownerEquity },
+      { Category: 'Equity', Account: 'Retained Earnings', Amount: balanceSheetData.equity.retainedEarnings },
+      { Category: 'TOTAL EQUITY', Account: '', Amount: balanceSheetData.equity.total },
+      { Category: 'TOTAL LIABILITIES + EQUITY', Account: '', Amount: balanceSheetData.liabilities.total + balanceSheetData.equity.total }
+    ];
+
+    exportToCSV(exportData, `balance_sheet_${dateRange}`);
   };
 
   return (

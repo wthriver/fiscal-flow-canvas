@@ -1,13 +1,25 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, BookOpen, FileText, Calculator } from "lucide-react";
+import { Plus, BookOpen, FileText, Calculator, Download } from "lucide-react";
+import { JournalEntryDialog } from "@/components/journal/JournalEntryDialog";
+import { JournalEntryViewDialog } from "@/components/journal/JournalEntryViewDialog";
+import { exportToCSV } from "@/utils/exportUtils";
+
+interface JournalEntry {
+  id: string;
+  date: string;
+  description: string;
+  reference?: string;
+  debits: Array<{ account: string; amount: number }>;
+  credits: Array<{ account: string; amount: number }>;
+  status: 'Draft' | 'Posted';
+}
 
 const Journal: React.FC = () => {
-  const journalEntries = [
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([
     {
       id: 'JE-001',
       date: '2025-05-24',
@@ -47,12 +59,47 @@ const Journal: React.FC = () => {
       ],
       status: 'Draft'
     }
-  ];
+  ]);
+
+  const handleSaveEntry = (entry: JournalEntry) => {
+    setJournalEntries(prev => {
+      const existing = prev.find(e => e.id === entry.id);
+      if (existing) {
+        return prev.map(e => e.id === entry.id ? entry : e);
+      }
+      return [...prev, entry];
+    });
+  };
+
+  const handleExportEntries = () => {
+    const exportData = journalEntries.map(entry => ({
+      ID: entry.id,
+      Date: entry.date,
+      Description: entry.description,
+      Reference: entry.reference || '',
+      'Total Amount': entry.debits.reduce((sum, d) => sum + d.amount, 0),
+      Status: entry.status
+    }));
+    
+    exportToCSV(exportData, 'journal_entries');
+  };
 
   const getStatusBadge = (status: string) => {
     return status === 'Posted' ? 
       <Badge className="bg-green-100 text-green-800">Posted</Badge> : 
       <Badge variant="outline">Draft</Badge>;
+  };
+
+  const getTotalEntries = () => journalEntries.length;
+  const getPostedEntries = () => journalEntries.filter(e => e.status === 'Posted').length;
+  const getDraftEntries = () => journalEntries.filter(e => e.status === 'Draft').length;
+  const getThisMonthEntries = () => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    return journalEntries.filter(e => {
+      const entryDate = new Date(e.date);
+      return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+    }).length;
   };
 
   return (
@@ -62,10 +109,18 @@ const Journal: React.FC = () => {
           <h1 className="text-3xl font-bold">General Journal</h1>
           <p className="text-muted-foreground">Record and manage journal entries</p>
         </div>
-        <Button className="flex items-center gap-2">
-          <Plus size={16} />
-          New Entry
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportEntries}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <JournalEntryDialog onSave={handleSaveEntry}>
+            <Button className="flex items-center gap-2">
+              <Plus size={16} />
+              New Entry
+            </Button>
+          </JournalEntryDialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -75,7 +130,7 @@ const Journal: React.FC = () => {
               <BookOpen className="h-5 w-5 text-blue-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Total Entries</p>
-                <p className="text-xl font-semibold">147</p>
+                <p className="text-xl font-semibold">{getTotalEntries()}</p>
               </div>
             </div>
           </CardContent>
@@ -86,7 +141,7 @@ const Journal: React.FC = () => {
               <FileText className="h-5 w-5 text-green-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Posted</p>
-                <p className="text-xl font-semibold">142</p>
+                <p className="text-xl font-semibold">{getPostedEntries()}</p>
               </div>
             </div>
           </CardContent>
@@ -97,7 +152,7 @@ const Journal: React.FC = () => {
               <Calculator className="h-5 w-5 text-orange-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Draft</p>
-                <p className="text-xl font-semibold">5</p>
+                <p className="text-xl font-semibold">{getDraftEntries()}</p>
               </div>
             </div>
           </CardContent>
@@ -108,7 +163,7 @@ const Journal: React.FC = () => {
               <div className="h-2 w-2 bg-purple-500 rounded-full"></div>
               <div>
                 <p className="text-sm text-muted-foreground">This Month</p>
-                <p className="text-xl font-semibold">23</p>
+                <p className="text-xl font-semibold">{getThisMonthEntries()}</p>
               </div>
             </div>
           </CardContent>
@@ -134,7 +189,14 @@ const Journal: React.FC = () => {
                       <p className="text-sm text-muted-foreground">Ref: {entry.reference}</p>
                     )}
                   </div>
-                  <Button variant="outline" size="sm">View</Button>
+                  <div className="flex gap-2">
+                    <JournalEntryViewDialog entry={entry}>
+                      <Button variant="outline" size="sm">View</Button>
+                    </JournalEntryViewDialog>
+                    <JournalEntryDialog onSave={handleSaveEntry} editEntry={entry}>
+                      <Button variant="outline" size="sm">Edit</Button>
+                    </JournalEntryDialog>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

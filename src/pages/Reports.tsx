@@ -6,6 +6,7 @@ import { CashFlowStatement } from "@/components/reports/CashFlowStatement";
 import { BalanceSheet } from "@/components/reports/BalanceSheet";
 import { ProfitLossStatement } from "@/components/reports/ProfitLossStatement";
 import { AccountsReceivableAging } from "@/components/accounting/AccountsReceivableAging";
+import { CustomReportBuilder } from "@/components/reports/CustomReportBuilder";
 
 const Reports: React.FC = () => {
   return (
@@ -46,9 +47,7 @@ const Reports: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="custom">
-          <div className="text-center py-8 text-muted-foreground">
-            Custom report builder coming soon
-          </div>
+          <CustomReportBuilder />
         </TabsContent>
       </Tabs>
     </div>
