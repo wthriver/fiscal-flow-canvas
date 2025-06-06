@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { CompanyContextType } from '@/types/context';
 import { Company, Customer, TaxRate, Account, Expense, Invoice, Transaction, BankAccount, Budget, Estimate, TimeEntry, Sale } from '@/types/company';
@@ -353,22 +352,56 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const addTransaction = (transaction: Transaction) => {
+    // Find the target bank account and add transaction
+    const updatedBankAccounts = currentCompany.bankAccounts.map(account => {
+      if (account.id === transaction.account || account.name === transaction.account) {
+        return {
+          ...account,
+          transactions: [...account.transactions, transaction],
+          // Update balance based on transaction type
+          balance: typeof account.balance === 'number' 
+            ? account.balance + (transaction.type === 'Deposit' || transaction.type === 'Credit' 
+                ? parseFloat(transaction.amount.replace(/[^0-9.-]+/g, ""))
+                : -parseFloat(transaction.amount.replace(/[^0-9.-]+/g, "")))
+            : account.balance
+        };
+      }
+      return account;
+    });
+
     const updatedCompany = {
       ...currentCompany,
-      transactions: [...currentCompany.transactions, transaction]
+      transactions: [...currentCompany.transactions, transaction],
+      bankAccounts: updatedBankAccounts
     };
     setCurrentCompany(updatedCompany);
   };
 
   const deleteTransaction = (transactionId: string, bankAccountId: string) => {
+    // Find transaction to get amount for balance adjustment
+    const targetAccount = currentCompany.bankAccounts.find(acc => acc.id === bankAccountId);
+    const targetTransaction = targetAccount?.transactions.find(t => t.id === transactionId);
+    
+    const updatedBankAccounts = currentCompany.bankAccounts.map(account => {
+      if (account.id === bankAccountId && targetTransaction) {
+        return {
+          ...account,
+          transactions: account.transactions.filter(t => t.id !== transactionId),
+          // Reverse the transaction amount from balance
+          balance: typeof account.balance === 'number' 
+            ? account.balance - (targetTransaction.type === 'Deposit' || targetTransaction.type === 'Credit' 
+                ? parseFloat(targetTransaction.amount.replace(/[^0-9.-]+/g, ""))
+                : -parseFloat(targetTransaction.amount.replace(/[^0-9.-]+/g, "")))
+            : account.balance
+        };
+      }
+      return account;
+    });
+
     const updatedCompany = {
       ...currentCompany,
       transactions: currentCompany.transactions.filter(t => t.id !== transactionId),
-      bankAccounts: currentCompany.bankAccounts.map(account => 
-        account.id === bankAccountId 
-          ? { ...account, transactions: account.transactions.filter(t => t.id !== transactionId) }
-          : account
-      )
+      bankAccounts: updatedBankAccounts
     };
     setCurrentCompany(updatedCompany);
   };

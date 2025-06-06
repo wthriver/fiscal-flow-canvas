@@ -1,278 +1,269 @@
 
 import React, { useState } from "react";
-import { useCompany } from "@/contexts/CompanyContext";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, FileBarChart } from "lucide-react";
-import { BankReconciliation } from "@/components/banking/BankReconciliation";
-import { AddTransactionDialog } from "@/components/banking/AddTransactionDialog";
-import { ReportsDialog } from "@/components/banking/ReportsDialog";
-import { CashFlowForecasting } from "@/components/banking/CashFlowForecasting";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { BankingIntegration } from "@/components/banking/BankingIntegration";
+import { ReportTabs } from "@/components/banking/reports/ReportTabs";
+import { TransactionDialog } from "@/components/banking/TransactionDialog";
+import { useCompany } from "@/contexts/CompanyContext";
+import { Plus, Search, MoreHorizontal, Edit, Trash, DollarSign, TrendingUp, Building } from "lucide-react";
+import { toast } from "sonner";
+import { Transaction } from "@/types/company";
 
-const Banking = () => {
-  const { currentCompany, addBankAccount } = useCompany();
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
-  const [selectedAccountName, setSelectedAccountName] = useState<string>("");
-  const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
-  const [isReportsOpen, setIsReportsOpen] = useState(false);
+const Banking: React.FC = () => {
+  const { currentCompany, deleteTransaction, updateTransaction } = useCompany();
   const [activeTab, setActiveTab] = useState("accounts");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [selectedAccountId, setSelectedAccountId] = useState("");
 
-  // Map through bank accounts and sum up the balances
-  const totalBalance = currentCompany.bankAccounts.reduce(
-    (sum, account) => {
-      // Handle both string and number balance types
-      let accountBalance = 0;
-      if (typeof account.balance === 'string') {
-        accountBalance = parseFloat(account.balance.replace(/[^0-9.-]+/g, "") || "0");
-      } else if (typeof account.balance === 'number') {
-        accountBalance = account.balance;
-      }
-      return sum + accountBalance;
-    },
-    0
+  const allTransactions = currentCompany.bankAccounts.flatMap(account => 
+    account.transactions.map(transaction => ({
+      ...transaction,
+      accountName: account.name,
+      accountId: account.id
+    }))
   );
 
-  // Handle account selection
-  const handleAccountSelect = (accountId: string, accountName: string) => {
-    setSelectedAccountId(accountId);
-    setSelectedAccountName(accountName);
+  const filteredTransactions = allTransactions.filter(transaction =>
+    transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transaction.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transaction.accountName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalBalance = currentCompany.bankAccounts.reduce((total, account) => {
+    const balance = typeof account.balance === 'string' 
+      ? parseFloat(account.balance.replace(/[^0-9.-]+/g, "") || "0")
+      : account.balance;
+    return total + balance;
+  }, 0);
+
+  const monthlyChange = 15.2; // This would be calculated from actual data
+  const accountCount = currentCompany.bankAccounts.length;
+
+  const handleEditTransaction = (transaction: Transaction & { accountId: string }) => {
+    setEditingTransaction(transaction);
+    setSelectedAccountId(transaction.accountId);
+    setIsTransactionDialogOpen(true);
   };
 
-  // Handle add new bank account
-  const handleAddBankAccount = () => {
-    const newAccount = {
-      id: `account-${Date.now()}`,
-      name: "New Bank Account",
-      type: "Checking",
-      balance: 0,
-      transactions: []
-    };
+  const handleDeleteTransaction = (transactionId: string, accountId: string) => {
+    if (confirm("Are you sure you want to delete this transaction?")) {
+      deleteTransaction(transactionId, accountId);
+      toast.success("Transaction deleted successfully!");
+    }
+  };
 
-    addBankAccount(newAccount);
+  const handleAddTransaction = (accountId: string) => {
+    setSelectedAccountId(accountId);
+    setEditingTransaction(null);
+    setIsTransactionDialogOpen(true);
+  };
+
+  const toggleReconciled = (transaction: Transaction & { accountId: string }) => {
+    updateTransaction(transaction.id, { reconciled: !transaction.reconciled });
+    toast.success(`Transaction ${transaction.reconciled ? 'unreconciled' : 'reconciled'}`);
   };
 
   return (
     <div className="container mx-auto p-4 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
-        <h1 className="text-2xl font-bold">Banking</h1>
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={() => setIsAddTransactionOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Transaction
-          </Button>
-          <Button variant="outline" onClick={handleAddBankAccount}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Bank Account
-          </Button>
-          <Button variant="outline" onClick={() => setIsReportsOpen(true)}>
-            <FileBarChart className="mr-2 h-4 w-4" />
-            Reports
-          </Button>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Banking</h1>
+          <p className="text-muted-foreground">Manage your bank accounts and transactions</p>
         </div>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalBalance.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">{currentCompany.bankAccounts.length} connected accounts</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{currentCompany.transactions?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">transactions this month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Pending Reconciliation</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {currentCompany.transactions?.filter(t => !t.reconciled)?.length || 0}
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-green-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total Balance</p>
+                <p className="text-xl font-semibold">${totalBalance.toLocaleString()}</p>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">unreconciled transactions</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Monthly Change</p>
+                <p className="text-xl font-semibold">+{monthlyChange}%</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Building className="h-5 w-5 text-purple-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Bank Accounts</p>
+                <p className="text-xl font-semibold">{accountCount}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-1 sm:grid-cols-3 mb-4">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="accounts">Accounts</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
-          <TabsTrigger value="forecasting">Cash Flow Forecasting</TabsTrigger>
+          <TabsTrigger value="integration">Integration</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="accounts" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Bank Accounts</h2>
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search accounts..." className="pl-8" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {currentCompany.bankAccounts.map((account) => (
-              <Card 
-                key={account.id} 
-                className={`cursor-pointer hover:border-primary transition-all ${
-                  selectedAccountId === account.id ? "border-primary" : ""
-                }`}
-                onClick={() => handleAccountSelect(account.id, account.name)}
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex justify-between items-center">
-                    <span>{account.name}</span>
-                    <span className="text-sm font-normal px-2 py-1 bg-muted rounded-md">
-                      {account.type}
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${typeof account.balance === 'number' 
-                      ? account.balance.toLocaleString() 
-                      : parseFloat(account.balance?.replace(/[^0-9.-]+/g, "") || "0").toLocaleString()}
-                  </div>
-                  <div className="flex justify-between items-center mt-4 text-sm">
-                    <span className="text-muted-foreground">Last transaction:</span>
-                    <span>{account.lastTransaction || "No transactions"}</span>
-                  </div>
-                  <div className="flex justify-between gap-2 mt-4">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsAddTransactionOpen(true);
-                      }}
-                    >
-                      Add Transaction
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsReportsOpen(true);
-                      }}
-                    >
-                      View Reports
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            
-            {/* Add Account Card */}
-            <Card className="cursor-pointer border-dashed border-2 flex items-center justify-center h-[200px]" onClick={handleAddBankAccount}>
-              <CardContent className="flex flex-col items-center justify-center p-6">
-                <div className="rounded-full bg-muted p-3 mb-4">
-                  <Plus className="h-6 w-6" />
-                </div>
-                <h3 className="text-lg font-medium">Add Account</h3>
-                <p className="text-sm text-muted-foreground text-center mt-2">
-                  Connect a new bank account
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="transactions" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Recent Transactions</h2>
-            <div className="flex gap-2">
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search transactions..." className="pl-8" />
+          <Card>
+            <CardHeader>
+              <CardTitle>Bank Accounts</CardTitle>
+              <CardDescription>Overview of all your connected bank accounts</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {currentCompany.bankAccounts.map(account => {
+                  const balance = typeof account.balance === 'string' 
+                    ? parseFloat(account.balance.replace(/[^0-9.-]+/g, "") || "0")
+                    : account.balance;
+                  
+                  return (
+                    <div key={account.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h3 className="font-medium">{account.name}</h3>
+                        <p className="text-sm text-muted-foreground">{account.type || 'Checking'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">${balance.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">{account.transactions.length} transactions</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleAddTransaction(account.id)}>
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Transaction
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <Button variant="outline" size="icon">
-                <Search className="h-4 w-4" />
-              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="transactions" className="space-y-4">
+          <div className="flex gap-4 items-center">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search transactions..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
           </div>
 
-          <div className="rounded-md border">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {currentCompany.transactions && currentCompany.transactions.length > 0 ? (
-                  currentCompany.transactions.map((transaction) => (
-                    <tr key={transaction.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">{transaction.date}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{transaction.description}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{transaction.category}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{transaction.bankAccount}</td>
-                      <td className={`px-6 py-4 whitespace-nowrap font-medium ${
-                        transaction.type === "Credit" || transaction.type === "Deposit" ? "text-green-600" : "text-red-600"
-                      }`}>
-                        {transaction.type === "Credit" || transaction.type === "Deposit" ? "+" : "-"}{transaction.amount}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          transaction.reconciled 
-                            ? "bg-green-100 text-green-800" 
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}>
-                          {transaction.reconciled ? "Reconciled" : "Pending"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Button variant="ghost" size="sm">Edit</Button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                      No transactions found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Transactions</CardTitle>
+              <CardDescription>All transactions across your bank accounts</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Account</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTransactions.length > 0 ? (
+                    filteredTransactions.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell>{transaction.date}</TableCell>
+                        <TableCell className="font-medium">{transaction.description}</TableCell>
+                        <TableCell>{transaction.accountName}</TableCell>
+                        <TableCell>{transaction.category}</TableCell>
+                        <TableCell className={transaction.amount.startsWith('+') ? 'text-green-600' : 'text-red-600'}>
+                          {transaction.amount}
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={transaction.reconciled ? "default" : "secondary"}
+                            className="cursor-pointer"
+                            onClick={() => toggleReconciled(transaction)}
+                          >
+                            {transaction.reconciled ? "Reconciled" : "Pending"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEditTransaction(transaction)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteTransaction(transaction.id, transaction.accountId)}
+                                className="text-red-600"
+                              >
+                                <Trash className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-4">
+                        No transactions found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
-        
-        <TabsContent value="forecasting">
-          <CashFlowForecasting />
+
+        <TabsContent value="integration" className="mt-6">
+          <BankingIntegration />
+        </TabsContent>
+
+        <TabsContent value="reports" className="mt-6">
+          <ReportTabs accountId="" />
         </TabsContent>
       </Tabs>
 
-      {/* Add Transaction Dialog */}
-      <AddTransactionDialog 
-        open={isAddTransactionOpen} 
-        onOpenChange={setIsAddTransactionOpen} 
-      />
-
-      {/* Reports Dialog */}
-      <ReportsDialog 
-        open={isReportsOpen} 
-        onOpenChange={setIsReportsOpen} 
-        accountId={selectedAccountId || ""} 
-        accountName={selectedAccountName}
+      <TransactionDialog
+        isOpen={isTransactionDialogOpen}
+        onClose={() => setIsTransactionDialogOpen(false)}
+        transaction={editingTransaction}
+        bankAccountId={selectedAccountId}
       />
     </div>
   );
