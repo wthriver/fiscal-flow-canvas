@@ -1,5 +1,5 @@
 
-import { Company, Invoice, Expense, TaxRate, Account, Transaction, Budget, Estimate, BudgetCategory, BankAccount, TimeEntry, Project, Sale } from './company';
+import { Company, Invoice, Expense, TaxRate, Account, Transaction, Budget, Estimate, BankAccount, TimeEntry, Project, Sale, Customer } from './company';
 
 export interface CompanyContextType {
   currentCompany: Company;
@@ -7,6 +7,11 @@ export interface CompanyContextType {
   updateCompany: (updatedCompany: Company) => void;
   switchCompany: (companyId: string) => void;
   addCompany: (company: Company) => void;
+  
+  // Customer operations
+  addCustomer: (customer: Customer) => void;
+  updateCustomer: (customer: Customer) => void;
+  deleteCustomer: (customerId: string) => void;
   
   // Tax operations
   updateTaxRate: (taxRate: TaxRate) => void;

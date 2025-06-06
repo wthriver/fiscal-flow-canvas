@@ -1,18 +1,19 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, MoreHorizontal, Users, UserPlus, DollarSign, CalendarIcon, Mail, Phone, Building, MapPin } from "lucide-react";
+import { PlusCircle, Search, MoreHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useCompany } from "@/contexts/CompanyContext";
 import { toast } from "sonner";
+import { Customer } from "@/types/company";
 
 const Customers: React.FC = () => {
-  const { currentCompany, switchCompany } = useCompany();
+  const { currentCompany, addCustomer, updateCustomer, deleteCustomer } = useCompany();
   const [searchTerm, setSearchTerm] = useState("");
   const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [newCustomer, setNewCustomer] = useState({
     id: "",
     name: "",
@@ -32,11 +33,58 @@ const Customers: React.FC = () => {
   const filteredCustomers = currentCompany.customers?.filter(customer => 
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.contactName.toLowerCase().includes(searchTerm.toLowerCase())
+    (customer.contactName && customer.contactName.toLowerCase().includes(searchTerm.toLowerCase()))
   ) || [];
 
   const handleCreateCustomer = () => {
+    setEditingCustomer(null);
+    setNewCustomer({
+      id: "",
+      name: "",
+      contactName: "",
+      email: "",
+      phone: "",
+      address: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      country: "",
+      type: "Business",
+      status: "Active"
+    });
     setShowCustomerForm(true);
+  };
+
+  const handleEditCustomer = (customerId: string) => {
+    const customer = filteredCustomers.find(c => c.id === customerId);
+    if (customer) {
+      setEditingCustomer(customer);
+      setNewCustomer({
+        id: customer.id,
+        name: customer.name,
+        contactName: customer.contactName || "",
+        email: customer.email,
+        phone: customer.phone || "",
+        address: customer.address || "",
+        city: customer.city || "",
+        state: customer.state || "",
+        postalCode: customer.postalCode || "",
+        country: customer.country || "",
+        type: customer.type || "Business",
+        status: customer.status || "Active"
+      });
+      setShowCustomerForm(true);
+    }
+  };
+
+  const handleDeleteCustomer = (customerId: string) => {
+    const customer = filteredCustomers.find(c => c.id === customerId);
+    if (customer) {
+      if (confirm(`Are you sure you want to delete ${customer.name}?`)) {
+        deleteCustomer(customerId);
+        toast.success(`Customer ${customer.name} deleted successfully`);
+      }
+    }
   };
 
   const handleCustomerFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -44,19 +92,49 @@ const Customers: React.FC = () => {
     setNewCustomer(prev => ({ ...prev, [id]: value }));
   };
 
+  const generateCustomerId = () => {
+    return `cust-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  };
+
   const handleCustomerFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Simple validation
-    if (!newCustomer.name) {
+    if (!newCustomer.name.trim()) {
       toast.error("Customer name is required");
       return;
     }
+
+    if (!newCustomer.email.trim()) {
+      toast.error("Email is required");
+      return;
+    }
     
-    // Update the current company with the new customer data
-    // We'd use a more robust method in a real application
-    toast.success(`Customer ${newCustomer.name} created`);
+    const customerData: Customer = {
+      id: editingCustomer ? editingCustomer.id : generateCustomerId(),
+      name: newCustomer.name.trim(),
+      contactName: newCustomer.contactName.trim(),
+      email: newCustomer.email.trim(),
+      phone: newCustomer.phone.trim(),
+      address: newCustomer.address.trim(),
+      city: newCustomer.city.trim(),
+      state: newCustomer.state.trim(),
+      postalCode: newCustomer.postalCode.trim(),
+      country: newCustomer.country.trim(),
+      type: newCustomer.type,
+      status: newCustomer.status
+    };
+
+    if (editingCustomer) {
+      updateCustomer(customerData);
+      toast.success(`Customer ${customerData.name} updated successfully`);
+    } else {
+      addCustomer(customerData);
+      toast.success(`Customer ${customerData.name} created successfully`);
+    }
+    
     setShowCustomerForm(false);
+    setEditingCustomer(null);
     
     // Reset the form
     setNewCustomer({
@@ -72,164 +150,6 @@ const Customers: React.FC = () => {
       country: "",
       type: "Business",
       status: "Active"
-    });
-  };
-
-  const handleEditCustomer = (customerId: string) => {
-    const customer = filteredCustomers.find(c => c.id === customerId);
-    if (customer) {
-      toast.info(`Editing customer ${customer.name}`);
-    }
-  };
-
-  const handleDeleteCustomer = (customerId: string) => {
-    const customer = filteredCustomers.find(c => c.id === customerId);
-    if (customer) {
-      toast.info(`Deleting customer ${customer.name}`);
-    }
-  };
-
-  const handleViewCustomer = (customerId: string) => {
-    const customer = filteredCustomers.find(c => c.id === customerId);
-    
-    if (!customer) return;
-    
-    // Create a modal to display customer details
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-    modal.innerHTML = `
-      <div class="bg-white rounded-lg p-6 max-w-3xl w-full mx-4 relative overflow-y-auto max-h-[90vh]">
-        <button id="close-modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
-          </svg>
-        </button>
-        <div class="flex items-center mb-4">
-          <div class="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-4">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-          </div>
-          <div>
-            <h3 class="text-xl font-bold">${customer.name}</h3>
-            <p class="text-gray-500">${customer.type} • ${customer.status}</p>
-          </div>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <h4 class="text-sm font-medium text-gray-500 mb-2">Contact Information</h4>
-            <div class="space-y-2">
-              <div class="flex items-center">
-                <svg width="16" height="16" class="mr-2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                </svg>
-                <span>${customer.phone}</span>
-              </div>
-              <div class="flex items-center">
-                <svg width="16" height="16" class="mr-2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                  <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-                <span>${customer.email}</span>
-              </div>
-              <div class="flex items-center">
-                <svg width="16" height="16" class="mr-2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
-                  <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-                <span>${customer.address}, ${customer.city}, ${customer.state} ${customer.postalCode}, ${customer.country}</span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <h4 class="text-sm font-medium text-gray-500 mb-2">Customer Details</h4>
-            <div class="space-y-2">
-              <div class="flex items-center">
-                <svg width="16" height="16" class="mr-2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"></path>
-                  <path d="M12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7Z"></path>
-                </svg>
-                <span>Contact: ${customer.contactName}</span>
-              </div>
-              <div class="flex items-center">
-                <svg width="16" height="16" class="mr-2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect width="20" height="14" x="2" y="7" rx="2" ry="2"></rect>
-                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                </svg>
-                <span>Customer since: January 2023</span>
-              </div>
-              <div class="flex items-center">
-                <svg width="16" height="16" class="mr-2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                <span>Last order: March 15, 2025</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="border-t border-b py-4 mb-6">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-gray-50 p-3 rounded">
-              <div class="text-sm text-gray-500">Total Orders</div>
-              <div class="text-2xl font-bold">24</div>
-            </div>
-            <div class="bg-gray-50 p-3 rounded">
-              <div class="text-sm text-gray-500">Lifetime Value</div>
-              <div class="text-2xl font-bold">$12,450</div>
-            </div>
-            <div class="bg-gray-50 p-3 rounded">
-              <div class="text-sm text-gray-500">Outstanding Balance</div>
-              <div class="text-2xl font-bold">$0</div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="flex flex-col md:flex-row justify-between gap-4">
-          <div class="flex gap-2">
-            <button id="edit-customer" class="px-4 py-2 border rounded hover:bg-gray-50 flex items-center">
-              <svg width="16" height="16" class="mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
-                <path d="m15 5 4 4"></path>
-              </svg>
-              Edit
-            </button>
-            <button id="create-invoice" class="px-4 py-2 border rounded hover:bg-gray-50 flex items-center">
-              <svg width="16" height="16" class="mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" x2="12" y1="3" y2="15"></line>
-              </svg>
-              Create Invoice
-            </button>
-          </div>
-          <button class="px-4 py-2 bg-primary text-white rounded" id="view-dashboard">View Dashboard</button>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    document.getElementById('close-modal')?.addEventListener('click', () => {
-      document.body.removeChild(modal);
-    });
-    
-    document.getElementById('edit-customer')?.addEventListener('click', () => {
-      document.body.removeChild(modal);
-      handleEditCustomer(customerId);
-    });
-    
-    document.getElementById('view-dashboard')?.addEventListener('click', () => {
-      toast.info(`Opening dashboard for ${customer.name}`);
-      document.body.removeChild(modal);
-    });
-    
-    document.getElementById('create-invoice')?.addEventListener('click', () => {
-      toast.info(`Creating invoice for ${customer.name}`);
-      document.body.removeChild(modal);
     });
   };
 
@@ -279,8 +199,8 @@ const Customers: React.FC = () => {
       {showCustomerForm && (
         <Card>
           <CardHeader>
-            <CardTitle>Create New Customer</CardTitle>
-            <CardDescription>Add a new customer to {currentCompany.name}</CardDescription>
+            <CardTitle>{editingCustomer ? 'Edit' : 'Create New'} Customer</CardTitle>
+            <CardDescription>{editingCustomer ? 'Update' : 'Add a new'} customer {editingCustomer ? 'information' : `to ${currentCompany.name}`}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCustomerFormSubmit} className="space-y-4">
@@ -411,11 +331,16 @@ const Customers: React.FC = () => {
                 <Button 
                   type="button" 
                   variant="outline"
-                  onClick={() => setShowCustomerForm(false)}
+                  onClick={() => {
+                    setShowCustomerForm(false);
+                    setEditingCustomer(null);
+                  }}
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Save Customer</Button>
+                <Button type="submit">
+                  {editingCustomer ? 'Update' : 'Save'} Customer
+                </Button>
               </div>
             </form>
           </CardContent>
@@ -433,18 +358,12 @@ const Customers: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <CalendarIcon size={16} />
-            <span>Filter</span>
-          </Button>
-        </div>
       </div>
 
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Customer List</CardTitle>
-          <CardDescription>View and manage your {currentCompany.name}'s customers</CardDescription>
+          <CardDescription>View and manage your {currentCompany.name}'s customers ({filteredCustomers.length} total)</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -464,9 +383,9 @@ const Customers: React.FC = () => {
                 filteredCustomers.map((customer) => (
                   <TableRow key={customer.id}>
                     <TableCell className="font-medium">{customer.name}</TableCell>
-                    <TableCell>{customer.contactName}</TableCell>
+                    <TableCell>{customer.contactName || 'N/A'}</TableCell>
                     <TableCell>{customer.email}</TableCell>
-                    <TableCell>{customer.phone}</TableCell>
+                    <TableCell>{customer.phone || 'N/A'}</TableCell>
                     <TableCell>{customer.type}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -488,9 +407,6 @@ const Customers: React.FC = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewCustomer(customer.id)}>
-                            View Details
-                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEditCustomer(customer.id)}>
                             Edit Customer
                           </DropdownMenuItem>
@@ -508,7 +424,7 @@ const Customers: React.FC = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
-                    No customers found for {currentCompany.name}
+                    {searchTerm ? `No customers found matching "${searchTerm}"` : `No customers found for ${currentCompany.name}. Create your first customer to get started.`}
                   </TableCell>
                 </TableRow>
               )}
