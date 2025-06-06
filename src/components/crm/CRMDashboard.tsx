@@ -118,9 +118,17 @@ export const CRMDashboard: React.FC = () => {
   const handleCreateLead = (data: z.infer<typeof leadSchema>) => {
     const newLead: Lead = {
       id: editingLead?.id || generateLeadId(),
-      ...data,
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      company: data.company,
+      value: data.value,
+      stage: data.stage,
+      source: data.source,
+      assignedTo: data.assignedTo,
       lastContact: new Date().toISOString().split('T')[0],
       nextFollowUp: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      notes: data.notes || "",
       score: Math.floor(Math.random() * 40) + 60, // Random score between 60-100
     };
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { toast } from "sonner";
+import { Estimate } from "@/types/company";
 
 interface EstimateItem {
   id: string;
@@ -18,16 +18,29 @@ interface EstimateItem {
 export interface EstimateDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave?: (estimateData: Estimate) => void;
+  estimate?: Estimate | null;
 }
 
-export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose }) => {
+export const EstimateDialog: React.FC<EstimateDialogProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSave,
+  estimate 
+}) => {
   const { currentCompany, addEstimate } = useCompany();
-  const [estimate, setEstimate] = useState({
-    id: `est-${Date.now()}`,
-    customerId: "",
-    date: new Date().toISOString().split('T')[0],
-    expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    items: [
+  const [estimateData, setEstimateData] = useState({
+    id: estimate?.id || `est-${Date.now()}`,
+    customerId: estimate?.customer || "",
+    date: estimate?.date || new Date().toISOString().split('T')[0],
+    expiryDate: estimate?.expiryDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    items: estimate?.items.map(item => ({
+      id: item.id,
+      description: item.description,
+      quantity: item.quantity,
+      unitPrice: `$${item.price.toFixed(2)}`,
+      amount: `$${item.total.toFixed(2)}`
+    })) || [
       {
         id: `item-${Date.now()}`,
         description: "",
@@ -38,16 +51,16 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
     ],
     notes: "",
     termsAndConditions: "Standard terms and conditions apply.",
-    amount: "$0.00",
-    status: "Draft",
-    estimateNumber: ""
+    amount: estimate ? `$${estimate.total.toFixed(2)}` : "$0.00",
+    status: estimate?.status || "Draft",
+    estimateNumber: estimate?.estimateNumber || ""
   });
 
   const handleAddItem = () => {
-    setEstimate({
-      ...estimate,
+    setEstimateData({
+      ...estimateData,
       items: [
-        ...estimate.items,
+        ...estimateData.items,
         {
           id: `item-${Date.now()}`,
           description: "",
@@ -60,7 +73,7 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
   };
 
   const handleRemoveItem = (index: number) => {
-    const updatedItems = [...estimate.items];
+    const updatedItems = [...estimateData.items];
     updatedItems.splice(index, 1);
     
     // Recalculate total
@@ -69,15 +82,15 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
       return total + itemTotal;
     }, 0);
     
-    setEstimate({
-      ...estimate,
+    setEstimateData({
+      ...estimateData,
       items: updatedItems,
       amount: `$${newTotal.toFixed(2)}`
     });
   };
 
   const handleItemChange = (index: number, field: keyof EstimateItem, value: string | number) => {
-    const updatedItems = [...estimate.items];
+    const updatedItems = [...estimateData.items];
     
     if (field === "unitPrice" || field === "quantity") {
       const price = field === "unitPrice" 
@@ -102,8 +115,8 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
         return total + subTotal;
       }, 0);
       
-      setEstimate({
-        ...estimate,
+      setEstimateData({
+        ...estimateData,
         items: updatedItems,
         amount: `$${newTotal.toFixed(2)}`
       });
@@ -113,20 +126,20 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
         [field]: value
       };
       
-      setEstimate({
-        ...estimate,
+      setEstimateData({
+        ...estimateData,
         items: updatedItems
       });
     }
   };
 
   const handleSave = () => {
-    if (!estimate.customerId) {
+    if (!estimateData.customerId) {
       toast.error("Please select a customer");
       return;
     }
     
-    if (estimate.items.some(item => !item.description)) {
+    if (estimateData.items.some(item => !item.description)) {
       toast.error("Please fill in all item descriptions");
       return;
     }
@@ -139,7 +152,7 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
     };
     
     // Convert our estimate items format to InvoiceItem format required by Estimate interface
-    const invoiceItems = estimate.items.map(item => ({
+    const invoiceItems = estimateData.items.map(item => ({
       id: item.id,
       description: item.description,
       quantity: item.quantity,
@@ -147,19 +160,23 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
       total: parseFloat(item.amount.replace(/[^0-9.-]+/g, ""))
     }));
     
-    const newEstimate = {
-      id: `est-${Date.now()}`,
-      customer: estimate.customerId,
-      date: estimate.date,
-      expiryDate: estimate.expiryDate,
-      total: calculateTotal(estimate.items),
-      status: estimate.status,
+    const newEstimate: Estimate = {
+      id: estimate?.id || `est-${Date.now()}`,
+      customer: estimateData.customerId,
+      date: estimateData.date,
+      expiryDate: estimateData.expiryDate,
+      total: calculateTotal(estimateData.items),
+      status: estimateData.status,
       items: invoiceItems,
-      estimateNumber: `EST-${Date.now().toString().slice(-6)}`,
+      estimateNumber: estimate?.estimateNumber || `EST-${Date.now().toString().slice(-6)}`,
     };
     
-    addEstimate(newEstimate);
-    toast.success("Estimate created successfully!");
+    if (onSave) {
+      onSave(newEstimate);
+    } else {
+      addEstimate(newEstimate);
+      toast.success("Estimate created successfully!");
+    }
     onClose();
   };
 
@@ -181,8 +198,8 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
             <select
               id="customer"
               className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-              value={estimate.customerId}
-              onChange={(e) => setEstimate({...estimate, customerId: e.target.value})}
+              value={estimateData.customerId}
+              onChange={(e) => setEstimateData({...estimateData, customerId: e.target.value})}
             >
               <option value="">Select Customer</option>
               {currentCompany.customers?.map(customer => (
@@ -201,8 +218,8 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
               id="date"
               type="date"
               className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-              value={estimate.date}
-              onChange={(e) => setEstimate({...estimate, date: e.target.value})}
+              value={estimateData.date}
+              onChange={(e) => setEstimateData({...estimateData, date: e.target.value})}
             />
           </div>
           
@@ -214,8 +231,8 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
               id="expiryDate"
               type="date"
               className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-              value={estimate.expiryDate}
-              onChange={(e) => setEstimate({...estimate, expiryDate: e.target.value})}
+              value={estimateData.expiryDate}
+              onChange={(e) => setEstimateData({...estimateData, expiryDate: e.target.value})}
             />
           </div>
           
@@ -226,7 +243,7 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
             </div>
             
             <div className="space-y-4">
-              {estimate.items.map((item, index) => (
+              {estimateData.items.map((item, index) => (
                 <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
                   <div className="col-span-5">
                     <label htmlFor={`description-${index}`} className="text-xs mb-1 block">
@@ -276,7 +293,7 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
                       variant="ghost" 
                       className="h-9 px-2 text-red-500"
                       onClick={() => handleRemoveItem(index)}
-                      disabled={estimate.items.length === 1}
+                      disabled={estimateData.items.length === 1}
                     >
                       <Trash2 size={16} />
                     </Button>
@@ -288,7 +305,7 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
             <div className="flex justify-end mt-4">
               <div className="text-right">
                 <div className="text-sm text-muted-foreground">Total Amount</div>
-                <div className="text-xl font-bold">{estimate.amount}</div>
+                <div className="text-xl font-bold">{estimateData.amount}</div>
               </div>
             </div>
           </div>
@@ -301,8 +318,8 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
               id="notes"
               rows={3}
               className="col-span-3 min-h-[80px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
-              value={estimate.notes}
-              onChange={(e) => setEstimate({...estimate, notes: e.target.value})}
+              value={estimateData.notes}
+              onChange={(e) => setEstimateData({...estimateData, notes: e.target.value})}
               placeholder="Additional notes for the estimate"
             />
           </div>
@@ -315,8 +332,8 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({ isOpen, onClose 
               id="terms"
               rows={3}
               className="col-span-3 min-h-[80px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
-              value={estimate.termsAndConditions}
-              onChange={(e) => setEstimate({...estimate, termsAndConditions: e.target.value})}
+              value={estimateData.termsAndConditions}
+              onChange={(e) => setEstimateData({...estimateData, termsAndConditions: e.target.value})}
             />
           </div>
         </div>
