@@ -122,7 +122,7 @@ export const CustomReportBuilder = () => {
 
   const [previewData, setPreviewData] = useState<any[]>([]);
 
-  const handleExport = (format: string) => {
+  const handleExport = (formatType: string) => {
     if (previewData.length === 0) {
       toast.error("No data to export");
       return;
@@ -142,10 +142,12 @@ export const CustomReportBuilder = () => {
       return exportRow;
     });
 
-    if (format === 'csv') {
-      exportToCSV(exportData, `${reportName}_${format(new Date(), "yyyy-MM-dd")}`);
-    } else if (format === 'excel') {
-      exportToExcel(exportData, `${reportName}_${format(new Date(), "yyyy-MM-dd")}`);
+    const fileName = `${reportName}_${format(new Date(), "yyyy-MM-dd")}`;
+
+    if (formatType === 'csv') {
+      exportToCSV(exportData, fileName);
+    } else if (formatType === 'excel') {
+      exportToExcel(exportData, fileName);
     }
   };
 
