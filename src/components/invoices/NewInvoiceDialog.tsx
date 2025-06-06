@@ -1,16 +1,16 @@
 
-import React, { useMemo } from "react";
+import React from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Customer } from "@/types/company";
+import { Customer, Invoice, InvoiceItem } from "@/types/company";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useCompany } from "@/contexts/CompanyContext";
-import { Invoice, InvoiceItem } from "@/types/company";
+import { Plus, Trash2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface NewInvoiceDialogProps {
   open: boolean;
@@ -19,15 +19,18 @@ interface NewInvoiceDialogProps {
   customers: Customer[];
 }
 
-// Create a schema for form validation
-const invoiceSchema = z.object({
-  id: z.string().min(3, "Invoice ID must be at least 3 characters"),
-  customer: z.string().min(1, "Customer is required"),
-  date: z.string().min(1, "Date is required"),
-  dueDate: z.string().min(1, "Due date is required"),
-  amount: z.string().min(1, "Amount is required"),
-  status: z.string().min(1, "Status is required"),
+const invoiceItemSchema = z.object({
   description: z.string().min(1, "Description is required"),
+  quantity: z.number().min(1, "Quantity must be at least 1"),
+  price: z.number().min(0, "Price must be positive"),
+});
+
+const invoiceSchema = z.object({
+  customer: z.string().min(1, "Customer is required"),
+  dueDate: z.string().min(1, "Due date is required"),
+  items: z.array(invoiceItemSchema).min(1, "At least one item is required"),
+  notes: z.string().optional(),
+  terms: z.string().optional(),
 });
 
 export const NewInvoiceDialog: React.FC<NewInvoiceDialogProps> = ({ 
@@ -36,117 +39,101 @@ export const NewInvoiceDialog: React.FC<NewInvoiceDialogProps> = ({
   onSubmit,
   customers
 }) => {
-  const { currentCompany } = useCompany();
+  const today = new Date().toISOString().split("T")[0];
+  const defaultDueDate = new Date();
+  defaultDueDate.setDate(defaultDueDate.getDate() + 30);
   
-  // Current date for default values
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
-  
-  // Due date 30 days from today
-  const dueDate = new Date();
-  dueDate.setDate(today.getDate() + 30);
-  const dueDateStr = dueDate.toISOString().split("T")[0];
-  
-  // Generate a new invoice ID
-  const generateInvoiceId = () => {
-    const prefix = "INV";
-    const existingInvoices = currentCompany.invoices || [];
-    const nextNumber = existingInvoices.length + 1;
-    return `${prefix}-${nextNumber.toString().padStart(3, '0')}`;
-  };
-  
-  // Set up form with validation
   const form = useForm<z.infer<typeof invoiceSchema>>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
-      id: generateInvoiceId(),
       customer: "",
-      date: todayStr,
-      dueDate: dueDateStr,
-      amount: "",
-      status: "Pending",
-      description: "",
+      dueDate: defaultDueDate.toISOString().split("T")[0],
+      items: [{ description: "", quantity: 1, price: 0 }],
+      notes: "",
+      terms: "",
     },
   });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "items",
+  });
   
-  // Get customer data for the selected customer
-  const selectedCustomer = useMemo(() => {
-    const customerName = form.watch('customer');
-    return customers.find(c => c.name === customerName);
-  }, [form.watch('customer'), customers]);
+  const generateInvoiceId = () => {
+    return `INV-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+  };
   
-  // Handle form submission
+  const generateInvoiceNumber = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `${year}${month}-${randomNum}`;
+  };
+  
   const handleSubmit = (data: z.infer<typeof invoiceSchema>) => {
-    const amount = parseFloat(data.amount.replace(/[^0-9.]/g, ''));
+    const selectedCustomer = customers.find(c => c.name === data.customer);
     
-    // Create invoice item
-    const invoiceItem: InvoiceItem = {
-      id: `item-${Date.now()}`,
-      description: data.description,
-      quantity: 1,
-      price: amount,
-      total: amount
-    };
+    const items: InvoiceItem[] = data.items.map((item, index) => ({
+      id: `item-${Date.now()}-${index}`,
+      description: item.description,
+      quantity: item.quantity,
+      price: item.price,
+      total: item.quantity * item.price,
+    }));
     
-    // Format invoice data
-    const invoiceData: Invoice = {
-      id: data.id,
-      invoiceNumber: data.id,
+    const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+    const taxAmount = subtotal * 0.1; // 10% tax
+    const total = subtotal + taxAmount;
+    
+    const invoice: Invoice = {
+      id: generateInvoiceId(),
+      invoiceNumber: generateInvoiceNumber(),
       customer: data.customer,
       customerId: selectedCustomer?.id,
-      date: data.date,
+      date: today,
       dueDate: data.dueDate,
-      items: [invoiceItem],
-      status: data.status,
-      total: amount,
-      amount: `$${amount.toFixed(2)}`
+      items,
+      status: "Draft",
+      total,
+      amount: total.toString(),
+      subtotal,
+      taxAmount,
+      notes: data.notes,
+      terms: data.terms,
+      paymentStatus: "Pending",
     };
     
-    onSubmit(invoiceData);
-    form.reset({
-      id: generateInvoiceId(),
-      customer: "",
-      date: todayStr,
-      dueDate: dueDateStr,
-      amount: "",
-      status: "Pending",
-      description: "",
-    });
+    onSubmit(invoice);
+    form.reset();
+    onOpenChange(false);
   };
+
+  const watchedItems = form.watch("items");
+  const subtotal = watchedItems?.reduce((sum, item) => 
+    sum + (item.quantity || 0) * (item.price || 0), 0) || 0;
+  const taxAmount = subtotal * 0.1;
+  const total = subtotal + taxAmount;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Invoice</DialogTitle>
           <DialogDescription>
-            Enter the details for the new invoice. Click save when you're done.
+            Fill in the invoice details and add line items. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Invoice ID</FormLabel>
-                    <FormControl>
-                      <Input {...field} readOnly className="bg-muted" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
               <FormField
                 control={form.control}
                 name="customer"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Customer</FormLabel>
+                    <FormLabel>Customer *</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
@@ -157,37 +144,19 @@ export const NewInvoiceDialog: React.FC<NewInvoiceDialogProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {customers.map((customer) => (
-                          <SelectItem key={customer.id} value={customer.name}>
-                            {customer.name}
+                        {customers.length > 0 ? (
+                          customers.map((customer) => (
+                            <SelectItem key={customer.id} value={customer.name}>
+                              {customer.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-customers" disabled>
+                            No customers available - Add customers first
                           </SelectItem>
-                        ))}
+                        )}
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {selectedCustomer && (
-              <div className="p-3 bg-muted rounded-md">
-                <p className="text-sm font-medium">Customer Details:</p>
-                <p className="text-sm text-muted-foreground">{selectedCustomer.email}</p>
-                {selectedCustomer.phone && <p className="text-sm text-muted-foreground">{selectedCustomer.phone}</p>}
-              </div>
-            )}
-            
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Date</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -198,7 +167,7 @@ export const NewInvoiceDialog: React.FC<NewInvoiceDialogProps> = ({
                 name="dueDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Due Date</FormLabel>
+                    <FormLabel>Due Date *</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -208,41 +177,130 @@ export const NewInvoiceDialog: React.FC<NewInvoiceDialogProps> = ({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field}
-                      placeholder="What is this invoice for?"
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h4 className="text-lg font-medium">Invoice Items</h4>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => append({ description: "", quantity: 1, price: 0 })}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
+              </div>
+              
+              {fields.map((field, index) => (
+                <div key={field.id} className="grid grid-cols-12 gap-2 items-end p-4 border rounded-lg">
+                  <div className="col-span-5">
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.description`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Item description" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.quantity`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Qty</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.price`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Price</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <FormLabel>Total</FormLabel>
+                    <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center">
+                      ${((watchedItems[index]?.quantity || 0) * (watchedItems[index]?.price || 0)).toFixed(2)}
+                    </div>
+                  </div>
+                  
+                  <div className="col-span-1 flex justify-center">
+                    {fields.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => remove(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-muted p-4 rounded-lg">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span>${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tax (10%):</span>
+                  <span>${taxAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-lg border-t pt-2">
+                  <span>Total:</span>
+                  <span>${total.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="amount"
+                name="notes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Amount</FormLabel>
+                    <FormLabel>Notes</FormLabel>
                     <FormControl>
-                      <Input
-                        type="text"
-                        {...field}
-                        onChange={(e) => {
-                          // Remove non-numeric characters for input
-                          const value = e.target.value.replace(/[^0-9.]/g, '');
-                          field.onChange(value);
-                        }}
-                        placeholder="0.00"
-                      />
+                      <Textarea {...field} placeholder="Additional notes..." />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -251,26 +309,13 @@ export const NewInvoiceDialog: React.FC<NewInvoiceDialogProps> = ({
               
               <FormField
                 control={form.control}
-                name="status"
+                name="terms"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Paid">Paid</SelectItem>
-                        <SelectItem value="Overdue">Overdue</SelectItem>
-                        <SelectItem value="Outstanding">Outstanding</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Terms & Conditions</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} placeholder="Payment terms..." />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -281,7 +326,7 @@ export const NewInvoiceDialog: React.FC<NewInvoiceDialogProps> = ({
               <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Save Invoice</Button>
+              <Button type="submit">Create Invoice</Button>
             </DialogFooter>
           </form>
         </Form>

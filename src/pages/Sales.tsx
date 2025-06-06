@@ -359,7 +359,7 @@ const SalesPage: React.FC = () => {
           setIsEstimateDialogOpen(false);
           setEditingEstimate(null);
         }}
-        onSubmit={handleCreateEstimate}
+        onSave={handleCreateEstimate}
         estimate={editingEstimate}
       />
 
