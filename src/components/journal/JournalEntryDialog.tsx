@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,16 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-
-interface JournalEntry {
-  id: string;
-  date: string;
-  description: string;
-  reference: string;
-  debits: Array<{ account: string; amount: number }>;
-  credits: Array<{ account: string; amount: number }>;
-  status: 'Draft' | 'Posted';
-}
+import { JournalEntry } from "@/types/journal";
 
 interface JournalEntryDialogProps {
   onSave: (entry: JournalEntry) => void;

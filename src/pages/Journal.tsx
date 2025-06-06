@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,16 +6,7 @@ import { Plus, BookOpen, FileText, Calculator, Download } from "lucide-react";
 import { JournalEntryDialog } from "@/components/journal/JournalEntryDialog";
 import { JournalEntryViewDialog } from "@/components/journal/JournalEntryViewDialog";
 import { exportToCSV } from "@/utils/exportUtils";
-
-interface JournalEntry {
-  id: string;
-  date: string;
-  description: string;
-  reference?: string;
-  debits: Array<{ account: string; amount: number }>;
-  credits: Array<{ account: string; amount: number }>;
-  status: 'Draft' | 'Posted';
-}
+import { JournalEntry } from "@/types/journal";
 
 const Journal: React.FC = () => {
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([

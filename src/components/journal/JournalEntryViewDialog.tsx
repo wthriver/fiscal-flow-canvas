@@ -1,18 +1,8 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-interface JournalEntry {
-  id: string;
-  date: string;
-  description: string;
-  reference?: string;
-  debits: Array<{ account: string; amount: number }>;
-  credits: Array<{ account: string; amount: number }>;
-  status: 'Draft' | 'Posted';
-}
+import { JournalEntry } from "@/types/journal";
 
 interface JournalEntryViewDialogProps {
   entry: JournalEntry;
