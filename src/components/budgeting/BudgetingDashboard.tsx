@@ -8,9 +8,34 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DollarSign, TrendingUp, TrendingDown, Target, Calendar, PieChart } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
+import { useBudget } from "./hooks/useBudget";
+import { NewBudgetDialog } from "./components/NewBudgetDialog";
+import { EditCategoryDialog } from "./components/EditCategoryDialog";
+import { BudgetTable } from "./components/BudgetTable";
 
 export const BudgetingDashboard: React.FC = () => {
   const { currentCompany } = useCompany();
+  const {
+    newBudgetDialogOpen,
+    setNewBudgetDialogOpen,
+    editCategoryDialogOpen,
+    setEditCategoryDialogOpen,
+    selectedBudget,
+    selectedCategory,
+    setSelectedCategory,
+    newBudget,
+    setNewBudget,
+    newCategory,
+    setNewCategory,
+    handleCreateBudget,
+    handleSaveNewBudget,
+    handleAddCategory,
+    handleRemoveCategory,
+    handleUpdateActual,
+    handleEditCategory,
+    handleUpdateCategory,
+    formatCurrency
+  } = useBudget();
   
   const budgets = currentCompany.budgets || [];
   
@@ -47,7 +72,7 @@ export const BudgetingDashboard: React.FC = () => {
           <h1 className="text-3xl font-bold">Budget Management</h1>
           <p className="text-muted-foreground">Monitor and control your financial planning</p>
         </div>
-        <Button>
+        <Button onClick={handleCreateBudget}>
           <Target className="h-4 w-4 mr-2" />
           Create Budget
         </Button>
@@ -108,6 +133,7 @@ export const BudgetingDashboard: React.FC = () => {
         <TabsList>
           <TabsTrigger value="overview">Budget Overview</TabsTrigger>
           <TabsTrigger value="categories">Category Analysis</TabsTrigger>
+          <TabsTrigger value="management">Budget Management</TabsTrigger>
           <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
 
@@ -164,10 +190,40 @@ export const BudgetingDashboard: React.FC = () => {
                   </TableBody>
                 </Table>
               ) : (
-                <p className="text-center text-muted-foreground py-8">No budgets created yet</p>
+                <div className="text-center p-8">
+                  <PieChart className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">No budgets created yet</h3>
+                  <p className="text-muted-foreground mb-4">Create your first budget to start tracking your financial goals</p>
+                  <Button onClick={handleCreateBudget}>
+                    <Target className="h-4 w-4 mr-2" />
+                    Create Your First Budget
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="management" className="space-y-4">
+          {budgets.map((budget) => (
+            <Card key={budget.id}>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>{budget.name}</CardTitle>
+                  <Badge variant={budget.status === 'Active' ? 'default' : 'secondary'}>
+                    {budget.status}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <BudgetTable
+                  budget={budget}
+                  handleUpdateActual={handleUpdateActual}
+                  handleEditCategory={handleEditCategory}
+                />
+              </CardContent>
+            </Card>
+          ))}
         </TabsContent>
 
         <TabsContent value="categories" className="space-y-4">
@@ -280,6 +336,28 @@ export const BudgetingDashboard: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <NewBudgetDialog
+        open={newBudgetDialogOpen}
+        onOpenChange={setNewBudgetDialogOpen}
+        newBudget={newBudget}
+        setNewBudget={setNewBudget}
+        newCategory={newCategory}
+        setNewCategory={setNewCategory}
+        handleSaveNewBudget={handleSaveNewBudget}
+        handleAddCategory={handleAddCategory}
+        handleRemoveCategory={handleRemoveCategory}
+        formatCurrency={formatCurrency}
+      />
+
+      <EditCategoryDialog
+        open={editCategoryDialogOpen}
+        onOpenChange={setEditCategoryDialogOpen}
+        selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
+        handleUpdateCategory={handleUpdateCategory}
+        formatCurrency={formatCurrency}
+      />
     </div>
   );
 };

@@ -4,15 +4,17 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { BudgetCategory } from "@/types/company";
-import { toast } from "sonner";
 
 interface NewBudgetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   newBudget: {
     name: string;
-    period: string;
+    period: "Monthly" | "Quarterly" | "Annual";
     startDate: string;
     endDate: string;
     categories: BudgetCategory[];
@@ -21,7 +23,7 @@ interface NewBudgetDialogProps {
   };
   setNewBudget: React.Dispatch<React.SetStateAction<{
     name: string;
-    period: string;
+    period: "Monthly" | "Quarterly" | "Annual";
     startDate: string;
     endDate: string;
     categories: BudgetCategory[];
@@ -30,12 +32,11 @@ interface NewBudgetDialogProps {
   }>>;
   newCategory: {
     name: string;
+    type: "income" | "expense";
+    budgeted: number;
     budgetedAmount: string;
   };
-  setNewCategory: React.Dispatch<React.SetStateAction<{
-    name: string;
-    budgetedAmount: string;
-  }>>;
+  setNewCategory: (category: any) => void;
   handleSaveNewBudget: () => void;
   handleAddCategory: () => void;
   handleRemoveCategory: (index: number) => void;
@@ -54,9 +55,11 @@ export const NewBudgetDialog: React.FC<NewBudgetDialogProps> = ({
   handleRemoveCategory,
   formatCurrency
 }) => {
+  const totalBudgeted = newBudget.categories.reduce((sum, cat) => sum + cat.budgeted, 0);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Budget</DialogTitle>
           <DialogDescription>
@@ -66,9 +69,9 @@ export const NewBudgetDialog: React.FC<NewBudgetDialogProps> = ({
         
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="budget-name" className="text-right">
+            <Label htmlFor="budget-name" className="text-right">
               Budget Name*
-            </label>
+            </Label>
             <Input 
               id="budget-name" 
               placeholder="Q2 2025 Operating Budget"
@@ -79,25 +82,30 @@ export const NewBudgetDialog: React.FC<NewBudgetDialogProps> = ({
           </div>
           
           <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="budget-period" className="text-right">
+            <Label htmlFor="budget-period" className="text-right">
               Period*
-            </label>
-            <select
-              id="budget-period"
-              value={newBudget.period}
-              onChange={(e) => setNewBudget({...newBudget, period: e.target.value})}
-              className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+            </Label>
+            <Select 
+              value={newBudget.period} 
+              onValueChange={(value: "Monthly" | "Quarterly" | "Annual") => 
+                setNewBudget({...newBudget, period: value})
+              }
             >
-              <option value="Monthly">Monthly</option>
-              <option value="Quarterly">Quarterly</option>
-              <option value="Annual">Annual</option>
-            </select>
+              <SelectTrigger className="col-span-3">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Monthly">Monthly</SelectItem>
+                <SelectItem value="Quarterly">Quarterly</SelectItem>
+                <SelectItem value="Annual">Annual</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="start-date" className="text-right">
+            <Label htmlFor="start-date" className="text-right">
               Start Date*
-            </label>
+            </Label>
             <Input 
               id="start-date" 
               type="date"
@@ -108,9 +116,9 @@ export const NewBudgetDialog: React.FC<NewBudgetDialogProps> = ({
           </div>
           
           <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="end-date" className="text-right">
+            <Label htmlFor="end-date" className="text-right">
               End Date*
-            </label>
+            </Label>
             <Input 
               id="end-date" 
               type="date"
@@ -123,66 +131,103 @@ export const NewBudgetDialog: React.FC<NewBudgetDialogProps> = ({
           <div className="border-t pt-4 mt-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-medium">Budget Categories</h3>
-              <div className="flex items-end gap-2">
-                <div>
-                  <label htmlFor="category-name" className="text-xs mb-1 block">
-                    Category Name
-                  </label>
-                  <Input 
-                    id="category-name" 
-                    placeholder="Rent"
-                    value={newCategory.name}
-                    onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="category-amount" className="text-xs mb-1 block">
-                    Budget Amount
-                  </label>
-                  <Input 
-                    id="category-amount" 
-                    placeholder="$0.00"
-                    value={newCategory.budgetedAmount}
-                    onChange={(e) => setNewCategory({
-                      ...newCategory, 
-                      budgetedAmount: formatCurrency(e.target.value)
-                    })}
-                  />
-                </div>
-                <Button size="sm" onClick={handleAddCategory}>Add</Button>
+              <div className="text-sm text-muted-foreground">
+                Total: <span className="font-semibold">${totalBudgeted.toLocaleString()}</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-12 gap-2 mb-4 p-3 border rounded-lg bg-muted/20">
+              <div className="col-span-4">
+                <Label htmlFor="category-name" className="text-xs mb-1 block">
+                  Category Name
+                </Label>
+                <Input 
+                  id="category-name" 
+                  placeholder="Rent"
+                  value={newCategory.name}
+                  onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
+                />
+              </div>
+              <div className="col-span-3">
+                <Label htmlFor="category-type" className="text-xs mb-1 block">
+                  Type
+                </Label>
+                <Select 
+                  value={newCategory.type} 
+                  onValueChange={(value: "income" | "expense") => 
+                    setNewCategory({...newCategory, type: value})
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="income">Income</SelectItem>
+                    <SelectItem value="expense">Expense</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-3">
+                <Label htmlFor="category-amount" className="text-xs mb-1 block">
+                  Budget Amount
+                </Label>
+                <Input 
+                  id="category-amount" 
+                  placeholder="$0.00"
+                  value={newCategory.budgetedAmount}
+                  onChange={(e) => setNewCategory({
+                    ...newCategory, 
+                    budgetedAmount: e.target.value
+                  })}
+                />
+              </div>
+              <div className="col-span-2 flex items-end">
+                <Button size="sm" onClick={handleAddCategory} className="w-full">
+                  Add
+                </Button>
               </div>
             </div>
             
             {newBudget.categories.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Budgeted Amount</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {newBudget.categories.map((category, index) => (
-                    <TableRow key={category.id}>
-                      <TableCell>{category.name}</TableCell>
-                      <TableCell>{category.budgetedAmount}</TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleRemoveCategory(index)}
-                        >
-                          Remove
-                        </Button>
-                      </TableCell>
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead className="w-20">Action</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {newBudget.categories.map((category, index) => (
+                      <TableRow key={category.id}>
+                        <TableCell className="font-medium">{category.name}</TableCell>
+                        <TableCell>
+                          <Badge variant={category.type === 'income' ? 'default' : 'secondary'}>
+                            {category.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>${category.budgeted.toLocaleString()}</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleRemoveCategory(index)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            Remove
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             ) : (
-              <div className="text-center p-4 border rounded-md text-muted-foreground">
-                No categories added yet. Add categories to complete your budget.
+              <div className="text-center p-6 border rounded-md text-muted-foreground bg-muted/10">
+                <p className="mb-2">No categories added yet</p>
+                <p className="text-sm">Add categories above to complete your budget setup</p>
               </div>
             )}
           </div>
@@ -190,7 +235,12 @@ export const NewBudgetDialog: React.FC<NewBudgetDialogProps> = ({
         
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSaveNewBudget}>Create Budget</Button>
+          <Button 
+            onClick={handleSaveNewBudget}
+            disabled={!newBudget.name || newBudget.categories.length === 0}
+          >
+            Create Budget
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

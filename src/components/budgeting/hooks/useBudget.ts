@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Budget, BudgetCategory } from "@/types/company";
@@ -11,7 +12,7 @@ export const useBudget = () => {
   const [selectedCategory, setSelectedCategory] = useState<BudgetCategory | null>(null);
   const [newBudget, setNewBudget] = useState({
     name: "",
-    period: "Monthly",
+    period: "Monthly" as "Monthly" | "Quarterly" | "Annual",
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
     categories: [] as BudgetCategory[],
@@ -56,12 +57,13 @@ export const useBudget = () => {
       return;
     }
 
-    const calculatedBudget = calculateBudgetActuals({
-      ...newBudget,
-      id: `budget-${Date.now()}`,
-      status: "Active",
-      categories: newBudget.categories
-    });
+    if (newBudget.categories.length === 0) {
+      toast.error("Please add at least one budget category");
+      return;
+    }
+
+    // Calculate totals from categories
+    const totalBudgeted = newBudget.categories.reduce((sum, cat) => sum + cat.budgeted, 0);
     
     const budgetToAdd: Budget = {
       id: `budget-${Date.now()}`,
@@ -77,15 +79,17 @@ export const useBudget = () => {
         budgeted: cat.budgeted,
         actual: 0
       })),
-      totalBudgeted: calculatedBudget.totalBudgeted,
-      totalActual: calculatedBudget.totalActual,
-      variance: calculatedBudget.variance
+      totalBudgeted: `$${totalBudgeted.toFixed(2)}`,
+      totalActual: "$0.00",
+      variance: `$${totalBudgeted.toFixed(2)}`
     };
     
     addBudget(budgetToAdd);
     
     toast.success("Budget created successfully");
     setNewBudgetDialogOpen(false);
+    
+    // Reset form
     setNewBudget({
       name: "",
       period: "Monthly",
@@ -103,18 +107,17 @@ export const useBudget = () => {
       return;
     }
     
+    const categoryToAdd: BudgetCategory = {
+      id: `temp-${Date.now()}`,
+      name: newCategory.name,
+      type: newCategory.type,
+      budgeted: newCategory.budgeted,
+      actual: 0
+    };
+    
     setNewBudget({
       ...newBudget,
-      categories: [
-        ...newBudget.categories,
-        {
-          id: `temp-${Date.now()}`,
-          name: newCategory.name,
-          type: newCategory.type,
-          budgeted: newCategory.budgeted,
-          actual: 0
-        }
-      ]
+      categories: [...newBudget.categories, categoryToAdd]
     });
     
     setNewCategory({
@@ -123,6 +126,8 @@ export const useBudget = () => {
       budgeted: 0,
       budgetedAmount: "$0.00"
     });
+    
+    toast.success("Category added");
   };
 
   const handleRemoveCategory = (index: number) => {
@@ -132,6 +137,7 @@ export const useBudget = () => {
       ...newBudget,
       categories: updatedCategories
     });
+    toast.success("Category removed");
   };
 
   const handleUpdateActual = (budgetId: string, categoryId: string, actualAmount: number) => {
@@ -170,15 +176,29 @@ export const useBudget = () => {
     if (!category) return;
     
     setSelectedBudget(budget);
-    setSelectedCategory(category);
+    setSelectedCategory({
+      ...category,
+      budgetedAmount: `$${category.budgeted.toFixed(2)}`,
+      actualAmount: `$${category.actual.toFixed(2)}`
+    });
     setEditCategoryDialogOpen(true);
   };
 
   const handleUpdateCategory = () => {
     if (!selectedBudget || !selectedCategory) return;
     
+    const budgetedValue = parseFloat(selectedCategory.budgetedAmount?.replace(/[^0-9.-]+/g, "") || "0");
+    const actualValue = parseFloat(selectedCategory.actualAmount?.replace(/[^0-9.-]+/g, "") || "0");
+    
     const updatedCategories = selectedBudget.categories.map(category => 
-      category.id === selectedCategory.id ? selectedCategory : category
+      category.id === selectedCategory.id 
+        ? {
+            ...category,
+            name: selectedCategory.name,
+            budgeted: budgetedValue,
+            actual: actualValue
+          }
+        : category
     );
     
     const calculatedBudget = calculateBudgetActuals({
@@ -196,12 +216,24 @@ export const useBudget = () => {
     
     toast.success("Category updated successfully");
     setEditCategoryDialogOpen(false);
+    setSelectedCategory(null);
+    setSelectedBudget(null);
   };
 
   // Format currency numbers
   const formatCurrency = (value: string): string => {
     const numValue = parseFloat(value.replace(/[^0-9.-]+/g, "")) || 0;
     return `$${numValue.toFixed(2)}`;
+  };
+
+  // Update newCategory budgeted amount when budgetedAmount changes
+  const updateNewCategoryAmount = (amount: string) => {
+    const numValue = parseFloat(amount.replace(/[^0-9.-]+/g, "")) || 0;
+    setNewCategory({
+      ...newCategory,
+      budgetedAmount: formatCurrency(amount),
+      budgeted: numValue
+    });
   };
 
   return {
@@ -216,7 +248,13 @@ export const useBudget = () => {
     newBudget,
     setNewBudget,
     newCategory,
-    setNewCategory,
+    setNewCategory: (category: any) => {
+      if (category.budgetedAmount !== undefined) {
+        updateNewCategoryAmount(category.budgetedAmount);
+      } else {
+        setNewCategory(category);
+      }
+    },
     calculateBudgetActuals,
     handleCreateBudget,
     handleSaveNewBudget,
