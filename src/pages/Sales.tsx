@@ -1,40 +1,46 @@
+
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Search, Plus, Download, Filter } from "lucide-react";
+import { Search, Plus, Download, Filter, Edit, Trash } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompany } from "@/contexts/CompanyContext";
 import { EstimateDialog } from "@/components/sales/EstimateDialog";
+import { SaleDialog } from "@/components/sales/SaleDialog";
 import { safeReplaceForNumber } from "@/components/timetracking/utils/timeTrackingUtils";
-
-// Define a type for sales to fix the import issue
-interface Sale {
-  id: string;
-  date: string;
-  customer: string;
-  amount: number | string;
-  status: string;
-  items?: any[];
-}
+import { Sale, Estimate } from "@/types/company";
+import { useToast } from "@/hooks/use-toast";
 
 const SalesPage: React.FC = () => {
-  const { currentCompany } = useCompany();
+  const { currentCompany, addSale, updateSale, deleteSale, addEstimate, updateEstimate, deleteEstimate } = useCompany();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("estimates");
   const [isEstimateDialogOpen, setIsEstimateDialogOpen] = useState(false);
+  const [isSaleDialogOpen, setIsSaleDialogOpen] = useState(false);
+  const [editingEstimate, setEditingEstimate] = useState<Estimate | null>(null);
+  const [editingSale, setEditingSale] = useState<Sale | null>(null);
+  const [searchText, setSearchText] = useState("");
   
-  // Get sales data from company
+  // Get data from company
   const estimates = currentCompany?.estimates || [];
   const salesData: Sale[] = currentCompany?.sales || [];
+  const customers = currentCompany?.customers || [];
   
-  // Calculate total estimates value
-  const totalEstimatesValue = estimates.reduce((total, estimate) => {
-    return total + estimate.total;
-  }, 0);
+  // Filter data based on search
+  const filteredEstimates = estimates.filter(estimate => 
+    estimate.customer.toLowerCase().includes(searchText.toLowerCase()) ||
+    estimate.id.toLowerCase().includes(searchText.toLowerCase())
+  );
   
-  // Calculate total sales value
+  const filteredSales = salesData.filter(sale => 
+    sale.customer.toLowerCase().includes(searchText.toLowerCase()) ||
+    sale.id.toLowerCase().includes(searchText.toLowerCase())
+  );
+  
+  // Calculate totals
+  const totalEstimatesValue = estimates.reduce((total, estimate) => total + estimate.total, 0);
   const totalSalesValue = salesData.reduce((total, sale) => {
     const amount = typeof sale.amount === 'string'
       ? parseFloat(safeReplaceForNumber(sale.amount))
@@ -42,9 +48,86 @@ const SalesPage: React.FC = () => {
     return total + amount;
   }, 0);
   
-  const handleCreateSale = () => {
-    // This would typically open a dialog to create a sale
-    console.log("Create sale clicked");
+  const handleCreateSale = (saleData: Sale) => {
+    try {
+      if (editingSale) {
+        updateSale!(saleData);
+        toast({
+          title: "Sale Updated",
+          description: "Sale has been updated successfully.",
+        });
+      } else {
+        addSale!(saleData);
+        toast({
+          title: "Sale Created",
+          description: "New sale has been created successfully.",
+        });
+      }
+      setIsSaleDialogOpen(false);
+      setEditingSale(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save sale. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateEstimate = (estimateData: Estimate) => {
+    try {
+      if (editingEstimate) {
+        updateEstimate(estimateData);
+        toast({
+          title: "Estimate Updated",
+          description: "Estimate has been updated successfully.",
+        });
+      } else {
+        addEstimate(estimateData);
+        toast({
+          title: "Estimate Created",
+          description: "New estimate has been created successfully.",
+        });
+      }
+      setIsEstimateDialogOpen(false);
+      setEditingEstimate(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save estimate. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditSale = (sale: Sale) => {
+    setEditingSale(sale);
+    setIsSaleDialogOpen(true);
+  };
+
+  const handleEditEstimate = (estimate: Estimate) => {
+    setEditingEstimate(estimate);
+    setIsEstimateDialogOpen(true);
+  };
+
+  const handleDeleteSale = (saleId: string) => {
+    if (confirm("Are you sure you want to delete this sale?")) {
+      deleteSale!(saleId);
+      toast({
+        title: "Sale Deleted",
+        description: "Sale has been deleted successfully.",
+      });
+    }
+  };
+
+  const handleDeleteEstimate = (estimateId: string) => {
+    if (confirm("Are you sure you want to delete this estimate?")) {
+      deleteEstimate(estimateId);
+      toast({
+        title: "Estimate Deleted",
+        description: "Estimate has been deleted successfully.",
+      });
+    }
   };
   
   return (
@@ -61,7 +144,7 @@ const SalesPage: React.FC = () => {
               New Estimate
             </Button>
           ) : (
-            <Button onClick={handleCreateSale}>
+            <Button onClick={() => setIsSaleDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New Sale
             </Button>
@@ -103,6 +186,18 @@ const SalesPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      <div className="flex gap-4 items-center">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={`Search ${activeTab}...`}
+            className="pl-8"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+        </div>
+      </div>
       
       <Tabs defaultValue="estimates" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
@@ -112,23 +207,8 @@ const SalesPage: React.FC = () => {
         
         <TabsContent value="estimates">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardHeader>
               <CardTitle>Estimates</CardTitle>
-              <div className="flex gap-2">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search estimates..."
-                    className="pl-8 w-[200px]"
-                  />
-                </div>
-                <Button variant="outline" size="icon">
-                  <Filter className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon">
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
             </CardHeader>
             <CardContent>
               <div className="rounded-md border">
@@ -141,11 +221,12 @@ const SalesPage: React.FC = () => {
                       <TableHead>Expiry</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {estimates.length > 0 ? (
-                      estimates.map((estimate) => (
+                    {filteredEstimates.length > 0 ? (
+                      filteredEstimates.map((estimate) => (
                         <TableRow key={estimate.id}>
                           <TableCell>{estimate.id.substring(0, 8)}</TableCell>
                           <TableCell>{estimate.customer}</TableCell>
@@ -161,11 +242,29 @@ const SalesPage: React.FC = () => {
                               {estimate.status}
                             </span>
                           </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditEstimate(estimate)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteEstimate(estimate.id)}
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
+                        <TableCell colSpan={7} className="h-24 text-center">
                           No estimates found
                         </TableCell>
                       </TableRow>
@@ -179,23 +278,8 @@ const SalesPage: React.FC = () => {
         
         <TabsContent value="sales">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardHeader>
               <CardTitle>Sales</CardTitle>
-              <div className="flex gap-2">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search sales..."
-                    className="pl-8 w-[200px]"
-                  />
-                </div>
-                <Button variant="outline" size="icon">
-                  <Filter className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon">
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
             </CardHeader>
             <CardContent>
               <div className="rounded-md border">
@@ -207,11 +291,13 @@ const SalesPage: React.FC = () => {
                       <TableHead>Date</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Payment Method</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {salesData.length > 0 ? (
-                      salesData.map((sale) => (
+                    {filteredSales.length > 0 ? (
+                      filteredSales.map((sale) => (
                         <TableRow key={sale.id}>
                           <TableCell>{sale.id.substring(0, 8)}</TableCell>
                           <TableCell>{sale.customer}</TableCell>
@@ -225,16 +311,36 @@ const SalesPage: React.FC = () => {
                             <span className={`px-2 py-1 rounded-full text-xs ${
                               sale.status === "Completed" ? "bg-green-100 text-green-800" :
                               sale.status === "In Progress" ? "bg-blue-100 text-blue-800" :
+                              sale.status === "Cancelled" ? "bg-red-100 text-red-800" :
                               "bg-gray-100 text-gray-800"
                             }`}>
                               {sale.status}
                             </span>
                           </TableCell>
+                          <TableCell>{sale.paymentMethod || 'N/A'}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditSale(sale)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteSale(sale.id)}
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
+                        <TableCell colSpan={7} className="h-24 text-center">
                           No sales found
                         </TableCell>
                       </TableRow>
@@ -249,7 +355,23 @@ const SalesPage: React.FC = () => {
       
       <EstimateDialog
         isOpen={isEstimateDialogOpen}
-        onClose={() => setIsEstimateDialogOpen(false)}
+        onClose={() => {
+          setIsEstimateDialogOpen(false);
+          setEditingEstimate(null);
+        }}
+        onSubmit={handleCreateEstimate}
+        estimate={editingEstimate}
+      />
+
+      <SaleDialog
+        open={isSaleDialogOpen}
+        onOpenChange={(open) => {
+          setIsSaleDialogOpen(open);
+          if (!open) setEditingSale(null);
+        }}
+        onSubmit={handleCreateSale}
+        customers={customers}
+        sale={editingSale}
       />
     </div>
   );
