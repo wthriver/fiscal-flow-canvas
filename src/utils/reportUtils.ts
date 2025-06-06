@@ -1,103 +1,49 @@
 
-import { Transaction } from "@/contexts/CompanyContext";
+import { format } from 'date-fns';
+import { Transaction } from '@/types/company';
 
-interface DateRange {
-  from: Date | undefined;
-  to: Date | undefined;
-}
+export const formatCurrency = (amount: number | string): string => {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(num);
+};
 
-export function prepareTransactionData(
+export const formatDate = (date: string): string => {
+  return format(new Date(date), 'MMM dd, yyyy');
+};
+
+export const calculateTransactionTotal = (transactions: Transaction[]): number => {
+  return transactions.reduce((total, transaction) => {
+    const amount = typeof transaction.amount === 'string' 
+      ? parseFloat(transaction.amount.replace(/[^0-9.-]+/g, ''))
+      : transaction.amount;
+    return total + amount;
+  }, 0);
+};
+
+export const groupTransactionsByCategory = (transactions: Transaction[]) => {
+  return transactions.reduce((groups, transaction) => {
+    const category = transaction.category;
+    if (!groups[category]) {
+      groups[category] = [];
+    }
+    groups[category].push(transaction);
+    return groups;
+  }, {} as Record<string, Transaction[]>);
+};
+
+export const filterTransactionsByDateRange = (
   transactions: Transaction[], 
-  accountName: string, 
-  dateRange: DateRange
-) {
-  // Filter transactions for the specific account
-  const accountTransactions = transactions.filter(
-    (transaction) => {
-      if (accountName === "All Accounts") return true;
-      return transaction.account === accountName || transaction.bankAccount === accountName;
-    }
-  );
-
-  // Filter transactions by date range if it's set
-  const filteredTransactions = accountTransactions.filter((transaction) => {
-    if (!dateRange.from && !dateRange.to) return true;
-    
+  startDate: string, 
+  endDate: string
+): Transaction[] => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  return transactions.filter(transaction => {
     const transactionDate = new Date(transaction.date);
-    
-    if (dateRange.from && !dateRange.to) {
-      return transactionDate >= dateRange.from;
-    }
-    
-    if (!dateRange.from && dateRange.to) {
-      return transactionDate <= dateRange.to;
-    }
-    
-    if (dateRange.from && dateRange.to) {
-      return transactionDate >= dateRange.from && transactionDate <= dateRange.to;
-    }
-    
-    return true;
+    return transactionDate >= start && transactionDate <= end;
   });
-
-  // Calculate income and expenses data for chart
-  const incomeExpenseData = filteredTransactions.reduce((acc: any[], transaction) => {
-    const date = transaction.date.substring(0, 7); // Get YYYY-MM format
-    const amount = parseFloat(transaction.amount.replace(/[^0-9.-]+/g, ""));
-    const isIncome = transaction.amount.startsWith("+") || transaction.type === "Credit";
-    
-    const existingEntry = acc.find((entry) => entry.month === date);
-    
-    if (existingEntry) {
-      if (isIncome) {
-        existingEntry.income += amount;
-      } else {
-        existingEntry.expenses += amount;
-      }
-      existingEntry.balance = existingEntry.income - existingEntry.expenses;
-    } else {
-      acc.push({
-        month: date,
-        income: isIncome ? amount : 0,
-        expenses: isIncome ? 0 : amount,
-        balance: isIncome ? amount : -amount,
-      });
-    }
-    
-    return acc;
-  }, []).sort((a, b) => a.month.localeCompare(b.month));
-
-  // Create reconciliation status data
-  const reconciliationData = {
-    reconciled: filteredTransactions.filter(t => t.reconciled).length,
-    unreconciled: filteredTransactions.filter(t => !t.reconciled).length
-  };
-
-  // Calculate account balance over time
-  const balanceHistory = filteredTransactions
-    .slice()
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .reduce((acc: any[], transaction) => {
-      const date = transaction.date;
-      const amount = parseFloat(transaction.amount.replace(/[^0-9.-]+/g, ""));
-      const isIncome = transaction.amount.startsWith("+") || transaction.type === "Credit";
-      
-      const lastBalance = acc.length > 0 ? acc[acc.length - 1].balance : 0;
-      const newBalance = isIncome ? lastBalance + amount : lastBalance - amount;
-      
-      acc.push({
-        date,
-        amount: isIncome ? amount : -amount,
-        balance: newBalance,
-      });
-      
-      return acc;
-    }, []);
-
-  return {
-    filteredTransactions,
-    incomeExpenseData,
-    reconciliationData,
-    balanceHistory
-  };
-}
+};

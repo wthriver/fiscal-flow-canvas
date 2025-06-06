@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Budget } from "@/contexts/CompanyContext";
+import { Budget } from "@/types/company";
 
 interface BudgetCardProps {
   budget: Budget;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pencil, Trash2, Plus } from "lucide-react";
-import { useCompany, TaxRate } from "@/contexts/CompanyContext";
+import { useCompany } from "@/contexts/CompanyContext";
+import { TaxRate } from "@/types/company";
 
 export const TaxCalculator = () => {
   const { currentCompany, addTaxRate, updateTaxRate, deleteTaxRate } = useCompany();
