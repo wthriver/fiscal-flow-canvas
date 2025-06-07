@@ -1,7 +1,6 @@
 
 import React from "react";
 import { GeneralLedger } from "@/components/accounting/GeneralLedger";
-import { TaxCalculator } from "@/components/taxes/TaxCalculator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RecurringInvoices } from "@/components/invoices/RecurringInvoices";
 import { AccountsPayableAging } from "@/components/expenses/AccountsPayableAging";

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -226,7 +225,7 @@ const PayrollPage: React.FC = () => {
                   <span className="font-medium">Status:</span> <Badge variant="secondary">{payrollSummary.currentPeriod.status}</Badge>
                 </p>
                 <p>
-                  <span className="font-medium">Total Paid:</span> ${payrollSummary.currentPeriod.totalPaid}
+                  <span className="font-medium">Total Paid:</span> ${typeof payrollSummary.currentPeriod.totalPaid === 'number' ? payrollSummary.currentPeriod.totalPaid : payrollSummary.currentPeriod.totalPaid}
                 </p>
               </div>
             ) : (

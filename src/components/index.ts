@@ -13,7 +13,6 @@ export { Badge } from "./ui/badge";
 
 // Business Components
 export { GeneralLedger } from "./accounting/GeneralLedger";
-export { TaxCalculator } from "./taxes/TaxCalculator";
 export { RecurringInvoices } from "./invoices/RecurringInvoices";
 export { AccountsPayableAging } from "./expenses/AccountsPayableAging";
 export { DigitalReceiptCapture } from "./expenses/DigitalReceiptCapture";
