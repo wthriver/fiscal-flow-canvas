@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { AdvancedProjectManagement } from "@/components/projects/AdvancedProjectManagement";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,14 +25,14 @@ const AdvancedProjects: React.FC = () => {
     const onHoldProjects = projects.filter(p => p.status === "On Hold").length;
     const overbudgetProjects = projects.filter(p => {
       const timeEntries = currentCompany.timeEntries?.filter(te => te.projectId === p.id) || [];
-      const totalCost = timeEntries.reduce((sum, te) => sum + (te.amount || 0), 0);
+      const totalCost = timeEntries.reduce((sum, te) => sum + ((te.amount || te.hours * (te.hourlyRate || te.billingRate || 0)) || 0), 0);
       return totalCost > (p.budget || 0);
     }).length;
 
     const totalBudget = projects.reduce((sum, p) => sum + (p.budget || 0), 0);
     const totalSpent = projects.reduce((sum, p) => {
       const timeEntries = currentCompany.timeEntries?.filter(te => te.projectId === p.id) || [];
-      return sum + timeEntries.reduce((entrySum, te) => entrySum + (te.amount || 0), 0);
+      return sum + timeEntries.reduce((entrySum, te) => entrySum + ((te.amount || te.hours * (te.hourlyRate || te.billingRate || 0)) || 0), 0);
     }, 0);
 
     const averageProgress = projects.length > 0 
@@ -337,7 +336,7 @@ const AdvancedProjects: React.FC = () => {
                       <span>Avg Team Size</span>
                     </div>
                     <span className="font-bold">
-                      {projects.length > 0 ? (projects.reduce((sum, p) => sum + (p.teamMembers?.length || 0), 0) / projects.length).toFixed(1) : 0}
+                      {projects.length > 0 ? (projects.reduce((sum, p) => sum + ((p.teamMembers || p.team)?.length || 0), 0) / projects.length).toFixed(1) : 0}
                     </span>
                   </div>
                 </div>

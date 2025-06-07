@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -75,7 +74,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         location: item.location || "",
         supplier: item.supplier || "",
         reorderLevel: item.reorderLevel?.toString() || "",
-        maxLevel: item.maxLevel?.toString() || "",
+        maxLevel: (item.maxLevel || item.maxStock)?.toString() || "",
         description: item.description || "",
         unit: item.unit || "pcs",
         weight: item.weight?.toString() || "",

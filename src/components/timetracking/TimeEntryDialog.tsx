@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -56,7 +55,7 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
         description: timeEntry.description || "",
         billable: timeEntry.billable !== undefined ? timeEntry.billable : true,
         status: timeEntry.status || "Draft",
-        hourlyRate: timeEntry.hourlyRate?.toString() || "",
+        hourlyRate: (timeEntry.hourlyRate || timeEntry.billingRate)?.toString() || "",
         tags: timeEntry.tags || []
       });
     } else if (!timeEntry && isOpen) {

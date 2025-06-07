@@ -1,4 +1,3 @@
-
 // Company and related types
 export interface Company {
   id: string;
@@ -221,6 +220,7 @@ export interface Project {
   spent?: number | string;
   progress?: number;
   team?: string[];
+  teamMembers?: string[];
   description?: string;
   priority?: string;
   billingRate?: number;
@@ -234,7 +234,9 @@ export interface Milestone {
   id: string;
   name: string;
   dueDate: string;
+  date?: string;
   status: string;
+  completed?: boolean;
   description?: string;
   budget?: number;
 }
@@ -244,6 +246,7 @@ export interface Task {
   name: string;
   description?: string;
   assigneeId?: string;
+  assignee?: string;
   status: string;
   priority: string;
   dueDate?: string;
@@ -300,9 +303,12 @@ export interface TimeEntry {
   status?: string;
   taskId?: string;
   billingRate?: number;
+  hourlyRate?: number;
   location?: string;
   approvedBy?: string;
   invoiceId?: string;
+  tags?: string[];
+  amount?: number;
 }
 
 export interface InventoryItem {
@@ -317,6 +323,7 @@ export interface InventoryItem {
   supplier?: string;
   reorderLevel?: number;
   maxStock?: number;
+  maxLevel?: number;
   unit?: string;
   barcode?: string;
   weight?: number;
@@ -325,6 +332,20 @@ export interface InventoryItem {
   images?: string[];
   lastRestocked?: string;
   expiryDate?: string;
+  taxable?: boolean;
+  trackSerial?: boolean;
+  trackLots?: boolean;
+  customFields?: Record<string, string>;
+  stockMovements?: Array<{
+    id: string;
+    type: 'in' | 'out' | 'adjustment';
+    quantity: number;
+    date: string;
+    reason: string;
+    reference: string;
+  }>;
+  lastUpdated?: string;
+  status?: string;
 }
 
 export interface BudgetCategory {

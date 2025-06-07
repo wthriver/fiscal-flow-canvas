@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -52,9 +51,19 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
         endDate: project.endDate || "",
         budget: project.budget?.toString() || "",
         progress: project.progress?.toString() || "0",
-        teamMembers: project.teamMembers || [],
-        tasks: project.tasks || [],
-        milestones: project.milestones || []
+        teamMembers: project.teamMembers || project.team || [],
+        tasks: project.tasks?.map(task => ({
+          id: task.id,
+          name: task.name,
+          status: task.status,
+          assignee: task.assignee || task.assigneeId || ""
+        })) || [],
+        milestones: project.milestones?.map(milestone => ({
+          id: milestone.id,
+          name: milestone.name,
+          date: milestone.date || milestone.dueDate,
+          completed: milestone.completed || milestone.status === "Completed"
+        })) || []
       });
     } else if (!project && isOpen) {
       setFormData({
@@ -136,8 +145,23 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
       budget: parseFloat(formData.budget) || 0,
       progress: parseInt(formData.progress) || 0,
       teamMembers: formData.teamMembers,
-      tasks: formData.tasks,
-      milestones: formData.milestones
+      tasks: formData.tasks.map(task => ({
+        id: task.id,
+        name: task.name,
+        status: task.status,
+        assignee: task.assignee,
+        priority: "Medium",
+        dueDate: "",
+        description: ""
+      })),
+      milestones: formData.milestones.map(milestone => ({
+        id: milestone.id,
+        name: milestone.name,
+        dueDate: milestone.date,
+        status: milestone.completed ? "Completed" : "Pending",
+        completed: milestone.completed
+      })),
+      documents: project?.documents || []
     };
 
     const updatedProjects = project 
