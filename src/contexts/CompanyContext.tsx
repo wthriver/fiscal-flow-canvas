@@ -458,6 +458,40 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     setCurrentCompany(updatedCompany);
   };
 
+  // Inventory operations
+  const addInventoryItem = (item: any) => {
+    const updatedInventory = {
+      ...currentCompany.inventory,
+      items: [...(currentCompany.inventory?.items || []), item]
+    };
+    updateCompany({
+      ...currentCompany,
+      inventory: updatedInventory
+    });
+  };
+
+  const updateInventoryItem = (item: any) => {
+    const updatedInventory = {
+      ...currentCompany.inventory,
+      items: (currentCompany.inventory?.items || []).map(i => i.id === item.id ? item : i)
+    };
+    updateCompany({
+      ...currentCompany,
+      inventory: updatedInventory
+    });
+  };
+
+  const deleteInventoryItem = (itemId: string) => {
+    const updatedInventory = {
+      ...currentCompany.inventory,
+      items: (currentCompany.inventory?.items || []).filter(i => i.id !== itemId)
+    };
+    updateCompany({
+      ...currentCompany,
+      inventory: updatedInventory
+    });
+  };
+
   // Payroll operations
   const processPayroll = (payrollData: any) => {
     const updatedCompany = {

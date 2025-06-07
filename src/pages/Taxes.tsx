@@ -1,82 +1,93 @@
 
 import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TaxCalculator } from "@/components/taxes/TaxCalculator";
-import { FileText, Download, Calendar, Clock } from "lucide-react";
+import { TaxRateDialog } from "@/components/taxes/TaxRateDialog";
+import { useCompany } from "@/contexts/CompanyContext";
+import { Plus, Edit, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
-const Taxes = () => {
-  const [activeTab, setActiveTab] = useState("calculator");
-  
+const Taxes: React.FC = () => {
+  const { currentCompany, deleteTaxRate } = useCompany();
+  const [isTaxRateDialogOpen, setIsTaxRateDialogOpen] = useState(false);
+  const [selectedTaxRate, setSelectedTaxRate] = useState(null);
+
+  const handleEditTaxRate = (taxRate: any) => {
+    setSelectedTaxRate(taxRate);
+    setIsTaxRateDialogOpen(true);
+  };
+
+  const handleDeleteTaxRate = (taxRateId: string) => {
+    deleteTaxRate(taxRateId);
+    toast.success("Tax rate deleted successfully!");
+  };
+
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Tax Management</h1>
-          <p className="text-muted-foreground">Prepare and manage your tax filings</p>
-        </div>
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Tax Management</h1>
+        <Button onClick={() => setIsTaxRateDialogOpen(true)} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          New Tax Rate
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid gap-6">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Estimated Tax</p>
-                <p className="text-2xl font-bold">$14,325.00</p>
-              </div>
-              <div className="bg-blue-100 p-2 rounded-full text-blue-600">
-                <FileText size={20} />
-              </div>
+          <CardHeader>
+            <CardTitle>Tax Rates</CardTitle>
+            <CardDescription>Manage your tax rates and calculations</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {currentCompany.taxRates?.map((taxRate) => (
+                <div key={taxRate.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h3 className="font-medium">{taxRate.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {taxRate.rate}% - {taxRate.description}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditTaxRate(taxRate)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteTaxRate(taxRate.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              
+              {!currentCompany.taxRates?.length && (
+                <p className="text-center text-muted-foreground py-8">
+                  No tax rates configured yet. Add your first tax rate to get started.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Deductions</p>
-                <p className="text-2xl font-bold">$5,250.00</p>
-              </div>
-              <div className="bg-green-100 p-2 rounded-full text-green-600">
-                <Download size={20} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Next Filing</p>
-                <p className="text-2xl font-bold">Q2 2025</p>
-              </div>
-              <div className="bg-yellow-100 p-2 rounded-full text-yellow-600">
-                <Calendar size={20} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Days Remaining</p>
-                <p className="text-2xl font-bold">45</p>
-              </div>
-              <div className="bg-red-100 p-2 rounded-full text-red-600">
-                <Clock size={20} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+
+        <TaxCalculator />
       </div>
 
-      <TaxCalculator />
+      <TaxRateDialog
+        isOpen={isTaxRateDialogOpen}
+        onClose={() => {
+          setIsTaxRateDialogOpen(false);
+          setSelectedTaxRate(null);
+        }}
+        taxRate={selectedTaxRate}
+      />
     </div>
   );
 };

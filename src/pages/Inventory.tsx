@@ -12,6 +12,7 @@ import { InventoryItemsTab } from "@/components/inventory/tabs/InventoryItemsTab
 import { BundlesTab } from "@/components/inventory/tabs/BundlesTab";
 import { LotTrackingTab } from "@/components/inventory/tabs/LotTrackingTab";
 import { SerialNumbersTab } from "@/components/inventory/tabs/SerialNumbersTab";
+import { InventoryItemDialog } from "@/components/inventory/InventoryItemDialog";
 import { useCompany } from "@/contexts/CompanyContext";
 import { safeReplaceForNumber } from "@/components/timetracking/utils/timeTrackingUtils";
 
@@ -19,6 +20,7 @@ const InventoryPage: React.FC = () => {
   const { currentCompany } = useCompany();
   const [activeTab, setActiveTab] = useState("items");
   const [managementTab, setManagementTab] = useState("valuation");
+  const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   
   const totalValue = currentCompany?.inventory?.items?.reduce((total, item) => {
     const cost = typeof item.cost === 'string' 
@@ -32,7 +34,7 @@ const InventoryPage: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-3xl font-bold">Inventory Management</h1>
         <div className="flex gap-2">
-          <Button>New Item</Button>
+          <Button onClick={() => setIsItemDialogOpen(true)}>New Item</Button>
         </div>
       </div>
       
@@ -84,6 +86,11 @@ const InventoryPage: React.FC = () => {
           <PurchaseOrders />
         </TabsContent>
       </Tabs>
+
+      <InventoryItemDialog 
+        isOpen={isItemDialogOpen}
+        onClose={() => setIsItemDialogOpen(false)}
+      />
     </div>
   );
 };
