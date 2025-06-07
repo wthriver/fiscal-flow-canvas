@@ -280,7 +280,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               <span className="font-medium">Stock Status:</span>
-              <Badge variant={stockStatus.variant}>{stockStatus.status}</Badge>
+              <Badge variant={stockStatus.variant as "default" | "secondary" | "destructive" | "outline"}>{stockStatus.status}</Badge>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-medium">Current Stock:</span>
@@ -347,7 +347,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
             <div className="p-3 bg-muted rounded-lg">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  {parseFloat(calculateMargin()) > 0 ? (
+                  {parseFloat(calculateMargin().toString()) > 0 ? (
                     <TrendingUp className="h-4 w-4 text-green-500" />
                   ) : (
                     <TrendingDown className="h-4 w-4 text-red-500" />
