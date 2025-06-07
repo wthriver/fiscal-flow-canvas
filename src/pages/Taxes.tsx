@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { TaxCalculator } from "@/components/taxes/TaxCalculator";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TaxRateDialog } from "@/components/taxes/TaxRateDialog";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Plus, Edit, Trash2, Calculator, FileText, TrendingUp } from "lucide-react";
@@ -14,6 +15,12 @@ const Taxes: React.FC = () => {
   const { currentCompany, deleteTaxRate } = useCompany();
   const [isTaxRateDialogOpen, setIsTaxRateDialogOpen] = useState(false);
   const [selectedTaxRate, setSelectedTaxRate] = useState(null);
+  
+  // Tax Calculator State
+  const [calculatorAmount, setCalculatorAmount] = useState("");
+  const [selectedTaxRateId, setSelectedTaxRateId] = useState("");
+  const [calculatedTax, setCalculatedTax] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
 
   const handleEditTaxRate = (taxRate: any) => {
     setSelectedTaxRate(taxRate);
@@ -25,6 +32,24 @@ const Taxes: React.FC = () => {
       deleteTaxRate(taxRateId);
       toast.success("Tax rate deleted successfully!");
     }
+  };
+
+  const calculateTax = () => {
+    const amount = parseFloat(calculatorAmount) || 0;
+    const taxRate = currentCompany.taxRates?.find(rate => rate.id === selectedTaxRateId);
+    
+    if (!taxRate) {
+      toast.error("Please select a tax rate");
+      return;
+    }
+
+    const tax = (amount * taxRate.rate) / 100;
+    const total = amount + tax;
+    
+    setCalculatedTax(tax);
+    setTotalAmount(total);
+    
+    toast.success("Tax calculated successfully!");
   };
 
   // Calculate tax summary from existing data
@@ -109,10 +134,11 @@ const Taxes: React.FC = () => {
       </div>
 
       <div className="grid gap-6">
+        {/* Tax Rates Management */}
         <Card>
           <CardHeader>
-            <CardTitle>Tax Rates Configuration</CardTitle>
-            <CardDescription>Manage your tax rates and calculations</CardDescription>
+            <CardTitle>Tax Rates Management</CardTitle>
+            <CardDescription>Configure and manage your tax rates</CardDescription>
           </CardHeader>
           <CardContent>
             {currentCompany.taxRates?.length > 0 ? (
@@ -183,7 +209,69 @@ const Taxes: React.FC = () => {
           </CardContent>
         </Card>
 
-        <TaxCalculator />
+        {/* Tax Calculator */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calculator className="h-5 w-5" />
+              Tax Calculator
+            </CardTitle>
+            <CardDescription>Calculate taxes using your configured tax rates</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Amount ($)</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="1000.00"
+                    value={calculatorAmount}
+                    onChange={(e) => setCalculatorAmount(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Tax Rate</label>
+                  <Select value={selectedTaxRateId} onValueChange={setSelectedTaxRateId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select tax rate" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currentCompany.taxRates?.map((taxRate) => (
+                        <SelectItem key={taxRate.id} value={taxRate.id}>
+                          {taxRate.name} ({taxRate.rate}%)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={calculateTax} className="w-full">
+                    Calculate Tax
+                  </Button>
+                </div>
+              </div>
+              
+              {calculatedTax > 0 && (
+                <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tax Amount</p>
+                    <p className="text-xl font-semibold">${calculatedTax.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Original Amount</p>
+                    <p className="text-xl font-semibold">${parseFloat(calculatorAmount).toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Amount</p>
+                    <p className="text-xl font-semibold">${totalAmount.toFixed(2)}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <TaxRateDialog

@@ -12,8 +12,8 @@ const Budgeting: React.FC = () => {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Budget Management</h1>
-          <p className="text-muted-foreground">Create and manage your budgets with detailed categories</p>
+          <h1 className="text-3xl font-bold">Budgeting & Planning</h1>
+          <p className="text-muted-foreground">Create and manage your budgets with detailed categories and tracking</p>
         </div>
         <Button onClick={() => setIsBudgetDialogOpen(true)} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
