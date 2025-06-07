@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,10 @@ const PayrollPage: React.FC = () => {
     
     const totalEmployees = currentCompany.employees?.length || 0;
     const totalPayroll = payPeriods.reduce((sum, period) => {
-      const periodTotal = typeof period.totalPaid === 'number' ? period.totalPaid : parseFloat(period.totalPaid?.toString().replace(/[^0-9.-]+/g, "") || "0");
+      // Fix: Handle the type properly
+      const periodTotal = typeof period.totalPaid === 'number' 
+        ? period.totalPaid 
+        : parseFloat(period.totalPaid?.toString().replace(/[^0-9.-]+/g, "") || "0");
       return sum + periodTotal;
     }, 0);
     
@@ -62,7 +66,7 @@ const PayrollPage: React.FC = () => {
   const employeeStats = calculateEmployeeStats();
 
   const createSamplePayPeriod = () => {
-    const samplePeriods = [
+    const samplePeriods: PayPeriod[] = [
       {
         id: `payroll-${Date.now()}`,
         startDate: '2024-01-01',
@@ -70,8 +74,7 @@ const PayrollPage: React.FC = () => {
         payDate: '2024-01-20',
         status: 'Completed',
         totalPaid: 45000,
-        employeeCount: 5,
-        createdDate: '2024-01-20'
+        employeeCount: 5
       },
       {
         id: `payroll-${Date.now() + 1}`,
@@ -80,8 +83,7 @@ const PayrollPage: React.FC = () => {
         payDate: '2024-02-05',
         status: 'Processing',
         totalPaid: 47500,
-        employeeCount: 5,
-        createdDate: '2024-02-05'
+        employeeCount: 5
       }
     ];
 

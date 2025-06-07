@@ -22,6 +22,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   item 
 }) => {
   const { currentCompany, updateCompany } = useCompany();
+  
   const [formData, setFormData] = useState({
     name: "",
     sku: "",
@@ -175,10 +176,10 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
     const reorderLevel = parseInt(formData.reorderLevel) || 0;
     const maxLevel = parseInt(formData.maxLevel) || 0;
 
-    if (quantity === 0) return { status: 'Out of Stock', color: 'destructive' };
-    if (quantity <= reorderLevel) return { status: 'Low Stock', color: 'warning' };
-    if (maxLevel > 0 && quantity >= maxLevel) return { status: 'Overstock', color: 'secondary' };
-    return { status: 'In Stock', color: 'success' };
+    if (quantity === 0) return { status: 'Out of Stock', variant: 'destructive' as const };
+    if (quantity <= reorderLevel) return { status: 'Low Stock', variant: 'secondary' as const };
+    if (maxLevel > 0 && quantity >= maxLevel) return { status: 'Overstock', variant: 'outline' as const };
+    return { status: 'In Stock', variant: 'default' as const };
   };
 
   const handleSave = () => {
@@ -279,7 +280,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               <span className="font-medium">Stock Status:</span>
-              <Badge variant={stockStatus.color as any}>{stockStatus.status}</Badge>
+              <Badge variant={stockStatus.variant}>{stockStatus.status}</Badge>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-medium">Current Stock:</span>
