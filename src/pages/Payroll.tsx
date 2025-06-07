@@ -28,14 +28,9 @@ const PayrollPage: React.FC = () => {
     
     const totalEmployees = currentCompany.employees?.length || 0;
     const totalPayroll = payPeriods.reduce((sum, period) => {
-      let periodTotal: number;
-      if (typeof period.totalPaid === 'number') {
-        periodTotal = period.totalPaid;
-      } else if (typeof period.totalPaid === 'string') {
-        periodTotal = parseFloat((period.totalPaid as string).replace(/[^0-9.-]+/g, "") || "0");
-      } else {
-        periodTotal = 0;
-      }
+      const periodTotal = typeof period.totalPaid === 'number' 
+        ? period.totalPaid 
+        : parseFloat(String(period.totalPaid).replace(/[^0-9.-]+/g, "") || "0");
       return sum + periodTotal;
     }, 0);
     
@@ -225,7 +220,7 @@ const PayrollPage: React.FC = () => {
                   <span className="font-medium">Status:</span> <Badge variant="secondary">{payrollSummary.currentPeriod.status}</Badge>
                 </p>
                 <p>
-                  <span className="font-medium">Total Paid:</span> ${typeof payrollSummary.currentPeriod.totalPaid === 'number' ? payrollSummary.currentPeriod.totalPaid : payrollSummary.currentPeriod.totalPaid}
+                  <span className="font-medium">Total Paid:</span> ${typeof payrollSummary.currentPeriod.totalPaid === 'number' ? payrollSummary.currentPeriod.totalPaid.toLocaleString() : String(payrollSummary.currentPeriod.totalPaid)}
                 </p>
               </div>
             ) : (
