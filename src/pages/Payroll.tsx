@@ -1,5 +1,3 @@
-
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,12 +26,12 @@ const PayrollPage: React.FC = () => {
     
     const totalEmployees = currentCompany.employees?.length || 0;
     const totalPayroll = payPeriods.reduce((sum, period) => {
-      // Fix: Handle the type properly with explicit type checking
+      // Fix: Handle the type properly with explicit type checking and type assertion
       let periodTotal: number;
       if (typeof period.totalPaid === 'number') {
         periodTotal = period.totalPaid;
       } else if (typeof period.totalPaid === 'string') {
-        periodTotal = parseFloat(period.totalPaid.replace(/[^0-9.-]+/g, "") || "0");
+        periodTotal = parseFloat((period.totalPaid as string).replace(/[^0-9.-]+/g, "") || "0");
       } else {
         periodTotal = 0;
       }
