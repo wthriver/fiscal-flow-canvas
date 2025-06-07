@@ -30,3 +30,12 @@ export { ReportTabs } from "./banking/reports/ReportTabs";
 
 // Budget Components
 export { BudgetingDashboard } from "./budgeting/BudgetingDashboard";
+
+// Auth Components
+export { RoleBasedAccess } from "./auth/RoleBasedAccess";
+
+// Comprehensive Components
+export { ComprehensiveAuditTrail } from "./audit/ComprehensiveAuditTrail";
+export { AdvancedMultiCurrency } from "./currency/AdvancedMultiCurrency";
+export { ComprehensiveIntegrations } from "./integrations/ComprehensiveIntegrations";
+export { ComprehensiveSettings } from "./settings/ComprehensiveSettings";

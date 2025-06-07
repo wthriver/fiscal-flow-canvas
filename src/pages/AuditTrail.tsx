@@ -1,11 +1,11 @@
 
 import React from "react";
-import { AuditTrail } from "@/components/audit/AuditTrail";
+import { ComprehensiveAuditTrail } from "@/components/audit/ComprehensiveAuditTrail";
 
 const AuditTrailPage: React.FC = () => {
   return (
     <div className="container mx-auto p-4 space-y-6">
-      <AuditTrail />
+      <ComprehensiveAuditTrail />
     </div>
   );
 };
