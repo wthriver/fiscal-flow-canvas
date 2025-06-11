@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,7 +36,7 @@ const PayrollPage: React.FC = () => {
       if (typeof totalPaid === 'number') {
         periodTotal = totalPaid;
       } else if (totalPaid && typeof totalPaid === 'string') {
-        const cleanedValue = totalPaid.replace(/[^0-9.-]+/g, "");
+        const cleanedValue = String(totalPaid).replace(/[^0-9.-]+/g, "");
         periodTotal = parseFloat(cleanedValue) || 0;
       }
       return sum + periodTotal;
@@ -133,7 +134,7 @@ const PayrollPage: React.FC = () => {
       payDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: 'Processing',
       totalPaid: currentCompany.employees.reduce((sum, emp) => {
-        const salary = typeof emp.salary === 'number' ? emp.salary : parseFloat(emp.salary?.toString() || '0');
+        const salary = typeof emp.salary === 'number' ? emp.salary : parseFloat(String(emp.salary) || '0');
         return sum + (salary / 26); // Bi-weekly pay
       }, 0)
     };
