@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   NavigationMenu,
@@ -25,7 +24,16 @@ import {
   Activity,
   Settings,
   CreditCard,
+  BarChart3,
+  FileText as Receipt,
+  Calculator,
+  Users,
+  TrendingUp,
+  Target,
+  Package,
+  Briefcase,
 } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
 const ListItem = React.forwardRef<
   React.ElementRef<"a">,
@@ -51,100 +59,27 @@ const ListItem = React.forwardRef<
 });
 ListItem.displayName = "ListItem";
 
-const routes = [
-  {
-    title: "Dashboard",
-    href: "/",
-    icon: Home,
-    submenu: false,
-  },
-  {
-    title: "Customers",
-    href: "/customers",
-    icon: User,
-    submenu: false,
-  },
-  {
-    title: "Invoicing",
-    href: "/invoices",
-    icon: FileText,
-    submenu: false,
-  },
-  {
-    title: "Payment Processing",
-    href: "/payment-processing",
-    icon: CreditCard,
-    submenu: false,
-  },
-  {
-    title: "Sales",
-    href: "/sales",
-    icon: ShoppingCart,
-    submenu: false,
-  },
-  {
-    title: "Accounting",
-    href: "/accounting",
-    icon: Coins,
-    submenu: false,
-  },
-  {
-    title: "Chart of Accounts",
-    href: "/chart-of-accounts",
-    icon: FileText, 
-    submenu: false,
-  },
-  {
-    title: "Banking",
-    href: "/banking",
-    icon: Landmark,
-    submenu: false,
-  },
-  {
-    title: "Projects",
-    href: "/projects",
-    icon: LayoutDashboard,
-    submenu: false,
-  },
-  {
-    title: "Time Tracking",
-    href: "/time-tracking",
-    icon: Clock,
-    submenu: false,
-  },
-  {
-    title: "Inventory",
-    href: "/inventory",
-    icon: Package2,
-    submenu: false,
-  },
-  {
-    title: "Budgeting",
-    href: "/budgeting",
-    icon: Activity,
-    submenu: false,
-  },
-  {
-    title: "Expenses",
-    href: "/expenses",
-    icon: FileText,
-    submenu: false,
-  },
-  {
-    title: "Payroll",
-    href: "/payroll",
-    icon: Calendar,
-    submenu: false,
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: Settings,
-    submenu: false,
-  },
-];
+const Navigation = () => {
+  const location = useLocation();
+  
+  const menuItems = [
+    { name: "Dashboard", icon: BarChart3, path: "/" },
+    { name: "Invoices", icon: FileText, path: "/invoices" },
+    { name: "Expenses", icon: Receipt, path: "/expenses" },
+    { name: "Banking", icon: CreditCard, path: "/banking" },
+    { name: "Accounting", icon: Calculator, path: "/accounting" },
+    { name: "Advanced Accounting", icon: Calculator, path: "/advanced-accounting" },
+    { name: "Payroll", icon: Users, path: "/payroll" },
+    { name: "Advanced Payroll", icon: Users, path: "/advanced-payroll" },
+    { name: "Reports", icon: TrendingUp, path: "/reports" },
+    { name: "Advanced Reporting", icon: TrendingUp, path: "/advanced-reporting" },
+    { name: "Budgeting", icon: Target, path: "/budgeting" },
+    { name: "Customers", icon: User, path: "/customers" },
+    { name: "Inventory", icon: Package, path: "/inventory" },
+    { name: "Projects", icon: Briefcase, path: "/projects" },
+    { name: "Settings", icon: Settings, path: "/settings" }
+  ];
 
-export function Navigation() {
   return (
     <div className="border-b">
       <div className="container flex items-center justify-between py-4">
@@ -153,10 +88,10 @@ export function Navigation() {
         </RouterLink>
         <NavigationMenu>
           <NavigationMenuList>
-            {routes.map((route) => (
-              <NavigationMenuItem key={route.href}>
-                <RouterLink to={route.href} className={navigationMenuTriggerStyle()}>
-                  {route.title}
+            {menuItems.map((route) => (
+              <NavigationMenuItem key={route.path}>
+                <RouterLink to={route.path} className={navigationMenuTriggerStyle()}>
+                  {route.name}
                 </RouterLink>
               </NavigationMenuItem>
             ))}
@@ -173,14 +108,14 @@ export function Navigation() {
               <RouterLink to="/" className="font-bold text-2xl block mb-4">
                 Acme Corp
               </RouterLink>
-              {routes.map((route) => (
+              {menuItems.map((route) => (
                 <RouterLink
-                  key={route.href}
-                  to={route.href}
+                  key={route.path}
+                  to={route.path}
                   className="flex items-center space-x-2 py-2 text-sm font-medium hover:underline"
                 >
                   <route.icon className="h-4 w-4" />
-                  <span>{route.title}</span>
+                  <span>{route.name}</span>
                 </RouterLink>
               ))}
             </div>
@@ -189,4 +124,6 @@ export function Navigation() {
       </div>
     </div>
   );
-}
+};
+
+export default Navigation;
