@@ -28,12 +28,14 @@ const PayrollPage: React.FC = () => {
     
     const totalEmployees = currentCompany.employees?.length || 0;
     const totalPayroll = payPeriods.reduce((sum, period) => {
-      // Fix the type handling for totalPaid
+      // Safe type handling for totalPaid
       let periodTotal = 0;
-      if (typeof period.totalPaid === 'number') {
-        periodTotal = period.totalPaid;
-      } else if (typeof period.totalPaid === 'string') {
-        const cleanedValue = period.totalPaid.replace(/[^0-9.-]+/g, "");
+      const totalPaid = period.totalPaid;
+      
+      if (typeof totalPaid === 'number') {
+        periodTotal = totalPaid;
+      } else if (totalPaid && typeof totalPaid === 'string') {
+        const cleanedValue = totalPaid.replace(/[^0-9.-]+/g, "");
         periodTotal = parseFloat(cleanedValue) || 0;
       }
       return sum + periodTotal;
@@ -226,9 +228,15 @@ const PayrollPage: React.FC = () => {
                 </p>
                 <p>
                   <span className="font-medium">Total Paid:</span> ${
-                    typeof payrollSummary.currentPeriod.totalPaid === 'number' 
-                      ? payrollSummary.currentPeriod.totalPaid.toLocaleString() 
-                      : payrollSummary.currentPeriod.totalPaid
+                    (() => {
+                      const totalPaid = payrollSummary.currentPeriod.totalPaid;
+                      if (typeof totalPaid === 'number') {
+                        return totalPaid.toLocaleString();
+                      } else if (totalPaid) {
+                        return String(totalPaid);
+                      }
+                      return '0';
+                    })()
                   }
                 </p>
               </div>
