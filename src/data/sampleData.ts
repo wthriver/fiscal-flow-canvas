@@ -4,16 +4,11 @@ import { Company } from '@/types/company';
 export const sampleCompany: Company = {
   id: 'company-1',
   name: 'Sample Business Inc.',
-  address: '123 Business St',
-  city: 'Business City',
-  state: 'BC',
-  postalCode: '12345',
-  country: 'United States',
+  address: '123 Business St, Business City, BC 12345',
   phone: '(555) 123-4567',
   email: 'info@samplebusiness.com',
   website: 'www.samplebusiness.com',
   taxId: '12-3456789',
-  fiscalYearEnd: '12-31',
   industry: 'Technology',
   
   // Initialize with empty arrays for all collections
