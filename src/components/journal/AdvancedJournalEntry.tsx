@@ -36,6 +36,14 @@ export const AdvancedJournalEntry: React.FC = () => {
     'Accounts Payable', 'Revenue', 'Expenses', 'Accrued Expenses'
   ];
 
+  const handleRecurringChange = (checked: boolean | "indeterminate") => {
+    setIsRecurring(checked === true);
+  };
+
+  const handleReversingChange = (checked: boolean | "indeterminate") => {
+    setIsReversing(checked === true);
+  };
+
   const addEntry = () => {
     setEntries([...entries, { id: Date.now().toString(), account: '', debit: 0, credit: 0 }]);
   };
@@ -79,7 +87,7 @@ export const AdvancedJournalEntry: React.FC = () => {
             <Checkbox 
               id="recurring" 
               checked={isRecurring}
-              onCheckedChange={setIsRecurring}
+              onCheckedChange={handleRecurringChange}
             />
             <Label htmlFor="recurring">Recurring Entry</Label>
           </div>
@@ -87,7 +95,7 @@ export const AdvancedJournalEntry: React.FC = () => {
             <Checkbox 
               id="reversing" 
               checked={isReversing}
-              onCheckedChange={setIsReversing}
+              onCheckedChange={handleReversingChange}
             />
             <Label htmlFor="reversing">Reversing Entry</Label>
           </div>
