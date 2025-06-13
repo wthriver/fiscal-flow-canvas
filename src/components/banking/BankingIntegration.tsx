@@ -170,8 +170,8 @@ export const BankingIntegration: React.FC = () => {
                             ${balance.toLocaleString()}
                           </TableCell>
                           <TableCell>
-                            <Badge className={account.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                              {account.isActive ? 'Active' : 'Inactive'}
+                            <Badge className={(account.isActive ?? true) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                              {(account.isActive ?? true) ? 'Active' : 'Inactive'}
                             </Badge>
                           </TableCell>
                           <TableCell>{account.openingDate || 'Unknown'}</TableCell>

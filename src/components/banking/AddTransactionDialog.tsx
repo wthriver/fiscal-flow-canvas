@@ -46,11 +46,11 @@ export const AddTransactionDialog: React.FC<AddTransactionDialogProps> = ({
       date,
       description,
       account,
-      bankAccount: account, // Ensure both account and bankAccount are set
+      bankAccount: account,
       category,
       amount: formattedAmount,
       reconciled: false,
-      type: isIncome ? "Deposit" : "Withdrawal" as "Deposit" | "Withdrawal" | "Transfer"
+      type: isIncome ? "Deposit" : "Withdrawal" as "Deposit" | "Withdrawal"
     };
 
     addTransaction(newTransaction);

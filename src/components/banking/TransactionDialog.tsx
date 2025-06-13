@@ -27,7 +27,7 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
     description: transaction?.description || "",
     amount: transaction?.amount.replace(/[^0-9.-]+/g, "") || "",
     category: transaction?.category || "",
-    type: transaction?.type || "Deposit" as "Deposit" | "Withdrawal" | "Transfer" | "Credit" | "Debit",
+    type: transaction?.type || "Deposit" as "Deposit" | "Withdrawal" | "Credit" | "Debit",
     reference: transaction?.reference || "",
     memo: transaction?.memo || ""
   });
@@ -109,7 +109,6 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
               <SelectContent>
                 <SelectItem value="Deposit">Deposit</SelectItem>
                 <SelectItem value="Withdrawal">Withdrawal</SelectItem>
-                <SelectItem value="Transfer">Transfer</SelectItem>
                 <SelectItem value="Credit">Credit</SelectItem>
                 <SelectItem value="Debit">Debit</SelectItem>
               </SelectContent>

@@ -22,6 +22,8 @@ export interface Company {
   timeEntries?: TimeEntry[];
   sales?: Sale[];
   transactions?: Transaction[];
+  revenue?: number;
+  profitMargin?: number;
 }
 
 export interface Customer {
@@ -74,6 +76,7 @@ export interface Expense {
   paymentMethod: string;
   status: 'Pending' | 'Paid';
   receiptUrl?: string;
+  billNumber?: string;
 }
 
 export interface Project {
@@ -108,6 +111,8 @@ export interface BankAccount {
   routingNumber: string;
   bankName: string;
   transactions: Transaction[];
+  isActive?: boolean;
+  openingDate?: string;
 }
 
 export interface Transaction {
@@ -120,6 +125,8 @@ export interface Transaction {
   account: string;
   bankAccount?: string;
   reconciled?: boolean;
+  reference?: string;
+  memo?: string;
 }
 
 export interface Account {
@@ -139,12 +146,29 @@ export interface TaxRate {
   description?: string;
 }
 
+export interface BudgetCategory {
+  id: string;
+  name: string;
+  type: 'income' | 'expense';
+  budgeted: number;
+  actual: number;
+  budgetedAmount?: string;
+  actualAmount?: string;
+}
+
 export interface Budget {
   id: string;
   name: string;
   amount: number;
   period: string;
   category: string;
+  categories?: BudgetCategory[];
+  startDate?: string;
+  endDate?: string;
+  status?: 'Draft' | 'Active' | 'Completed';
+  totalBudgeted?: string;
+  totalActual?: string;
+  variance?: string;
 }
 
 export interface Estimate {
