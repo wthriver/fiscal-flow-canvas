@@ -1,0 +1,72 @@
+
+import { Company } from '@/types/company';
+
+export const sampleCompany: Company = {
+  id: 'company-1',
+  name: 'Sample Business Inc.',
+  address: '123 Business St',
+  city: 'Business City',
+  state: 'BC',
+  postalCode: '12345',
+  country: 'United States',
+  phone: '(555) 123-4567',
+  email: 'info@samplebusiness.com',
+  website: 'www.samplebusiness.com',
+  taxId: '12-3456789',
+  fiscalYearEnd: '12-31',
+  industry: 'Technology',
+  
+  // Initialize with empty arrays for all collections
+  customers: [],
+  invoices: [],
+  expenses: [],
+  projects: [],
+  employees: [],
+  bankAccounts: [{
+    id: 'bank-1',
+    name: 'Main Checking',
+    type: 'Checking',
+    balance: 25000,
+    accountNumber: '****1234',
+    routingNumber: '123456789',
+    bankName: 'First National Bank',
+    transactions: []
+  }],
+  accounts: [
+    {
+      id: 'acc-1',
+      code: '1000',
+      name: 'Cash',
+      type: 'Asset',
+      balance: 25000,
+      description: 'Main cash account'
+    },
+    {
+      id: 'acc-2',
+      code: '4000',
+      name: 'Revenue',
+      type: 'Revenue',
+      balance: 0,
+      description: 'Main revenue account'
+    },
+    {
+      id: 'acc-3',
+      code: '5000',
+      name: 'Expenses',
+      type: 'Expense',
+      balance: 0,
+      description: 'General expenses'
+    }
+  ],
+  taxRates: [{
+    id: 'tax-1',
+    name: 'Sales Tax',
+    rate: 8.5,
+    type: 'Sales',
+    description: 'Standard sales tax rate'
+  }],
+  budgets: [],
+  estimates: [],
+  timeEntries: [],
+  sales: []
+};
