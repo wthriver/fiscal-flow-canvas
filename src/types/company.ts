@@ -27,7 +27,7 @@ export interface Company {
     bundles: Bundle[];
     serialNumbers: SerialNumber[];
     lotTracking: LotTrack[];
-    suppliers?: string[];
+    suppliers?: Supplier[];
   };
   revenue?: {
     current: number;
@@ -43,6 +43,9 @@ export interface Company {
     totalPayroll: number;
     employeeCount: number;
     averageSalary: number;
+    payPeriods?: PayPeriod[];
+    taxSettings?: any;
+    deductionTypes?: any;
   };
 }
 
@@ -75,6 +78,7 @@ export interface Invoice {
   tax?: number;
   taxAmount?: number;
   total: number;
+  amount?: number;
   status: 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Pending' | 'Outstanding';
   paymentStatus?: string;
   notes?: string;
@@ -116,6 +120,44 @@ export interface Project {
   priority?: 'Low' | 'Medium' | 'High';
   billed?: number;
   tracked?: number;
+  progress?: number;
+  teamMembers?: string[];
+  team?: string[];
+  tasks?: ProjectTask[];
+  milestones?: ProjectMilestone[];
+  documents?: ProjectDocument[];
+  projectManager?: string;
+  billingRate?: number;
+}
+
+export interface ProjectTask {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'Todo' | 'In Progress' | 'Done';
+  assignedTo?: string;
+  dueDate?: string;
+  priority: 'Low' | 'Medium' | 'High';
+}
+
+export interface ProjectMilestone {
+  id: string;
+  title: string;
+  description?: string;
+  dueDate: string;
+  status: 'Pending' | 'Completed';
+}
+
+export interface ProjectDocument {
+  id: string;
+  name: string;
+  type: string;
+  size: string;
+  url?: string;
+  uploadedBy: string;
+  uploadDate?: string;
+  date?: string;
+  lastModified?: string;
 }
 
 export interface Employee {
@@ -154,7 +196,7 @@ export interface Transaction {
   id: string;
   date: string;
   description: string;
-  amount: string;
+  amount: number | string;
   type: 'Debit' | 'Credit' | 'Deposit' | 'Withdrawal' | 'Transfer';
   category: string;
   account: string;
@@ -194,9 +236,9 @@ export interface BudgetCategory {
 export interface Budget {
   id: string;
   name: string;
-  amount: number;
+  amount?: number;
   period: string;
-  category: string;
+  category?: string;
   categories?: BudgetCategory[];
   startDate?: string;
   endDate?: string;
@@ -210,11 +252,20 @@ export interface Estimate {
   id: string;
   estimateNumber: string;
   customerId: string;
+  customer?: string;
   date: string;
   expiryDate: string;
-  items: InvoiceItem[];
+  items: EstimateItem[];
   total: number;
   status: 'Draft' | 'Sent' | 'Accepted' | 'Declined';
+}
+
+export interface EstimateItem {
+  id: string;
+  description: string;
+  quantity: number;
+  price: number;
+  amount: number;
 }
 
 export interface TimeEntry {
@@ -225,6 +276,8 @@ export interface TimeEntry {
   hours: number;
   description: string;
   billable: boolean;
+  status?: 'Draft' | 'Submitted' | 'Approved';
+  billingRate?: number;
 }
 
 export interface Sale {
@@ -233,6 +286,45 @@ export interface Sale {
   customer: string;
   amount: number;
   status: 'Completed' | 'Pending';
+}
+
+export interface PayPeriod {
+  id: string;
+  startDate: string;
+  endDate: string;
+  payDate: string;
+  status: 'Processing' | 'Completed' | 'Current';
+  employees?: PayrollEmployee[];
+  totalGross?: string | number;
+  totalNet?: string | number;
+  totalTaxes?: string | number;
+  totalDeductions?: string | number;
+  totalPaid?: string | number;
+}
+
+export interface PayrollEmployee {
+  employeeId: string;
+  grossPay: string | number;
+  netPay: string | number;
+  taxes: string | number;
+  deductions: string | number;
+}
+
+export interface PayrollData {
+  totalPayroll: number;
+  employeeCount: number;
+  averageSalary: number;
+  payPeriods?: PayPeriod[];
+  taxSettings?: any;
+  deductionTypes?: any;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
 }
 
 // Inventory related interfaces
