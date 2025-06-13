@@ -16,6 +16,10 @@ import Customers from '@/pages/Customers';
 import Inventory from '@/pages/Inventory';
 import Projects from '@/pages/Projects';
 import Settings from '@/pages/Settings';
+import CRM from '@/pages/CRM';
+import Integrations from '@/pages/Integrations';
+import PurchaseOrders from '@/pages/PurchaseOrders';
+import PaymentProcessing from '@/pages/PaymentProcessing';
 import NotFound from '@/pages/NotFound';
 
 export const AppRoutes = () => {
@@ -33,8 +37,12 @@ export const AppRoutes = () => {
       <Route path="/advanced-reporting" element={<AdvancedReporting />} />
       <Route path="/budgeting" element={<Budgeting />} />
       <Route path="/customers" element={<Customers />} />
+      <Route path="/crm" element={<CRM />} />
       <Route path="/inventory" element={<Inventory />} />
       <Route path="/projects" element={<Projects />} />
+      <Route path="/integrations" element={<Integrations />} />
+      <Route path="/purchase-orders" element={<PurchaseOrders />} />
+      <Route path="/payment-processing" element={<PaymentProcessing />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

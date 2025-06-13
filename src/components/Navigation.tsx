@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   NavigationMenu,
@@ -32,6 +33,7 @@ import {
   Target,
   Package,
   Briefcase,
+  Plug
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
@@ -64,6 +66,8 @@ const Navigation = () => {
   
   const menuItems = [
     { name: "Dashboard", icon: BarChart3, path: "/" },
+    { name: "Customers", icon: User, path: "/customers" },
+    { name: "CRM", icon: Activity, path: "/crm" },
     { name: "Invoices", icon: FileText, path: "/invoices" },
     { name: "Expenses", icon: Receipt, path: "/expenses" },
     { name: "Banking", icon: CreditCard, path: "/banking" },
@@ -74,9 +78,11 @@ const Navigation = () => {
     { name: "Reports", icon: TrendingUp, path: "/reports" },
     { name: "Advanced Reporting", icon: TrendingUp, path: "/advanced-reporting" },
     { name: "Budgeting", icon: Target, path: "/budgeting" },
-    { name: "Customers", icon: User, path: "/customers" },
     { name: "Inventory", icon: Package, path: "/inventory" },
     { name: "Projects", icon: Briefcase, path: "/projects" },
+    { name: "Purchase Orders", icon: ShoppingCart, path: "/purchase-orders" },
+    { name: "Payment Processing", icon: CreditCard, path: "/payment-processing" },
+    { name: "Integrations", icon: Plug, path: "/integrations" },
     { name: "Settings", icon: Settings, path: "/settings" }
   ];
 
@@ -84,11 +90,11 @@ const Navigation = () => {
     <div className="border-b">
       <div className="container flex items-center justify-between py-4">
         <RouterLink to="/" className="font-bold text-2xl">
-          Acme Corp
+          FiscalFlow
         </RouterLink>
         <NavigationMenu>
           <NavigationMenuList>
-            {menuItems.map((route) => (
+            {menuItems.slice(0, 8).map((route) => (
               <NavigationMenuItem key={route.path}>
                 <RouterLink to={route.path} className={navigationMenuTriggerStyle()}>
                   {route.name}
@@ -106,7 +112,7 @@ const Navigation = () => {
           <SheetContent side="left" className="w-full sm:w-64">
             <div className="p-4">
               <RouterLink to="/" className="font-bold text-2xl block mb-4">
-                Acme Corp
+                FiscalFlow
               </RouterLink>
               {menuItems.map((route) => (
                 <RouterLink

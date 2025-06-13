@@ -28,7 +28,8 @@ import {
   CreditCard,
   Shield,
   Activity,
-  Target
+  Target,
+  ShoppingCart
 } from "lucide-react";
 
 interface SidebarItemProps {
@@ -145,6 +146,12 @@ const Sidebar: React.FC = () => {
               active={pathname === "/accounting"}
             />
             <SidebarItem
+              to="/advanced-accounting"
+              icon={<Landmark className="h-4 w-4" />}
+              label="Advanced Accounting"
+              active={pathname === "/advanced-accounting"}
+            />
+            <SidebarItem
               to="/expenses"
               icon={<Receipt className="h-4 w-4" />}
               label="Expenses"
@@ -154,7 +161,7 @@ const Sidebar: React.FC = () => {
         </div>
         <div className="px-3 py-2">
           <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-            Tracking & Planning
+            Operations & Planning
           </h2>
           <div className="space-y-1">
             <SidebarItem
@@ -182,16 +189,28 @@ const Sidebar: React.FC = () => {
               active={pathname === "/inventory"}
             />
             <SidebarItem
+              to="/purchase-orders"
+              icon={<ShoppingCart className="h-4 w-4" />}
+              label="Purchase Orders"
+              active={pathname === "/purchase-orders"}
+            />
+            <SidebarItem
               to="/payroll"
               icon={<CircleDollarSign className="h-4 w-4" />}
               label="Payroll"
               active={pathname === "/payroll"}
             />
+            <SidebarItem
+              to="/advanced-payroll"
+              icon={<CircleDollarSign className="h-4 w-4" />}
+              label="Advanced Payroll"
+              active={pathname === "/advanced-payroll"}
+            />
           </div>
         </div>
         <div className="px-3 py-2">
           <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-            Reports & Taxes
+            Reports & Analytics
           </h2>
           <div className="space-y-1">
             <SidebarItem
@@ -199,6 +218,12 @@ const Sidebar: React.FC = () => {
               icon={<FileBarChart className="h-4 w-4" />}
               label="Reports"
               active={pathname === "/reports"}
+            />
+            <SidebarItem
+              to="/advanced-reporting"
+              icon={<FileBarChart className="h-4 w-4" />}
+              label="Advanced Reporting"
+              active={pathname === "/advanced-reporting"}
             />
             <SidebarItem
               to="/taxes"
