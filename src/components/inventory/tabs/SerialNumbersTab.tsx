@@ -18,7 +18,7 @@ export const SerialNumbersTab: React.FC = () => {
   const [formData, setFormData] = useState({
     itemId: "",
     serialNumber: "",
-    status: "In Stock",
+    status: "Available" as 'Available' | 'Sold' | 'Reserved' | 'Defective',
     location: "",
     soldTo: "",
     saleDate: ""
@@ -74,12 +74,14 @@ export const SerialNumbersTab: React.FC = () => {
 
     const serialData: SerialNumber = {
       id: selectedSerial?.id || `serial-${Date.now()}`,
+      inventoryItemId: formData.itemId,
       itemId: formData.itemId,
       serialNumber: formData.serialNumber,
       status: formData.status,
       location: formData.location,
       soldTo: formData.soldTo,
-      saleDate: formData.saleDate
+      saleDate: formData.saleDate,
+      receivedDate: new Date().toISOString().split('T')[0]
     };
 
     const updatedSerials = selectedSerial

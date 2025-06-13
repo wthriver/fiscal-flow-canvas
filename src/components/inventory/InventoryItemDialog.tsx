@@ -69,8 +69,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         sku: item.sku || "",
         barcode: item.barcode || "",
         quantity: item.quantity?.toString() || "0",
-        price: typeof item.price === 'string' ? item.price.replace(/[^0-9.-]+/g, "") : item.price?.toString() || "",
-        cost: typeof item.cost === 'string' ? item.cost.replace(/[^0-9.-]+/g, "") : item.cost?.toString() || "",
+        price: item.price ? (typeof item.price === 'string' ? item.price.replace(/[^0-9.-]+/g, "") : item.price.toString()) : "",
+        cost: item.cost ? (typeof item.cost === 'string' ? item.cost.replace(/[^0-9.-]+/g, "") : item.cost.toString()) : "",
         category: item.category || "",
         location: item.location || "",
         supplier: item.supplier || "",
@@ -171,14 +171,14 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
     return (quantity * cost).toFixed(2);
   };
 
-  const getStockStatus = () => {
+  const getStockStatus = (): { status: 'In Stock' | 'Low Stock' | 'Out of Stock', variant: 'default' | 'secondary' | 'destructive' | 'outline' } => {
     const quantity = parseInt(formData.quantity) || 0;
     const reorderLevel = parseInt(formData.reorderLevel) || 0;
     const maxLevel = parseInt(formData.maxLevel) || 0;
 
     if (quantity === 0) return { status: 'Out of Stock', variant: 'destructive' as const };
     if (quantity <= reorderLevel) return { status: 'Low Stock', variant: 'secondary' as const };
-    if (maxLevel > 0 && quantity >= maxLevel) return { status: 'Overstock', variant: 'outline' as const };
+    if (maxLevel > 0 && quantity >= maxLevel) return { status: 'In Stock', variant: 'outline' as const };
     return { status: 'In Stock', variant: 'default' as const };
   };
 
@@ -187,6 +187,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       toast.error("Please fill in all required fields");
       return;
     }
+
+    const stockStatus = getStockStatus();
 
     const itemData: InventoryItem = {
       id: item?.id || `inv-${Date.now()}`,
@@ -212,7 +214,9 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       customFields: formData.customFields,
       stockMovements: stockMovements,
       lastUpdated: new Date().toISOString(),
-      status: getStockStatus().status
+      status: stockStatus.status,
+      unitPrice: parseFloat(formData.price) || 0,
+      totalValue: (parseInt(formData.quantity) || 0) * (parseFloat(formData.cost) || 0)
     };
 
     const updatedInventory = item 

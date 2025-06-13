@@ -22,10 +22,13 @@ export interface Company {
   timeEntries?: TimeEntry[];
   sales?: Sale[];
   transactions?: Transaction[];
-  inventory?: InventoryItem[];
-  bundles?: Bundle[];
-  serialNumbers?: SerialNumber[];
-  lotTracking?: LotTrack[];
+  inventory?: {
+    items: InventoryItem[];
+    bundles: Bundle[];
+    serialNumbers: SerialNumber[];
+    lotTracking: LotTrack[];
+    suppliers?: string[];
+  };
   revenue?: {
     current: number;
     previous: number;
@@ -35,6 +38,11 @@ export interface Company {
     value: number;
     previous: number;
     percentChange: number;
+  };
+  payrollData?: {
+    totalPayroll: number;
+    employeeCount: number;
+    averageSalary: number;
   };
 }
 
@@ -100,11 +108,14 @@ export interface Project {
   name: string;
   clientId: string;
   client: string;
-  status: 'Active' | 'Completed' | 'On Hold';
+  status: 'Active' | 'Completed' | 'On Hold' | 'In Progress' | 'Planning';
   startDate: string;
   endDate?: string;
   budget: number;
   description?: string;
+  priority?: 'Low' | 'Medium' | 'High';
+  billed?: number;
+  tracked?: number;
 }
 
 export interface Employee {
@@ -112,11 +123,18 @@ export interface Employee {
   name: string;
   email: string;
   phone?: string;
+  address?: string;
   position: string;
   department: string;
   salary: number;
+  payRate?: number;
+  payType?: 'Hourly' | 'Salary';
+  manager?: string;
+  emergencyContact?: string;
+  benefits?: string[];
+  skills?: string[];
   hireDate: string;
-  status: 'Active' | 'Inactive';
+  status: 'Active' | 'Inactive' | 'Pending';
 }
 
 export interface BankAccount {
@@ -137,7 +155,7 @@ export interface Transaction {
   date: string;
   description: string;
   amount: string;
-  type: 'Debit' | 'Credit' | 'Deposit' | 'Withdrawal';
+  type: 'Debit' | 'Credit' | 'Deposit' | 'Withdrawal' | 'Transfer';
   category: string;
   account: string;
   bankAccount?: string;
