@@ -26,7 +26,7 @@ export const BudgetDialog: React.FC<BudgetDialogProps> = ({
     period: budget?.period || "Monthly",
     startDate: budget?.startDate || new Date().toISOString().split('T')[0],
     endDate: budget?.endDate || "",
-    status: budget?.status || "Draft"
+    status: budget?.status || "Draft" as 'Draft' | 'Active' | 'Completed'
   });
 
   const [categories, setCategories] = useState<BudgetCategory[]>(
@@ -46,7 +46,7 @@ export const BudgetDialog: React.FC<BudgetDialogProps> = ({
         period: budget.period,
         startDate: budget.startDate || new Date().toISOString().split('T')[0],
         endDate: budget.endDate || "",
-        status: budget.status || "Draft"
+        status: (budget.status || "Draft") as 'Draft' | 'Active' | 'Completed'
       });
       setCategories(budget.categories || []);
     } else {
@@ -116,7 +116,7 @@ export const BudgetDialog: React.FC<BudgetDialogProps> = ({
       period: formData.period,
       startDate: formData.startDate,
       endDate: formData.endDate,
-      status: formData.status as 'Draft' | 'Active' | 'Completed',
+      status: formData.status,
       categories: categories,
       totalBudgeted: `$${totalBudgeted.toFixed(2)}`,
       totalActual: `$${totalActual.toFixed(2)}`,
@@ -189,7 +189,7 @@ export const BudgetDialog: React.FC<BudgetDialogProps> = ({
             </div>
             <div>
               <label className="text-sm font-medium">Status</label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
+              <Select value={formData.status} onValueChange={(value: 'Draft' | 'Active' | 'Completed') => setFormData({...formData, status: value})}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

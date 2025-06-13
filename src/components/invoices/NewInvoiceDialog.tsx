@@ -1,335 +1,280 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Customer, Invoice, InvoiceItem } from "@/types/company";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { z } from "zod";
-import { useForm, useFieldArray } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Plus, Trash2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Trash2 } from "lucide-react";
+import { useCompany } from "@/contexts/CompanyContext";
+import { toast } from "@/hooks/use-toast";
+import { InvoiceItem } from "@/types/company";
 
 interface NewInvoiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: Invoice) => void;
-  customers: Customer[];
 }
 
-const invoiceItemSchema = z.object({
-  description: z.string().min(1, "Description is required"),
-  quantity: z.number().min(1, "Quantity must be at least 1"),
-  price: z.number().min(0, "Price must be positive"),
-});
-
-const invoiceSchema = z.object({
-  customer: z.string().min(1, "Customer is required"),
-  dueDate: z.string().min(1, "Due date is required"),
-  items: z.array(invoiceItemSchema).min(1, "At least one item is required"),
-  notes: z.string().optional(),
-  terms: z.string().optional(),
-});
-
-export const NewInvoiceDialog: React.FC<NewInvoiceDialogProps> = ({ 
-  open, 
-  onOpenChange, 
-  onSubmit,
-  customers
+export const NewInvoiceDialog: React.FC<NewInvoiceDialogProps> = ({
+  open,
+  onOpenChange,
 }) => {
-  const today = new Date().toISOString().split("T")[0];
-  const defaultDueDate = new Date();
-  defaultDueDate.setDate(defaultDueDate.getDate() + 30);
-  
-  const form = useForm<z.infer<typeof invoiceSchema>>({
-    resolver: zodResolver(invoiceSchema),
-    defaultValues: {
-      customer: "",
-      dueDate: defaultDueDate.toISOString().split("T")[0],
-      items: [{ description: "", quantity: 1, price: 0 }],
-      notes: "",
-      terms: "",
-    },
-  });
+  const { addInvoice, currentCompany } = useCompany();
+  const [customer, setCustomer] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [items, setItems] = useState([
+    { id: `item-${Date.now()}`, description: "", quantity: 1, price: 0 },
+  ]);
+  const [taxRate, setTaxRate] = useState(0);
+  const [notes, setNotes] = useState("");
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "items",
-  });
-  
-  const generateInvoiceId = () => {
-    return `INV-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+  const resetForm = () => {
+    setCustomer("");
+    setDueDate("");
+    setItems([{ id: `item-${Date.now()}`, description: "", quantity: 1, price: 0 }]);
+    setTaxRate(0);
+    setNotes("");
   };
-  
-  const generateInvoiceNumber = () => {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `${year}${month}-${randomNum}`;
+
+  const calculateSubtotal = () => {
+    return items.reduce((acc, item) => acc + item.quantity * item.price, 0);
   };
-  
-  const handleSubmit = (data: z.infer<typeof invoiceSchema>) => {
-    const selectedCustomer = customers.find(c => c.name === data.customer);
+
+  const calculateTax = () => {
+    return calculateSubtotal() * (taxRate / 100);
+  };
+
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateTax();
+  };
+
+  const handleAddItem = () => {
+    setItems([
+      ...items,
+      { id: `item-${Date.now()}`, description: "", quantity: 1, price: 0 },
+    ]);
+  };
+
+  const handleRemoveItem = (id: string) => {
+    setItems(items.filter((item) => item.id !== id));
+  };
+
+  const handleItemChange = (
+    id: string,
+    field: string,
+    value: string | number
+  ) => {
+    setItems(
+      items.map((item) =>
+        item.id === id ? { ...item, [field]: value } : item
+      )
+    );
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     
-    const items: InvoiceItem[] = data.items.map((item, index) => ({
-      id: `item-${Date.now()}-${index}`,
+    if (!customer || !dueDate || items.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields and add at least one item",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const invoiceItems: InvoiceItem[] = items.map(item => ({
+      id: item.id,
       description: item.description,
       quantity: item.quantity,
-      price: item.price,
-      total: item.quantity * item.price,
+      rate: item.price,
+      amount: item.quantity * item.price
     }));
-    
-    const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-    const taxAmount = subtotal * 0.1; // 10% tax
-    const total = subtotal + taxAmount;
-    
-    const invoice: Invoice = {
-      id: generateInvoiceId(),
-      invoiceNumber: generateInvoiceNumber(),
-      customer: data.customer,
-      customerId: selectedCustomer?.id,
-      date: today,
-      dueDate: data.dueDate,
-      items,
-      status: "Draft",
-      total,
-      amount: total.toString(),
-      subtotal,
-      taxAmount,
-      notes: data.notes,
-      terms: data.terms,
-      paymentStatus: "Pending",
+
+    const newInvoice = {
+      id: `INV-${Math.floor(Math.random() * 9000) + 1000}`,
+      customer,
+      date: new Date().toISOString().split('T')[0],
+      dueDate,
+      items: invoiceItems,
+      subtotal: calculateSubtotal(),
+      tax: taxRate,
+      taxAmount: calculateTax(),
+      total: calculateTotal(),
+      status: "Draft" as const,
+      notes: notes || ""
     };
+
+    addInvoice(newInvoice);
     
-    onSubmit(invoice);
-    form.reset();
+    toast({
+      title: "Success",
+      description: "Invoice created successfully",
+    });
+    
+    resetForm();
     onOpenChange(false);
   };
 
-  const watchedItems = form.watch("items");
-  const subtotal = watchedItems?.reduce((sum, item) => 
-    sum + (item.quantity || 0) * (item.price || 0), 0) || 0;
-  const taxAmount = subtotal * 0.1;
-  const total = subtotal + taxAmount;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
-          <DialogTitle>Create New Invoice</DialogTitle>
-          <DialogDescription>
-            Fill in the invoice details and add line items. Click save when you're done.
-          </DialogDescription>
+          <DialogTitle>New Invoice</DialogTitle>
+          <DialogDescription>Create a new invoice for a customer</DialogDescription>
         </DialogHeader>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="customer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Customer *</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select customer" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {customers.length > 0 ? (
-                          customers.map((customer) => (
-                            <SelectItem key={customer.id} value={customer.name}>
-                              {customer.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="no-customers" disabled>
-                            No customers available - Add customers first
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="dueDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Due Date *</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="customer" className="text-right">
+                Customer
+              </Label>
+              <Select value={customer} onValueChange={setCustomer}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a customer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {currentCompany?.customers?.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.name}>
+                      {customer.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="dueDate" className="text-right">
+                Due Date
+              </Label>
+              <Input
+                type="date"
+                id="dueDate"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="col-span-3"
               />
             </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h4 className="text-lg font-medium">Invoice Items</h4>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => append({ description: "", quantity: 1, price: 0 })}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Item
-                </Button>
-              </div>
-              
-              {fields.map((field, index) => (
-                <div key={field.id} className="grid grid-cols-12 gap-2 items-end p-4 border rounded-lg">
-                  <div className="col-span-5">
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.description`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Description</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Item description" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <div className="col-span-2">
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.quantity`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Qty</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="1"
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <div className="col-span-2">
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.price`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Price</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <div className="col-span-2">
-                    <FormLabel>Total</FormLabel>
-                    <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center">
-                      ${((watchedItems[index]?.quantity || 0) * (watchedItems[index]?.price || 0)).toFixed(2)}
-                    </div>
-                  </div>
-                  
-                  <div className="col-span-1 flex justify-center">
-                    {fields.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => remove(index)}
-                      >
-                        <Trash2 className="h-4 w-4" />
+            <div className="grid grid-cols-1 gap-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Quantity</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead className="w-[50px]">
+                      <Button variant="ghost" size="sm" onClick={handleAddItem}>
+                        <Plus className="h-4 w-4" />
                       </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        <Input
+                          type="text"
+                          value={item.description}
+                          onChange={(e) =>
+                            handleItemChange(item.id, "description", e.target.value)
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) =>
+                            handleItemChange(
+                              item.id,
+                              "quantity",
+                              parseInt(e.target.value)
+                            )
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={item.price}
+                          onChange={(e) =>
+                            handleItemChange(
+                              item.id,
+                              "price",
+                              parseFloat(e.target.value)
+                            )
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>{item.quantity * item.price}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveItem(item.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
 
-            <div className="bg-muted p-4 rounded-lg">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Subtotal:</span>
-                  <span>${subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Tax (10%):</span>
-                  <span>${taxAmount.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between font-bold text-lg border-t pt-2">
-                  <span>Total:</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-              </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="taxRate" className="text-right">
+                Tax Rate (%)
+              </Label>
+              <Input
+                type="number"
+                id="taxRate"
+                value={taxRate}
+                onChange={(e) => setTaxRate(parseFloat(e.target.value))}
+                className="col-span-3"
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} placeholder="Additional notes..." />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="terms"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Terms & Conditions</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} placeholder="Payment terms..." />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="notes" className="text-right">
+                Notes
+              </Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="col-span-3"
               />
             </div>
-            
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Create Invoice</Button>
-            </DialogFooter>
-          </form>
-        </Form>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Subtotal</Label>
+              <div className="col-span-3">${calculateSubtotal()}</div>
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Tax</Label>
+              <div className="col-span-3">${calculateTax()}</div>
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Total</Label>
+              <div className="col-span-3">${calculateTotal()}</div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">Create Invoice</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

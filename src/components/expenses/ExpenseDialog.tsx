@@ -27,7 +27,7 @@ export const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
     category: expense?.category || "",
     amount: expense ? (typeof expense.amount === 'string' ? expense.amount.replace(/[^0-9.-]+/g, "") : expense.amount.toString()) : "",
     description: expense?.description || "",
-    status: expense?.status || "Pending",
+    status: (expense?.status || "Pending") as 'Pending' | 'Paid' | 'Approved' | 'Rejected',
     paymentMethod: expense?.paymentMethod || "",
     billNumber: expense?.billNumber || "",
     dueDate: expense?.dueDate || ""
@@ -126,7 +126,7 @@ export const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
           
           <div className="grid grid-cols-4 items-center gap-4">
             <label className="text-right">Status</label>
-            <Select onValueChange={(value) => setFormData({...formData, status: value})}>
+            <Select onValueChange={(value: 'Pending' | 'Paid' | 'Approved' | 'Rejected') => setFormData({...formData, status: value})}>
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder={formData.status || "Select status"} />
               </SelectTrigger>

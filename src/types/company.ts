@@ -1,5 +1,4 @@
 
-
 export interface Company {
   id: string;
   name: string;
@@ -24,6 +23,9 @@ export interface Company {
   sales?: Sale[];
   transactions?: Transaction[];
   inventory?: InventoryItem[];
+  bundles?: Bundle[];
+  serialNumbers?: SerialNumber[];
+  lotTracking?: LotTrack[];
   revenue?: {
     current: number;
     previous: number;
@@ -65,7 +67,6 @@ export interface Invoice {
   tax?: number;
   taxAmount?: number;
   total: number;
-  amount?: string;
   status: 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Pending' | 'Outstanding';
   paymentStatus?: string;
   notes?: string;
@@ -77,9 +78,7 @@ export interface InvoiceItem {
   description: string;
   quantity: number;
   rate: number;
-  price?: number;
   amount: number;
-  total?: number;
 }
 
 export interface Expense {
@@ -234,21 +233,46 @@ export interface InventoryItem {
   reorderPoint?: number;
   reorderQuantity?: number;
   lastUpdated: string;
+  barcode?: string;
+  price?: number;
+  cost?: number;
+  reorderLevel?: number;
+  maxLevel?: number;
+  maxStock?: number;
+  unit?: string;
+  weight?: number;
+  dimensions?: string;
+  taxable?: boolean;
+  trackSerial?: boolean;
+  trackLots?: boolean;
+  images?: string[];
+  customFields?: Record<string, string>;
+  stockMovements?: Array<{
+    id: string;
+    type: 'in' | 'out' | 'adjustment';
+    quantity: number;
+    date: string;
+    reason: string;
+    reference: string;
+  }>;
 }
 
 export interface Bundle {
   id: string;
   name: string;
+  sku?: string;
   description?: string;
   items: BundleItem[];
   totalCost: number;
   sellingPrice: number;
+  price?: number;
   status: 'Active' | 'Inactive';
 }
 
 export interface BundleItem {
   id: string;
   inventoryItemId: string;
+  itemId?: string;
   quantity: number;
   unitCost: number;
 }
@@ -257,9 +281,12 @@ export interface LotTrack {
   id: string;
   lotNumber: string;
   inventoryItemId: string;
+  itemId?: string;
   quantity: number;
   expirationDate?: string;
+  expiryDate?: string;
   supplier?: string;
+  supplierId?: string;
   receivedDate: string;
   status: 'Available' | 'Reserved' | 'Expired';
 }
@@ -268,9 +295,12 @@ export interface SerialNumber {
   id: string;
   serialNumber: string;
   inventoryItemId: string;
+  itemId?: string;
   status: 'Available' | 'Sold' | 'Reserved' | 'Defective';
   receivedDate: string;
   soldDate?: string;
   customerId?: string;
+  location?: string;
+  soldTo?: string;
+  saleDate?: string;
 }
-
