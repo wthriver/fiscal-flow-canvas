@@ -1,549 +1,334 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { CompanyContextType } from '@/types/context';
-import { Company, Customer, TaxRate, Account, Expense, Invoice, Transaction, BankAccount, Budget, Estimate, TimeEntry, Sale } from '@/types/company';
-import { saveToLocalStorage, loadFromLocalStorage } from '@/services/localStorageService';
+import { Customer, Invoice, Expense, Project, Transaction, Employee } from '@/types/company';
+import { sampleCompany } from '@/data/sampleData';
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
-// Default company data with proper structure
-const createDefaultCompany = (): Company => ({
-  id: `company-${Date.now()}`,
-  name: "My Company",
-  address: "",
-  phone: "",
-  email: "",
-  website: "",
-  taxId: "",
-  industry: "",
-  fiscalYearStart: "January 1",
-  transactions: [],
-  accounts: [
-    {
-      id: 'acc-1',
-      number: '1000',
-      name: 'Cash',
-      type: 'Asset',
-      balance: 0,
-      description: 'Cash account'
-    },
-    {
-      id: 'acc-2',
-      number: '1200',
-      name: 'Accounts Receivable',
-      type: 'Asset',
-      balance: 0,
-      description: 'Accounts receivable'
-    },
-    {
-      id: 'acc-3',
-      number: '2000',
-      name: 'Accounts Payable',
-      type: 'Liability',
-      balance: 0,
-      description: 'Accounts payable'
-    }
-  ],
-  taxRates: [
-    {
-      id: 'tax-1',
-      name: 'Standard Tax',
-      rate: 10,
-      isDefault: true,
-      description: 'Standard tax rate'
-    }
-  ],
-  bankAccounts: [
-    {
-      id: 'bank-1',
-      name: 'Main Checking',
-      balance: 1000,
-      transactions: [],
-      type: 'Checking'
-    }
-  ],
-  customers: [],
-  invoices: [],
-  expenses: [],
-  projects: [],
-  timeEntries: [],
-  employees: [],
-  inventory: {
-    items: [],
-    categories: [],
-    locations: [],
-    bundles: [],
-    serialNumbers: [],
-    lotTracking: []
-  },
-  budgets: [],
-  estimates: [],
-  payrollData: { payPeriods: [] },
-  auditTrail: [],
-  integrations: [],
-  sales: [],
-  revenue: { current: 0, previous: 0, percentChange: 0 },
-  profitMargin: { value: 0, trend: 0, percentChange: 0 },
-  outstandingInvoices: { amount: 0, percentChange: 0 },
-  activeCustomers: { count: 0, percentChange: 0 },
-  leads: [],
-  opportunities: [],
-  bankConnections: [],
-  users: [],
-  roles: [],
-  paymentTemplates: [],
-  recurringInvoices: [],
-  mileageEntries: [],
-  vendorBills: [],
-  scannedReceipts: []
-});
+export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [currentCompany, setCurrentCompany] = useState(sampleCompany);
+  const [companies] = useState([sampleCompany]);
 
-export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [currentCompany, setCurrentCompany] = useState<Company>(createDefaultCompany());
-
-  // Load data on component mount
-  useEffect(() => {
-    const savedData = loadFromLocalStorage();
-    if (savedData) {
-      setCurrentCompany(savedData);
-      setCompanies([savedData]);
-    }
+  // Enhanced customer operations with data relations
+  const addCustomer = useCallback((customer: Customer) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      customers: [...(prev.customers || []), customer]
+    }));
   }, []);
 
-  // Save data whenever company changes
-  useEffect(() => {
-    if (currentCompany.id) {
-      saveToLocalStorage(currentCompany);
-    }
-  }, [currentCompany]);
+  const updateCustomer = useCallback((customer: Customer) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      customers: prev.customers?.map(c => c.id === customer.id ? customer : c) || []
+    }));
+  }, []);
 
-  const updateCompany = (updatedCompany: Company) => {
-    setCurrentCompany(updatedCompany);
-    setCompanies(prev => prev.map(c => c.id === updatedCompany.id ? updatedCompany : c));
-  };
+  const deleteCustomer = useCallback((customerId: string) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      customers: prev.customers?.filter(c => c.id !== customerId) || [],
+      // Also remove related invoices and projects
+      invoices: prev.invoices?.filter(i => i.customerId !== customerId) || [],
+      projects: prev.projects?.filter(p => p.clientId !== customerId) || []
+    }));
+  }, []);
 
-  const switchCompany = (companyId: string) => {
-    const company = companies.find(c => c.id === companyId);
-    if (company) {
-      setCurrentCompany(company);
-    }
-  };
+  // Enhanced invoice operations with automatic calculations
+  const addInvoice = useCallback((invoice: Invoice) => {
+    setCurrentCompany(prev => {
+      const updatedCustomers = prev.customers?.map(customer => {
+        if (customer.id === invoice.customerId) {
+          return {
+            ...customer,
+            totalSales: (customer.totalSales || 0) + invoice.total
+          };
+        }
+        return customer;
+      }) || [];
 
-  const addCompany = (company: Company) => {
-    setCompanies(prev => [...prev, company]);
-    setCurrentCompany(company);
-  };
-
-  // Customer operations
-  const addCustomer = (customer: Customer) => {
-    const updatedCompany = {
-      ...currentCompany,
-      customers: [...(currentCompany.customers || []), customer]
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const updateCustomer = (customer: Customer) => {
-    const updatedCompany = {
-      ...currentCompany,
-      customers: (currentCompany.customers || []).map(c => c.id === customer.id ? customer : c)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const deleteCustomer = (customerId: string) => {
-    const updatedCompany = {
-      ...currentCompany,
-      customers: (currentCompany.customers || []).filter(c => c.id !== customerId)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  // Tax operations
-  const updateTaxRate = (taxRate: TaxRate) => {
-    const updatedCompany = {
-      ...currentCompany,
-      taxRates: currentCompany.taxRates.map(t => t.id === taxRate.id ? taxRate : t)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const addTaxRate = (taxRate: TaxRate) => {
-    const updatedCompany = {
-      ...currentCompany,
-      taxRates: [...currentCompany.taxRates, taxRate]
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const deleteTaxRate = (taxRateId: string) => {
-    const updatedCompany = {
-      ...currentCompany,
-      taxRates: currentCompany.taxRates.filter(t => t.id !== taxRateId)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  // Account operations
-  const updateAccount = (account: Account) => {
-    const updatedCompany = {
-      ...currentCompany,
-      accounts: currentCompany.accounts.map(a => a.id === account.id ? account : a)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const addAccount = (account: Account) => {
-    const updatedCompany = {
-      ...currentCompany,
-      accounts: [...currentCompany.accounts, account]
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const deleteAccount = (accountId: string) => {
-    const updatedCompany = {
-      ...currentCompany,
-      accounts: currentCompany.accounts.filter(a => a.id !== accountId)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  // Bank Account operations
-  const addBankAccount = (bankAccount: BankAccount) => {
-    const updatedCompany = {
-      ...currentCompany,
-      bankAccounts: [...currentCompany.bankAccounts, bankAccount]
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const updateBankAccount = (bankAccount: BankAccount) => {
-    const updatedCompany = {
-      ...currentCompany,
-      bankAccounts: currentCompany.bankAccounts.map(b => b.id === bankAccount.id ? bankAccount : b)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const deleteBankAccount = (bankAccountId: string) => {
-    const updatedCompany = {
-      ...currentCompany,
-      bankAccounts: currentCompany.bankAccounts.filter(b => b.id !== bankAccountId)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  // Expense operations
-  const addExpense = (expense: Expense) => {
-    const updatedCompany = {
-      ...currentCompany,
-      expenses: [...(currentCompany.expenses || []), expense]
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const updateExpense = (expense: Expense) => {
-    const updatedCompany = {
-      ...currentCompany,
-      expenses: (currentCompany.expenses || []).map(e => e.id === expense.id ? expense : e)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const deleteExpense = (expenseId: string) => {
-    const updatedCompany = {
-      ...currentCompany,
-      expenses: (currentCompany.expenses || []).filter(e => e.id !== expenseId)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  // Invoice operations
-  const addInvoice = (invoice: Invoice) => {
-    const updatedCompany = {
-      ...currentCompany,
-      invoices: [...(currentCompany.invoices || []), invoice]
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const updateInvoice = (invoice: Invoice) => {
-    const updatedCompany = {
-      ...currentCompany,
-      invoices: (currentCompany.invoices || []).map(i => i.id === invoice.id ? invoice : i)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const deleteInvoice = (invoiceId: string) => {
-    const updatedCompany = {
-      ...currentCompany,
-      invoices: (currentCompany.invoices || []).filter(i => i.id !== invoiceId)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  // Estimate operations
-  const addEstimate = (estimate: Estimate) => {
-    const updatedCompany = {
-      ...currentCompany,
-      estimates: [...(currentCompany.estimates || []), estimate]
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const updateEstimate = (estimate: Estimate) => {
-    const updatedCompany = {
-      ...currentCompany,
-      estimates: (currentCompany.estimates || []).map(e => e.id === estimate.id ? estimate : e)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const deleteEstimate = (estimateId: string) => {
-    const updatedCompany = {
-      ...currentCompany,
-      estimates: (currentCompany.estimates || []).filter(e => e.id !== estimateId)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  // Budget operations
-  const addBudget = (budget: Budget) => {
-    const updatedCompany = {
-      ...currentCompany,
-      budgets: [...(currentCompany.budgets || []), budget]
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const updateBudget = (budget: Budget) => {
-    const updatedCompany = {
-      ...currentCompany,
-      budgets: (currentCompany.budgets || []).map(b => b.id === budget.id ? budget : b)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const deleteBudget = (budgetId: string) => {
-    const updatedCompany = {
-      ...currentCompany,
-      budgets: (currentCompany.budgets || []).filter(b => b.id !== budgetId)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  // Transaction operations
-  const updateTransaction = (transactionId: string, updates: Partial<Transaction>) => {
-    const updatedCompany = {
-      ...currentCompany,
-      transactions: currentCompany.transactions.map(t => 
-        t.id === transactionId ? { ...t, ...updates } : t
-      ),
-      bankAccounts: currentCompany.bankAccounts.map(account => ({
-        ...account,
-        transactions: account.transactions.map(t => 
-          t.id === transactionId ? { ...t, ...updates } : t
-        )
-      }))
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const addTransaction = (transaction: Transaction) => {
-    // Find the target bank account and add transaction
-    const updatedBankAccounts = currentCompany.bankAccounts.map(account => {
-      if (account.id === transaction.account || account.name === transaction.account) {
-        return {
-          ...account,
-          transactions: [...account.transactions, transaction],
-          // Update balance based on transaction type
-          balance: typeof account.balance === 'number' 
-            ? account.balance + (transaction.type === 'Deposit' || transaction.type === 'Credit' 
-                ? parseFloat(transaction.amount.replace(/[^0-9.-]+/g, ""))
-                : -parseFloat(transaction.amount.replace(/[^0-9.-]+/g, "")))
-            : account.balance
-        };
-      }
-      return account;
+      return {
+        ...prev,
+        invoices: [...(prev.invoices || []), invoice],
+        customers: updatedCustomers
+      };
     });
+  }, []);
 
-    const updatedCompany = {
-      ...currentCompany,
-      transactions: [...currentCompany.transactions, transaction],
-      bankAccounts: updatedBankAccounts
-    };
-    setCurrentCompany(updatedCompany);
-  };
+  const updateInvoice = useCallback((invoice: Invoice) => {
+    setCurrentCompany(prev => {
+      const oldInvoice = prev.invoices?.find(i => i.id === invoice.id);
+      const updatedCustomers = prev.customers?.map(customer => {
+        if (customer.id === invoice.customerId) {
+          const oldAmount = oldInvoice?.total || 0;
+          return {
+            ...customer,
+            totalSales: (customer.totalSales || 0) - oldAmount + invoice.total
+          };
+        }
+        return customer;
+      }) || [];
 
-  const deleteTransaction = (transactionId: string, bankAccountId: string) => {
-    // Find transaction to get amount for balance adjustment
-    const targetAccount = currentCompany.bankAccounts.find(acc => acc.id === bankAccountId);
-    const targetTransaction = targetAccount?.transactions.find(t => t.id === transactionId);
-    
-    const updatedBankAccounts = currentCompany.bankAccounts.map(account => {
-      if (account.id === bankAccountId && targetTransaction) {
-        return {
-          ...account,
-          transactions: account.transactions.filter(t => t.id !== transactionId),
-          // Reverse the transaction amount from balance
-          balance: typeof account.balance === 'number' 
-            ? account.balance - (targetTransaction.type === 'Deposit' || targetTransaction.type === 'Credit' 
-                ? parseFloat(targetTransaction.amount.replace(/[^0-9.-]+/g, ""))
-                : -parseFloat(targetTransaction.amount.replace(/[^0-9.-]+/g, "")))
-            : account.balance
-        };
-      }
-      return account;
+      return {
+        ...prev,
+        invoices: prev.invoices?.map(i => i.id === invoice.id ? invoice : i) || [],
+        customers: updatedCustomers
+      };
     });
+  }, []);
 
-    const updatedCompany = {
-      ...currentCompany,
-      transactions: currentCompany.transactions.filter(t => t.id !== transactionId),
-      bankAccounts: updatedBankAccounts
-    };
-    setCurrentCompany(updatedCompany);
-  };
+  const deleteInvoice = useCallback((invoiceId: string) => {
+    setCurrentCompany(prev => {
+      const invoice = prev.invoices?.find(i => i.id === invoiceId);
+      const updatedCustomers = prev.customers?.map(customer => {
+        if (customer.id === invoice?.customerId) {
+          return {
+            ...customer,
+            totalSales: (customer.totalSales || 0) - (invoice?.total || 0)
+          };
+        }
+        return customer;
+      }) || [];
 
-  // Time Entry operations
-  const addTimeEntry = (timeEntry: TimeEntry) => {
-    const updatedCompany = {
-      ...currentCompany,
-      timeEntries: [...(currentCompany.timeEntries || []), timeEntry]
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const updateTimeEntry = (timeEntryId: string, updates: Partial<TimeEntry>) => {
-    const updatedCompany = {
-      ...currentCompany,
-      timeEntries: (currentCompany.timeEntries || []).map(te => 
-        te.id === timeEntryId ? { ...te, ...updates } : te
-      )
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const deleteTimeEntry = (timeEntryId: string) => {
-    const updatedCompany = {
-      ...currentCompany,
-      timeEntries: (currentCompany.timeEntries || []).filter(te => te.id !== timeEntryId)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  // Sale operations
-  const addSale = (sale: Sale) => {
-    const updatedCompany = {
-      ...currentCompany,
-      sales: [...(currentCompany.sales || []), sale]
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const updateSale = (sale: Sale) => {
-    const updatedCompany = {
-      ...currentCompany,
-      sales: (currentCompany.sales || []).map(s => s.id === sale.id ? sale : s)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  const deleteSale = (saleId: string) => {
-    const updatedCompany = {
-      ...currentCompany,
-      sales: (currentCompany.sales || []).filter(s => s.id !== saleId)
-    };
-    setCurrentCompany(updatedCompany);
-  };
-
-  // Inventory operations
-  const addInventoryItem = (item: any) => {
-    const updatedInventory = {
-      ...currentCompany.inventory,
-      items: [...(currentCompany.inventory?.items || []), item]
-    };
-    updateCompany({
-      ...currentCompany,
-      inventory: updatedInventory
+      return {
+        ...prev,
+        invoices: prev.invoices?.filter(i => i.id !== invoiceId) || [],
+        customers: updatedCustomers
+      };
     });
-  };
+  }, []);
 
-  const updateInventoryItem = (item: any) => {
-    const updatedInventory = {
-      ...currentCompany.inventory,
-      items: (currentCompany.inventory?.items || []).map(i => i.id === item.id ? item : i)
-    };
-    updateCompany({
-      ...currentCompany,
-      inventory: updatedInventory
+  // Enhanced expense operations with category tracking
+  const addExpense = useCallback((expense: Expense) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      expenses: [...(prev.expenses || []), expense]
+    }));
+  }, []);
+
+  const updateExpense = useCallback((expense: Expense) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      expenses: prev.expenses?.map(e => e.id === expense.id ? expense : e) || []
+    }));
+  }, []);
+
+  const deleteExpense = useCallback((expenseId: string) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      expenses: prev.expenses?.filter(e => e.id !== expenseId) || []
+    }));
+  }, []);
+
+  // Enhanced transaction operations with balance updates
+  const addTransaction = useCallback((transaction: Transaction) => {
+    setCurrentCompany(prev => {
+      const updatedBankAccounts = prev.bankAccounts?.map(account => {
+        if (account.id === transaction.account || account.name === transaction.account) {
+          const amount = parseFloat(transaction.amount.replace(/[^0-9.-]+/g, ''));
+          return {
+            ...account,
+            balance: account.balance + amount,
+            transactions: [...(account.transactions || []), transaction]
+          };
+        }
+        return account;
+      }) || [];
+
+      return {
+        ...prev,
+        bankAccounts: updatedBankAccounts
+      };
     });
-  };
+  }, []);
 
-  const deleteInventoryItem = (itemId: string) => {
-    const updatedInventory = {
-      ...currentCompany.inventory,
-      items: (currentCompany.inventory?.items || []).filter(i => i.id !== itemId)
-    };
-    updateCompany({
-      ...currentCompany,
-      inventory: updatedInventory
+  const updateTransaction = useCallback((transactionId: string, updates: Partial<Transaction>) => {
+    setCurrentCompany(prev => {
+      const updatedBankAccounts = prev.bankAccounts?.map(account => {
+        const transactionIndex = account.transactions?.findIndex(t => t.id === transactionId);
+        if (transactionIndex !== undefined && transactionIndex >= 0) {
+          const oldTransaction = account.transactions![transactionIndex];
+          const updatedTransaction = { ...oldTransaction, ...updates };
+          
+          // Update balance if amount changed
+          const oldAmount = parseFloat(oldTransaction.amount.replace(/[^0-9.-]+/g, ''));
+          const newAmount = parseFloat(updatedTransaction.amount.replace(/[^0-9.-]+/g, ''));
+          const balanceDiff = newAmount - oldAmount;
+
+          const updatedTransactions = [...account.transactions!];
+          updatedTransactions[transactionIndex] = updatedTransaction;
+
+          return {
+            ...account,
+            balance: account.balance + balanceDiff,
+            transactions: updatedTransactions
+          };
+        }
+        return account;
+      }) || [];
+
+      return {
+        ...prev,
+        bankAccounts: updatedBankAccounts
+      };
     });
-  };
+  }, []);
 
-  // Payroll operations
-  const processPayroll = (payrollData: any) => {
-    const updatedCompany = {
-      ...currentCompany,
-      payrollData: {
-        ...currentCompany.payrollData,
-        payPeriods: [...(currentCompany.payrollData?.payPeriods || []), payrollData]
-      }
-    };
-    setCurrentCompany(updatedCompany);
-  };
+  const deleteTransaction = useCallback((transactionId: string, bankAccountId: string) => {
+    setCurrentCompany(prev => {
+      const updatedBankAccounts = prev.bankAccounts?.map(account => {
+        if (account.id === bankAccountId) {
+          const transaction = account.transactions?.find(t => t.id === transactionId);
+          const amount = transaction ? parseFloat(transaction.amount.replace(/[^0-9.-]+/g, '')) : 0;
+          
+          return {
+            ...account,
+            balance: account.balance - amount,
+            transactions: account.transactions?.filter(t => t.id !== transactionId) || []
+          };
+        }
+        return account;
+      }) || [];
+
+      return {
+        ...prev,
+        bankAccounts: updatedBankAccounts
+      };
+    });
+  }, []);
+
+  // Project operations with proper linking
+  const addProject = useCallback((project: Project) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      projects: [...(prev.projects || []), project]
+    }));
+  }, []);
+
+  const updateProject = useCallback((project: Project) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      projects: prev.projects?.map(p => p.id === project.id ? project : p) || []
+    }));
+  }, []);
+
+  const deleteProject = useCallback((projectId: string) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      projects: prev.projects?.filter(p => p.id !== projectId) || [],
+      // Also remove related time entries
+      timeEntries: prev.timeEntries?.filter(te => te.projectId !== projectId) || []
+    }));
+  }, []);
+
+  // Employee operations
+  const addEmployee = useCallback((employee: Employee) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      employees: [...(prev.employees || []), employee]
+    }));
+  }, []);
+
+  const updateEmployee = useCallback((employee: Employee) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      employees: prev.employees?.map(e => e.id === employee.id ? employee : e) || []
+    }));
+  }, []);
+
+  const deleteEmployee = useCallback((employeeId: string) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      employees: prev.employees?.filter(e => e.id !== employeeId) || []
+    }));
+  }, []);
+
+  // Enhanced utility functions
+  const calculateTotalRevenue = useCallback(() => {
+    return currentCompany.invoices?.reduce((total, invoice) => total + invoice.total, 0) || 0;
+  }, [currentCompany.invoices]);
+
+  const calculateTotalExpenses = useCallback(() => {
+    return currentCompany.expenses?.reduce((total, expense) => {
+      const amount = typeof expense.amount === 'number' ? expense.amount : parseFloat(expense.amount.toString());
+      return total + amount;
+    }, 0) || 0;
+  }, [currentCompany.expenses]);
+
+  const getCustomerInvoices = useCallback((customerId: string) => {
+    return currentCompany.invoices?.filter(invoice => invoice.customerId === customerId) || [];
+  }, [currentCompany.invoices]);
+
+  const getProjectsByCustomer = useCallback((customerId: string) => {
+    return currentCompany.projects?.filter(project => project.clientId === customerId) || [];
+  }, [currentCompany.projects]);
 
   const value: CompanyContextType = {
     currentCompany,
     companies,
-    updateCompany,
-    switchCompany,
-    addCompany,
+    updateCompany: setCurrentCompany,
+    switchCompany: () => {},
+    addCompany: () => {},
+    
+    // Customer operations
     addCustomer,
     updateCustomer,
     deleteCustomer,
-    updateTaxRate,
-    addTaxRate,
-    deleteTaxRate,
-    updateAccount,
-    addAccount,
-    deleteAccount,
-    addBankAccount,
-    updateBankAccount,
-    deleteBankAccount,
-    addExpense,
-    updateExpense,
-    deleteExpense,
+    
+    // Invoice operations
     addInvoice,
     updateInvoice,
     deleteInvoice,
-    addEstimate,
-    updateEstimate,
-    deleteEstimate,
-    addBudget,
-    updateBudget,
-    deleteBudget,
-    updateTransaction,
+    
+    // Expense operations
+    addExpense,
+    updateExpense,
+    deleteExpense,
+    
+    // Transaction operations
     addTransaction,
+    updateTransaction,
     deleteTransaction,
-    addTimeEntry,
-    updateTimeEntry,
-    deleteTimeEntry,
-    addSale,
-    updateSale,
-    deleteSale,
-    processPayroll,
+    
+    // Project operations
+    addProject,
+    updateProject,
+    deleteProject,
+    
+    // Employee operations
+    addEmployee,
+    updateEmployee,
+    deleteEmployee,
+    
+    // Utility functions
+    calculateTotalRevenue,
+    calculateTotalExpenses,
+    getCustomerInvoices,
+    getProjectsByCustomer,
+    
+    // Legacy operations (keeping for compatibility)
+    updateTaxRate: () => {},
+    addTaxRate: () => {},
+    deleteTaxRate: () => {},
+    updateAccount: () => {},
+    addAccount: () => {},
+    deleteAccount: () => {},
+    addBankAccount: () => {},
+    updateBankAccount: () => {},
+    deleteBankAccount: () => {},
+    addEstimate: () => {},
+    updateEstimate: () => {},
+    deleteEstimate: () => {},
+    addBudget: () => {},
+    updateBudget: () => {},
+    deleteBudget: () => {},
+    addTimeEntry: () => {},
+    updateTimeEntry: () => {},
+    deleteTimeEntry: () => {},
+    addSale: () => {},
+    updateSale: () => {},
+    deleteSale: () => {},
+    processPayroll: () => {}
   };
 
   return (
@@ -553,7 +338,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
   );
 };
 
-export const useCompany = (): CompanyContextType => {
+export const useCompany = () => {
   const context = useContext(CompanyContext);
   if (context === undefined) {
     throw new Error('useCompany must be used within a CompanyProvider');

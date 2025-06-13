@@ -1,5 +1,5 @@
 
-import { Company, Invoice, Expense, TaxRate, Account, Transaction, Budget, Estimate, BankAccount, TimeEntry, Project, Sale, Customer } from './company';
+import { Company, Invoice, Expense, TaxRate, Account, Transaction, Budget, Estimate, BankAccount, TimeEntry, Project, Sale, Customer, Employee } from './company';
 
 export interface CompanyContextType {
   currentCompany: Company;
@@ -53,6 +53,16 @@ export interface CompanyContextType {
   addTransaction: (transaction: Transaction) => void;
   deleteTransaction: (transactionId: string, bankAccountId: string) => void;
   
+  // Project operations
+  addProject: (project: Project) => void;
+  updateProject: (project: Project) => void;
+  deleteProject: (projectId: string) => void;
+  
+  // Employee operations
+  addEmployee: (employee: Employee) => void;
+  updateEmployee: (employee: Employee) => void;
+  deleteEmployee: (employeeId: string) => void;
+  
   // Time Entry operations
   addTimeEntry?: (timeEntry: TimeEntry) => void;
   updateTimeEntry?: (timeEntryId: string, updates: Partial<TimeEntry>) => void;
@@ -65,4 +75,10 @@ export interface CompanyContextType {
   
   // Payroll operations
   processPayroll: (payrollData: any) => void;
+  
+  // Utility functions
+  calculateTotalRevenue: () => number;
+  calculateTotalExpenses: () => number;
+  getCustomerInvoices: (customerId: string) => Invoice[];
+  getProjectsByCustomer: (customerId: string) => Project[];
 }
