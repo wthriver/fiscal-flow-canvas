@@ -126,9 +126,12 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const updatedBankAccounts = prev.bankAccounts?.map(account => {
         if (account.id === transaction.account || account.name === transaction.account) {
           const amount = parseFloat(transaction.amount.replace(/[^0-9.-]+/g, ''));
+          const currentBalance = typeof account.balance === 'string' 
+            ? parseFloat(account.balance.replace(/[^0-9.-]+/g, '')) 
+            : account.balance;
           return {
             ...account,
-            balance: account.balance + amount,
+            balance: currentBalance + amount,
             transactions: [...(account.transactions || []), transaction]
           };
         }
@@ -154,13 +157,16 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           const oldAmount = parseFloat(oldTransaction.amount.replace(/[^0-9.-]+/g, ''));
           const newAmount = parseFloat(updatedTransaction.amount.replace(/[^0-9.-]+/g, ''));
           const balanceDiff = newAmount - oldAmount;
+          const currentBalance = typeof account.balance === 'string' 
+            ? parseFloat(account.balance.replace(/[^0-9.-]+/g, '')) 
+            : account.balance;
 
           const updatedTransactions = [...account.transactions!];
           updatedTransactions[transactionIndex] = updatedTransaction;
 
           return {
             ...account,
-            balance: account.balance + balanceDiff,
+            balance: currentBalance + balanceDiff,
             transactions: updatedTransactions
           };
         }
@@ -180,10 +186,13 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (account.id === bankAccountId) {
           const transaction = account.transactions?.find(t => t.id === transactionId);
           const amount = transaction ? parseFloat(transaction.amount.replace(/[^0-9.-]+/g, '')) : 0;
+          const currentBalance = typeof account.balance === 'string' 
+            ? parseFloat(account.balance.replace(/[^0-9.-]+/g, '')) 
+            : account.balance;
           
           return {
             ...account,
-            balance: account.balance - amount,
+            balance: currentBalance - amount,
             transactions: account.transactions?.filter(t => t.id !== transactionId) || []
           };
         }

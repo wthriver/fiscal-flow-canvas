@@ -35,7 +35,7 @@ export const sampleCompany: Company = {
   accounts: [
     {
       id: 'acc-1',
-      code: '1000',
+      number: '1000',
       name: 'Cash',
       type: 'Asset',
       balance: 25000,
@@ -43,7 +43,7 @@ export const sampleCompany: Company = {
     },
     {
       id: 'acc-2',
-      code: '4000',
+      number: '4000',
       name: 'Revenue',
       type: 'Revenue',
       balance: 0,
@@ -51,7 +51,7 @@ export const sampleCompany: Company = {
     },
     {
       id: 'acc-3',
-      code: '5000',
+      number: '5000',
       name: 'Expenses',
       type: 'Expense',
       balance: 0,
@@ -62,11 +62,12 @@ export const sampleCompany: Company = {
     id: 'tax-1',
     name: 'Sales Tax',
     rate: 8.5,
-    type: 'Sales',
+    isDefault: true,
     description: 'Standard sales tax rate'
   }],
   budgets: [],
   estimates: [],
   timeEntries: [],
-  sales: []
+  sales: [],
+  transactions: []
 };
