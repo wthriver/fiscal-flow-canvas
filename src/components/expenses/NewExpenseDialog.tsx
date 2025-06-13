@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -71,7 +72,7 @@ export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({
       category,
       vendor,
       amount: formattedAmount,
-      status,
+      status: status as 'Pending' | 'Paid',
       paymentMethod,
       description: description || "No description provided"
     };

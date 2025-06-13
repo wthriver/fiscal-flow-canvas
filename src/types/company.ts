@@ -1,4 +1,5 @@
 
+
 export interface Company {
   id: string;
   name: string;
@@ -22,8 +23,17 @@ export interface Company {
   timeEntries?: TimeEntry[];
   sales?: Sale[];
   transactions?: Transaction[];
-  revenue?: number;
-  profitMargin?: number;
+  inventory?: InventoryItem[];
+  revenue?: {
+    current: number;
+    previous: number;
+    percentChange: number;
+  };
+  profitMargin?: {
+    value: number;
+    previous: number;
+    percentChange: number;
+  };
 }
 
 export interface Customer {
@@ -46,16 +56,20 @@ export interface Customer {
 export interface Invoice {
   id: string;
   invoiceNumber?: string;
-  customerId: string;
+  customerId?: string;
   customer: string;
   date: string;
   dueDate: string;
   items: InvoiceItem[];
   subtotal: number;
-  tax: number;
+  tax?: number;
+  taxAmount?: number;
   total: number;
-  status: 'Draft' | 'Sent' | 'Paid' | 'Overdue';
+  amount?: string;
+  status: 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Pending' | 'Outstanding';
+  paymentStatus?: string;
   notes?: string;
+  terms?: string;
 }
 
 export interface InvoiceItem {
@@ -63,7 +77,9 @@ export interface InvoiceItem {
   description: string;
   quantity: number;
   rate: number;
+  price?: number;
   amount: number;
+  total?: number;
 }
 
 export interface Expense {
@@ -74,9 +90,10 @@ export interface Expense {
   description: string;
   amount: number | string;
   paymentMethod: string;
-  status: 'Pending' | 'Paid';
+  status: 'Pending' | 'Paid' | 'Approved' | 'Rejected';
   receiptUrl?: string;
   billNumber?: string;
+  dueDate?: string;
 }
 
 export interface Project {
@@ -95,6 +112,7 @@ export interface Employee {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   position: string;
   department: string;
   salary: number;
@@ -199,3 +217,60 @@ export interface Sale {
   amount: number;
   status: 'Completed' | 'Pending';
 }
+
+// Inventory related interfaces
+export interface InventoryItem {
+  id: string;
+  name: string;
+  sku: string;
+  description?: string;
+  category: string;
+  quantity: number;
+  unitPrice: number;
+  totalValue: number;
+  supplier?: string;
+  location?: string;
+  status: 'In Stock' | 'Low Stock' | 'Out of Stock';
+  reorderPoint?: number;
+  reorderQuantity?: number;
+  lastUpdated: string;
+}
+
+export interface Bundle {
+  id: string;
+  name: string;
+  description?: string;
+  items: BundleItem[];
+  totalCost: number;
+  sellingPrice: number;
+  status: 'Active' | 'Inactive';
+}
+
+export interface BundleItem {
+  id: string;
+  inventoryItemId: string;
+  quantity: number;
+  unitCost: number;
+}
+
+export interface LotTrack {
+  id: string;
+  lotNumber: string;
+  inventoryItemId: string;
+  quantity: number;
+  expirationDate?: string;
+  supplier?: string;
+  receivedDate: string;
+  status: 'Available' | 'Reserved' | 'Expired';
+}
+
+export interface SerialNumber {
+  id: string;
+  serialNumber: string;
+  inventoryItemId: string;
+  status: 'Available' | 'Sold' | 'Reserved' | 'Defective';
+  receivedDate: string;
+  soldDate?: string;
+  customerId?: string;
+}
+

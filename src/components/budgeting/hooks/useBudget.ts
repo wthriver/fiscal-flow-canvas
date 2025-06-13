@@ -31,7 +31,7 @@ export const useBudget = () => {
     let totalBudgeted = 0;
     let totalActual = 0;
     
-    budget.categories.forEach(category => {
+    budget.categories?.forEach(category => {
       totalBudgeted += category.budgeted;
       totalActual += category.actual;
     });
@@ -68,6 +68,8 @@ export const useBudget = () => {
     const budgetToAdd: Budget = {
       id: `budget-${Date.now()}`,
       name: newBudget.name,
+      amount: totalBudgeted, // Required field
+      category: "General", // Required field
       period: newBudget.period,
       startDate: newBudget.startDate,
       endDate: newBudget.endDate,
@@ -144,7 +146,7 @@ export const useBudget = () => {
     if (!currentCompany.budgets) return;
     
     const budget = currentCompany.budgets.find(b => b.id === budgetId);
-    if (!budget) return;
+    if (!budget || !budget.categories) return;
     
     const updatedCategories = budget.categories.map(category => {
       if (category.id === categoryId) {
@@ -172,6 +174,8 @@ export const useBudget = () => {
   };
 
   const handleEditCategory = (budget: Budget, categoryId: string) => {
+    if (!budget.categories) return;
+    
     const category = budget.categories.find(cat => cat.id === categoryId);
     if (!category) return;
     
@@ -185,7 +189,7 @@ export const useBudget = () => {
   };
 
   const handleUpdateCategory = () => {
-    if (!selectedBudget || !selectedCategory) return;
+    if (!selectedBudget || !selectedCategory || !selectedBudget.categories) return;
     
     const budgetedValue = parseFloat(selectedCategory.budgetedAmount?.replace(/[^0-9.-]+/g, "") || "0");
     const actualValue = parseFloat(selectedCategory.actualAmount?.replace(/[^0-9.-]+/g, "") || "0");

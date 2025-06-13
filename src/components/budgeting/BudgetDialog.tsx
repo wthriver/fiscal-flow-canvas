@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -45,9 +44,9 @@ export const BudgetDialog: React.FC<BudgetDialogProps> = ({
       setFormData({
         name: budget.name,
         period: budget.period,
-        startDate: budget.startDate,
-        endDate: budget.endDate,
-        status: budget.status
+        startDate: budget.startDate || new Date().toISOString().split('T')[0],
+        endDate: budget.endDate || "",
+        status: budget.status || "Draft"
       });
       setCategories(budget.categories || []);
     } else {
@@ -112,10 +111,12 @@ export const BudgetDialog: React.FC<BudgetDialogProps> = ({
     const budgetData: Budget = {
       id: budget?.id || `budget-${Date.now()}`,
       name: formData.name,
+      amount: totalBudgeted, // Required field
+      category: "General", // Required field
       period: formData.period,
       startDate: formData.startDate,
       endDate: formData.endDate,
-      status: formData.status,
+      status: formData.status as 'Draft' | 'Active' | 'Completed',
       categories: categories,
       totalBudgeted: `$${totalBudgeted.toFixed(2)}`,
       totalActual: `$${totalActual.toFixed(2)}`,
