@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Calculator, Trash2, Edit } from "lucide-react";
+import { Plus, Edit, Trash2, Calculator } from "lucide-react";
 import { toast } from "sonner";
 
 interface FixedAsset {
@@ -16,101 +16,97 @@ interface FixedAsset {
   name: string;
   category: string;
   purchaseDate: string;
-  originalCost: number;
-  depreciationMethod: 'straight-line' | 'declining-balance' | 'units-of-production';
+  purchasePrice: number;
+  currentValue: number;
+  depreciationMethod: 'Straight Line' | 'Declining Balance' | 'Sum of Years';
   usefulLife: number;
-  salvageValue: number;
   accumulatedDepreciation: number;
-  bookValue: number;
-  status: 'active' | 'disposed' | 'fully-depreciated';
+  status: 'Active' | 'Disposed' | 'Sold';
 }
 
 export const FixedAssetsManager: React.FC = () => {
   const [assets, setAssets] = useState<FixedAsset[]>([
     {
       id: '1',
-      name: 'Office Computer',
-      category: 'Equipment',
-      purchaseDate: '2022-01-15',
-      originalCost: 2500,
-      depreciationMethod: 'straight-line',
+      name: 'Office Building',
+      category: 'Real Estate',
+      purchaseDate: '2020-01-15',
+      purchasePrice: 500000,
+      currentValue: 450000,
+      depreciationMethod: 'Straight Line',
+      usefulLife: 30,
+      accumulatedDepreciation: 50000,
+      status: 'Active'
+    },
+    {
+      id: '2',
+      name: 'Company Vehicle',
+      category: 'Vehicle',
+      purchaseDate: '2022-06-01',
+      purchasePrice: 35000,
+      currentValue: 28000,
+      depreciationMethod: 'Declining Balance',
       usefulLife: 5,
-      salvageValue: 500,
-      accumulatedDepreciation: 800,
-      bookValue: 1700,
-      status: 'active'
+      accumulatedDepreciation: 7000,
+      status: 'Active'
     }
   ]);
 
-  const [newAsset, setNewAsset] = useState<Partial<FixedAsset>>({
-    depreciationMethod: 'straight-line',
-    usefulLife: 5,
-    salvageValue: 0
-  });
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<FixedAsset | null>(null);
 
-  const calculateDepreciation = (asset: Partial<FixedAsset>) => {
-    if (!asset.originalCost || !asset.usefulLife) return 0;
-    
-    const depreciableAmount = asset.originalCost - (asset.salvageValue || 0);
-    
+  const calculateDepreciation = (asset: FixedAsset): number => {
+    const yearsOwned = new Date().getFullYear() - new Date(asset.purchaseDate).getFullYear();
     switch (asset.depreciationMethod) {
-      case 'straight-line':
-        return depreciableAmount / asset.usefulLife;
-      case 'declining-balance':
-        return (asset.originalCost * 0.2); // 20% declining balance
+      case 'Straight Line':
+        return (asset.purchasePrice / asset.usefulLife) * yearsOwned;
+      case 'Declining Balance':
+        return asset.purchasePrice * (1 - Math.pow(0.8, yearsOwned));
       default:
-        return depreciableAmount / asset.usefulLife;
+        return asset.accumulatedDepreciation;
     }
   };
 
-  const addAsset = () => {
-    if (!newAsset.name || !newAsset.originalCost || !newAsset.purchaseDate) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    const annualDepreciation = calculateDepreciation(newAsset);
-    const yearsOwned = Math.floor(
-      (new Date().getTime() - new Date(newAsset.purchaseDate!).getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-    );
-    const accumulatedDepreciation = Math.min(
-      annualDepreciation * yearsOwned,
-      newAsset.originalCost! - (newAsset.salvageValue || 0)
-    );
-
-    const asset: FixedAsset = {
-      id: Date.now().toString(),
-      name: newAsset.name!,
-      category: newAsset.category || 'Equipment',
-      purchaseDate: newAsset.purchaseDate!,
-      originalCost: newAsset.originalCost!,
-      depreciationMethod: newAsset.depreciationMethod || 'straight-line',
-      usefulLife: newAsset.usefulLife || 5,
-      salvageValue: newAsset.salvageValue || 0,
-      accumulatedDepreciation,
-      bookValue: newAsset.originalCost! - accumulatedDepreciation,
-      status: 'active'
-    };
-
-    setAssets([...assets, asset]);
-    setNewAsset({ depreciationMethod: 'straight-line', usefulLife: 5, salvageValue: 0 });
-    toast.success("Fixed asset added successfully");
+  const handleAddAsset = () => {
+    setEditingAsset(null);
+    setIsDialogOpen(true);
   };
 
-  const deleteAsset = (id: string) => {
-    setAssets(assets.filter(asset => asset.id !== id));
+  const handleEditAsset = (asset: FixedAsset) => {
+    setEditingAsset(asset);
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteAsset = (assetId: string) => {
+    setAssets(assets.filter(asset => asset.id !== assetId));
     toast.success("Asset deleted successfully");
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      'active': { variant: 'default' as const, label: 'Active' },
-      'disposed': { variant: 'secondary' as const, label: 'Disposed' },
-      'fully-depreciated': { variant: 'outline' as const, label: 'Fully Depreciated' }
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+  const handleSaveAsset = (assetData: Partial<FixedAsset>) => {
+    if (editingAsset) {
+      setAssets(assets.map(asset => 
+        asset.id === editingAsset.id 
+          ? { ...editingAsset, ...assetData } as FixedAsset
+          : asset
+      ));
+      toast.success("Asset updated successfully");
+    } else {
+      const newAsset: FixedAsset = {
+        id: `asset-${Date.now()}`,
+        name: assetData.name!,
+        category: assetData.category!,
+        purchaseDate: assetData.purchaseDate!,
+        purchasePrice: assetData.purchasePrice!,
+        currentValue: assetData.currentValue!,
+        depreciationMethod: assetData.depreciationMethod!,
+        usefulLife: assetData.usefulLife!,
+        accumulatedDepreciation: 0,
+        status: 'Active'
+      };
+      setAssets([...assets, newAsset]);
+      toast.success("Asset added successfully");
+    }
+    setIsDialogOpen(false);
   };
 
   return (
@@ -118,151 +114,60 @@ export const FixedAssetsManager: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Fixed Assets Management</h2>
-          <p className="text-muted-foreground">Track and manage your company's fixed assets with depreciation schedules</p>
+          <p className="text-muted-foreground">Track and manage your company's fixed assets</p>
         </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Asset
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add New Fixed Asset</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Asset Name *</Label>
-                <Input
-                  value={newAsset.name || ''}
-                  onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
-                  placeholder="Enter asset name"
-                />
-              </div>
-              <div>
-                <Label>Category</Label>
-                <Select 
-                  value={newAsset.category || ''} 
-                  onValueChange={(value) => setNewAsset({ ...newAsset, category: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Equipment">Equipment</SelectItem>
-                    <SelectItem value="Vehicles">Vehicles</SelectItem>
-                    <SelectItem value="Building">Building</SelectItem>
-                    <SelectItem value="Furniture">Furniture</SelectItem>
-                    <SelectItem value="Software">Software</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Purchase Date *</Label>
-                <Input
-                  type="date"
-                  value={newAsset.purchaseDate || ''}
-                  onChange={(e) => setNewAsset({ ...newAsset, purchaseDate: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Original Cost *</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={newAsset.originalCost || ''}
-                  onChange={(e) => setNewAsset({ ...newAsset, originalCost: parseFloat(e.target.value) || 0 })}
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <Label>Depreciation Method</Label>
-                <Select 
-                  value={newAsset.depreciationMethod || 'straight-line'} 
-                  onValueChange={(value: any) => setNewAsset({ ...newAsset, depreciationMethod: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="straight-line">Straight Line</SelectItem>
-                    <SelectItem value="declining-balance">Declining Balance</SelectItem>
-                    <SelectItem value="units-of-production">Units of Production</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Useful Life (Years)</Label>
-                <Input
-                  type="number"
-                  value={newAsset.usefulLife || ''}
-                  onChange={(e) => setNewAsset({ ...newAsset, usefulLife: parseInt(e.target.value) || 0 })}
-                  placeholder="5"
-                />
-              </div>
-              <div>
-                <Label>Salvage Value</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={newAsset.salvageValue || ''}
-                  onChange={(e) => setNewAsset({ ...newAsset, salvageValue: parseFloat(e.target.value) || 0 })}
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <Label>Annual Depreciation</Label>
-                <Input
-                  value={`$${calculateDepreciation(newAsset).toFixed(2)}`}
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
+        <Button onClick={handleAddAsset}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Asset
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Total Assets</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${assets.reduce((sum, asset) => sum + asset.purchasePrice, 0).toLocaleString()}
             </div>
-            <div className="flex justify-end space-x-2 mt-6">
-              <Button variant="outline">Cancel</Button>
-              <Button onClick={addAsset}>Add Asset</Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Current Value</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${assets.reduce((sum, asset) => sum + asset.currentValue, 0).toLocaleString()}
             </div>
-          </DialogContent>
-        </Dialog>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Total Depreciation</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${assets.reduce((sum, asset) => sum + asset.accumulatedDepreciation, 0).toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Active Assets</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {assets.filter(asset => asset.status === 'Active').length}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Asset Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{assets.length}</div>
-              <div className="text-sm text-muted-foreground">Total Assets</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">
-                ${assets.reduce((sum, asset) => sum + asset.originalCost, 0).toLocaleString()}
-              </div>
-              <div className="text-sm text-muted-foreground">Original Cost</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">
-                ${assets.reduce((sum, asset) => sum + asset.accumulatedDepreciation, 0).toLocaleString()}
-              </div>
-              <div className="text-sm text-muted-foreground">Accumulated Depreciation</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">
-                ${assets.reduce((sum, asset) => sum + asset.bookValue, 0).toLocaleString()}
-              </div>
-              <div className="text-sm text-muted-foreground">Net Book Value</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Assets List</CardTitle>
+          <CardTitle>Assets</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -271,8 +176,9 @@ export const FixedAssetsManager: React.FC = () => {
                 <TableHead>Asset Name</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Purchase Date</TableHead>
-                <TableHead>Original Cost</TableHead>
-                <TableHead>Book Value</TableHead>
+                <TableHead>Purchase Price</TableHead>
+                <TableHead>Current Value</TableHead>
+                <TableHead>Depreciation</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -282,22 +188,28 @@ export const FixedAssetsManager: React.FC = () => {
                 <TableRow key={asset.id}>
                   <TableCell className="font-medium">{asset.name}</TableCell>
                   <TableCell>{asset.category}</TableCell>
-                  <TableCell>{new Date(asset.purchaseDate).toLocaleDateString()}</TableCell>
-                  <TableCell>${asset.originalCost.toLocaleString()}</TableCell>
-                  <TableCell>${asset.bookValue.toLocaleString()}</TableCell>
-                  <TableCell>{getStatusBadge(asset.status)}</TableCell>
+                  <TableCell>{asset.purchaseDate}</TableCell>
+                  <TableCell>${asset.purchasePrice.toLocaleString()}</TableCell>
+                  <TableCell>${asset.currentValue.toLocaleString()}</TableCell>
+                  <TableCell>${asset.accumulatedDepreciation.toLocaleString()}</TableCell>
+                  <TableCell>
+                    <Badge variant={asset.status === 'Active' ? 'default' : 'secondary'}>
+                      {asset.status}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditAsset(asset)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
-                        <Calculator className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
                         size="sm"
-                        onClick={() => deleteAsset(asset.id)}
+                        variant="outline"
+                        onClick={() => handleDeleteAsset(asset.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -309,6 +221,117 @@ export const FixedAssetsManager: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{editingAsset ? 'Edit Asset' : 'Add New Asset'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target as HTMLFormElement);
+            handleSaveAsset({
+              name: formData.get('name') as string,
+              category: formData.get('category') as string,
+              purchaseDate: formData.get('purchaseDate') as string,
+              purchasePrice: parseFloat(formData.get('purchasePrice') as string),
+              currentValue: parseFloat(formData.get('currentValue') as string),
+              depreciationMethod: formData.get('depreciationMethod') as any,
+              usefulLife: parseInt(formData.get('usefulLife') as string)
+            });
+          }}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Asset Name</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    defaultValue={editingAsset?.name}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="category">Category</Label>
+                  <Input
+                    id="category"
+                    name="category"
+                    defaultValue={editingAsset?.category}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="purchaseDate">Purchase Date</Label>
+                  <Input
+                    id="purchaseDate"
+                    name="purchaseDate"
+                    type="date"
+                    defaultValue={editingAsset?.purchaseDate}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="purchasePrice">Purchase Price</Label>
+                  <Input
+                    id="purchasePrice"
+                    name="purchasePrice"
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingAsset?.purchasePrice}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="currentValue">Current Value</Label>
+                  <Input
+                    id="currentValue"
+                    name="currentValue"
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingAsset?.currentValue}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="usefulLife">Useful Life (years)</Label>
+                  <Input
+                    id="usefulLife"
+                    name="usefulLife"
+                    type="number"
+                    defaultValue={editingAsset?.usefulLife}
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="depreciationMethod">Depreciation Method</Label>
+                <Select name="depreciationMethod" defaultValue={editingAsset?.depreciationMethod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Straight Line">Straight Line</SelectItem>
+                    <SelectItem value="Declining Balance">Declining Balance</SelectItem>
+                    <SelectItem value="Sum of Years">Sum of Years</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                {editingAsset ? 'Update' : 'Add'} Asset
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompany } from "@/contexts/CompanyContext";
 import { toast } from "sonner";
@@ -17,20 +19,16 @@ export const ReconciliationTab: React.FC<ReconciliationTabProps> = ({ accountId 
   const [statementBalance, setStatementBalance] = useState<string>("");
   
   // Get account info and unreconciled transactions
-  const account = currentCompany.bankAccounts.find(acc => acc.id === accountId);
-  const unreconciledTransactions = currentCompany.transactions
-    .filter(t => !accountId || t.bankAccount === accountId)
-    .filter(t => !t.reconciled)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const account = currentCompany.bankAccounts?.find(acc => acc.id === accountId);
+  const unreconciledTransactions = account?.transactions?.filter(t => !t.reconciled) || [];
 
-  // Calculate account balance from transactions
+  // Calculate balances
   const calculateBalance = (reconciled: boolean) => {
-    return currentCompany.transactions
-      .filter(t => (!accountId || t.bankAccount === accountId) && t.reconciled === reconciled)
+    return account?.transactions?.filter(t => t.reconciled === reconciled)
       .reduce((sum, t) => {
         const amount = parseFloat(t.amount.replace(/[^0-9.-]+/g, "")) || 0;
         return (t.type === 'Credit' || t.type === 'Deposit') ? sum + amount : sum - amount;
-      }, 0);
+      }, 0) || 0;
   };
 
   const bookBalance = calculateBalance(true);
@@ -68,105 +66,112 @@ export const ReconciliationTab: React.FC<ReconciliationTabProps> = ({ accountId 
     }
     
     // Mark selected transactions as reconciled
-    selectedTransactions.forEach(id => {
-      updateTransaction(id, { reconciled: true });
+    selectedTransactions.forEach(transactionId => {
+      updateTransaction(transactionId, { reconciled: true });
     });
     
-    toast.success(`${selectedTransactions.length} transactions reconciled successfully!`);
     setSelectedTransactions([]);
     setStatementBalance("");
+    toast.success("Bank reconciliation completed successfully");
   };
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Book Balance</CardTitle>
+            <CardTitle className="text-sm">Book Balance</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">${bookBalance.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">All reconciled transactions</p>
+            <div className="text-2xl font-bold">
+              ${bookBalance.toFixed(2)}
+            </div>
+            <p className="text-sm text-muted-foreground">Reconciled transactions</p>
           </CardContent>
         </Card>
+        
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Pending Balance</CardTitle>
+            <CardTitle className="text-sm">Selected Balance</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">${pendingBalance.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">Unreconciled transactions</p>
+            <div className="text-2xl font-bold">
+              ${selectedBalance.toFixed(2)}
+            </div>
+            <p className="text-sm text-muted-foreground">{selectedTransactions.length} transactions selected</p>
           </CardContent>
         </Card>
+        
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Selected Balance</CardTitle>
+            <CardTitle className="text-sm">Statement Balance</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">${selectedBalance.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">{selectedTransactions.length} transactions selected</p>
+            <div className="space-y-2">
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="Enter bank statement balance"
+                value={statementBalance}
+                onChange={(e) => setStatementBalance(e.target.value)}
+              />
+              <Button 
+                onClick={handleReconcile} 
+                className="w-full"
+                disabled={!statementBalance || selectedTransactions.length === 0}
+              >
+                Reconcile
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Reconciliation</CardTitle>
-          <div className="flex items-center gap-2">
-            <div>
-              <label htmlFor="statement-balance" className="text-sm mr-2">Statement Balance:</label>
-              <input 
-                id="statement-balance" 
-                type="text" 
-                value={statementBalance} 
-                onChange={e => setStatementBalance(e.target.value)}
-                placeholder="$ 0.00"
-                className="w-32 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
-              />
-            </div>
-            <Button 
-              onClick={handleReconcile}
-              disabled={selectedTransactions.length === 0}
-            >
-              Reconcile
-            </Button>
-          </div>
+        <CardHeader>
+          <CardTitle>Unreconciled Transactions</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Select transactions that appear on your bank statement
+          </p>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[40px]"></TableHead>
+                <TableHead className="w-[50px]">Select</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Description</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {unreconciledTransactions.length > 0 ? (
-                unreconciledTransactions.map(t => (
-                  <TableRow key={t.id}>
+              {unreconciledTransactions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    All transactions have been reconciled
+                  </TableCell>
+                </TableRow>
+              ) : (
+                unreconciledTransactions.map((transaction) => (
+                  <TableRow key={transaction.id}>
                     <TableCell>
-                      <Checkbox 
-                        checked={selectedTransactions.includes(t.id)} 
-                        onCheckedChange={() => handleToggleTransaction(t.id)}
+                      <Checkbox
+                        checked={selectedTransactions.includes(transaction.id)}
+                        onCheckedChange={() => handleToggleTransaction(transaction.id)}
                       />
                     </TableCell>
-                    <TableCell>{t.date}</TableCell>
-                    <TableCell>{t.description}</TableCell>
-                    <TableCell>{t.category}</TableCell>
-                    <TableCell className={`text-right ${(t.type === 'Credit' || t.type === 'Deposit') ? 'text-green-600' : 'text-red-600'}`}>
-                      {(t.type === 'Credit' || t.type === 'Deposit') ? '+' : '-'}{t.amount}
+                    <TableCell>{transaction.date}</TableCell>
+                    <TableCell>{transaction.description}</TableCell>
+                    <TableCell>{transaction.type}</TableCell>
+                    <TableCell>
+                      <span className={transaction.type === 'Debit' || transaction.type === 'Withdrawal' ? 'text-red-600' : 'text-green-600'}>
+                        {transaction.type === 'Debit' || transaction.type === 'Withdrawal' ? '-' : '+'}
+                        ${Math.abs(parseFloat(transaction.amount.replace(/[^0-9.-]+/g, "")) || 0).toFixed(2)}
+                      </span>
                     </TableCell>
                   </TableRow>
                 ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-4">
-                    All transactions have been reconciled.
-                  </TableCell>
-                </TableRow>
               )}
             </TableBody>
           </Table>

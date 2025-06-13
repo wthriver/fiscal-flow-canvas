@@ -1,45 +1,41 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { FileText, Download } from "lucide-react";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/CompanyContext";
 
-export interface ReportHeaderProps {
+interface ReportHeaderProps {
   accountId: string;
 }
 
 export const ReportHeader: React.FC<ReportHeaderProps> = ({ accountId }) => {
   const { currentCompany } = useCompany();
-  const account = accountId ? currentCompany.bankAccounts.find(acc => acc.id === accountId) : null;
-
-  const handleGenerateReport = () => {
-    console.log("Generating report for", account?.name || "all accounts");
-  };
-
-  const handleExportData = () => {
-    console.log("Exporting data for", account?.name || "all accounts");
-  };
+  
+  const account = currentCompany.bankAccounts?.find(acc => acc.id === accountId);
 
   return (
-    <div className="flex justify-between items-center mb-4">
-      <div>
-        <h3 className="text-lg font-medium">
-          {account ? account.name : "All Accounts"} Reports
-        </h3>
+    <Card>
+      <CardHeader>
+        <CardTitle>Banking Reports</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Generate and download financial reports
+          {account ? `${account.name} - ${account.accountNumber}` : 'All Accounts'}
         </p>
-      </div>
-      <div className="flex gap-2">
-        <Button variant="outline" onClick={handleGenerateReport}>
-          <FileText className="mr-2 h-4 w-4" />
-          Generate Report
-        </Button>
-        <Button variant="outline" onClick={handleExportData}>
-          <Download className="mr-2 h-4 w-4" />
-          Export Data
-        </Button>
-      </div>
-    </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Current Balance</label>
+            <p className="text-2xl font-bold">${account?.balance.toFixed(2) || '0.00'}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Account Type</label>
+            <p className="font-medium">{account?.type || 'N/A'}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Bank</label>
+            <p className="font-medium">{account?.bankName || 'N/A'}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
