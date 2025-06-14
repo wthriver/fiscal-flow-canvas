@@ -8,6 +8,8 @@ export interface Company {
   website: string;
   taxId: string;
   industry: string;
+  fiscalYearStart?: string;
+  fiscalYear?: string;
   
   customers?: Customer[];
   invoices?: Invoice[];
@@ -221,6 +223,9 @@ export interface TaxRate {
   rate: number;
   isDefault?: boolean;
   description?: string;
+  category?: string;
+  jurisdiction?: string;
+  effectiveDate?: string;
 }
 
 export interface BudgetCategory {
@@ -278,6 +283,9 @@ export interface TimeEntry {
   billable: boolean;
   status?: 'Draft' | 'Submitted' | 'Approved';
   billingRate?: number;
+  startTime?: string;
+  endTime?: string;
+  hourlyRate?: number;
 }
 
 export interface Sale {
@@ -286,6 +294,8 @@ export interface Sale {
   customer: string;
   amount: number;
   status: 'Completed' | 'Pending';
+  paymentMethod?: string;
+  notes?: string;
 }
 
 export interface PayPeriod {

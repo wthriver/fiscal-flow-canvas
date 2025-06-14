@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -31,7 +30,7 @@ export const SerialNumbersTab: React.FC = () => {
     setFormData({
       itemId: "",
       serialNumber: "",
-      status: "In Stock",
+      status: "Available",
       location: "",
       soldTo: "",
       saleDate: ""
@@ -216,15 +215,15 @@ export const SerialNumbersTab: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Status</label>
-                <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
+                <Select value={formData.status} onValueChange={(value: 'Available' | 'Sold' | 'Reserved' | 'Defective') => setFormData({...formData, status: value})}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="In Stock">In Stock</SelectItem>
+                    <SelectItem value="Available">Available</SelectItem>
                     <SelectItem value="Sold">Sold</SelectItem>
+                    <SelectItem value="Reserved">Reserved</SelectItem>
                     <SelectItem value="Defective">Defective</SelectItem>
-                    <SelectItem value="Returned">Returned</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

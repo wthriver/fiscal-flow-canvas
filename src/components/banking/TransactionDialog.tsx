@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCompany } from "@/contexts/CompanyContext";
 import { toast } from "sonner";
 import { Transaction } from "@/types/company";
+import { safeStringReplace } from "@/utils/typeHelpers";
 
 interface TransactionDialogProps {
   isOpen: boolean;
@@ -25,7 +26,7 @@ export const TransactionDialog: React.FC<TransactionDialogProps> = ({
   const [formData, setFormData] = useState({
     date: transaction?.date || new Date().toISOString().split('T')[0],
     description: transaction?.description || "",
-    amount: transaction?.amount.replace(/[^0-9.-]+/g, "") || "",
+    amount: safeStringReplace(transaction?.amount || "", /[^0-9.-]+/g, ""),
     category: transaction?.category || "",
     type: transaction?.type || "Deposit" as "Deposit" | "Withdrawal" | "Credit" | "Debit",
     reference: transaction?.reference || "",
