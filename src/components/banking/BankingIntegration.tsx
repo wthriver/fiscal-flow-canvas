@@ -17,6 +17,7 @@ import {
   Plus
 } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
+import { safeStringStartsWith } from "@/utils/typeHelpers";
 
 export const BankingIntegration: React.FC = () => {
   const { currentCompany } = useCompany();
@@ -231,7 +232,7 @@ export const BankingIntegration: React.FC = () => {
                           <Badge variant="outline">{transaction.category}</Badge>
                         </TableCell>
                         <TableCell>{transaction.account}</TableCell>
-                        <TableCell className={transaction.amount?.startsWith('+') ? 'text-green-600' : 'text-red-600'}>
+                        <TableCell className={safeStringStartsWith(transaction.amount, '+') ? 'text-green-600' : 'text-red-600'}>
                           {transaction.amount}
                         </TableCell>
                         <TableCell>

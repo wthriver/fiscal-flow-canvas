@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompany } from "@/contexts/CompanyContext";
 import { toast } from "sonner";
+import { safeStringReplace } from "@/utils/typeHelpers";
 
 export interface ReconciliationTabProps {
   accountId: string;
@@ -26,7 +27,7 @@ export const ReconciliationTab: React.FC<ReconciliationTabProps> = ({ accountId 
   const calculateBalance = (reconciled: boolean) => {
     return account?.transactions?.filter(t => t.reconciled === reconciled)
       .reduce((sum, t) => {
-        const amount = parseFloat(t.amount.replace(/[^0-9.-]+/g, "")) || 0;
+        const amount = parseFloat(safeStringReplace(t.amount, /[^0-9.-]+/g, "")) || 0;
         return (t.type === 'Credit' || t.type === 'Deposit') ? sum + amount : sum - amount;
       }, 0) || 0;
   };
@@ -36,7 +37,7 @@ export const ReconciliationTab: React.FC<ReconciliationTabProps> = ({ accountId 
   const selectedBalance = unreconciledTransactions
     .filter(t => selectedTransactions.includes(t.id))
     .reduce((sum, t) => {
-      const amount = parseFloat(t.amount.replace(/[^0-9.-]+/g, "")) || 0;
+      const amount = parseFloat(safeStringReplace(t.amount, /[^0-9.-]+/g, "")) || 0;
       return (t.type === 'Credit' || t.type === 'Deposit') ? sum + amount : sum - amount;
     }, 0);
 
@@ -167,7 +168,7 @@ export const ReconciliationTab: React.FC<ReconciliationTabProps> = ({ accountId 
                     <TableCell>
                       <span className={transaction.type === 'Debit' || transaction.type === 'Withdrawal' ? 'text-red-600' : 'text-green-600'}>
                         {transaction.type === 'Debit' || transaction.type === 'Withdrawal' ? '-' : '+'}
-                        ${Math.abs(parseFloat(transaction.amount.replace(/[^0-9.-]+/g, "")) || 0).toFixed(2)}
+                        ${Math.abs(parseFloat(safeStringReplace(transaction.amount, /[^0-9.-]+/g, "")) || 0).toFixed(2)}
                       </span>
                     </TableCell>
                   </TableRow>

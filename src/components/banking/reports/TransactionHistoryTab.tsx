@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Transaction } from "@/types/company";
+import { safeStringReplace } from "@/utils/typeHelpers";
 
 interface TransactionHistoryTabProps {
   transactions: Transaction[];
@@ -50,7 +51,7 @@ export const TransactionHistoryTab: React.FC<TransactionHistoryTabProps> = ({ tr
                   <TableCell>{transaction.category}</TableCell>
                   <TableCell>
                     <span className={transaction.type === 'Debit' ? 'text-red-600' : 'text-green-600'}>
-                      {transaction.type === 'Debit' ? '-' : '+'}${Math.abs(parseFloat(transaction.amount.replace(/[^0-9.-]+/g, "")) || 0).toFixed(2)}
+                      {transaction.type === 'Debit' ? '-' : '+'}${Math.abs(parseFloat(safeStringReplace(transaction.amount, /[^0-9.-]+/g, "")) || 0).toFixed(2)}
                     </span>
                   </TableCell>
                   <TableCell>

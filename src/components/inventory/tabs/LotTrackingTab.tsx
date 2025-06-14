@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Edit, Trash2 } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { toast } from "sonner";
 import { LotTrack } from "@/types/company";
@@ -18,9 +18,8 @@ export const LotTrackingTab: React.FC = () => {
   const [formData, setFormData] = useState({
     itemId: "",
     lotNumber: "",
-    quantity: "",
+    quantity: "1",
     expiryDate: "",
-    receivedDate: "",
     supplierId: ""
   });
 
@@ -31,9 +30,8 @@ export const LotTrackingTab: React.FC = () => {
     setFormData({
       itemId: "",
       lotNumber: "",
-      quantity: "",
+      quantity: "1",
       expiryDate: "",
-      receivedDate: new Date().toISOString().split('T')[0],
       supplierId: ""
     });
     setIsLotDialogOpen(true);
@@ -42,11 +40,10 @@ export const LotTrackingTab: React.FC = () => {
   const handleEditLot = (lot: LotTrack) => {
     setSelectedLot(lot);
     setFormData({
-      itemId: lot.itemId,
+      itemId: lot.itemId || lot.inventoryItemId,
       lotNumber: lot.lotNumber,
       quantity: lot.quantity.toString(),
-      expiryDate: lot.expiryDate || "",
-      receivedDate: lot.receivedDate,
+      expiryDate: lot.expiryDate || lot.expirationDate || "",
       supplierId: lot.supplierId || ""
     });
     setIsLotDialogOpen(true);
@@ -74,12 +71,16 @@ export const LotTrackingTab: React.FC = () => {
 
     const lotData: LotTrack = {
       id: selectedLot?.id || `lot-${Date.now()}`,
+      inventoryItemId: formData.itemId,
       itemId: formData.itemId,
       lotNumber: formData.lotNumber,
       quantity: parseInt(formData.quantity),
       expiryDate: formData.expiryDate,
-      receivedDate: formData.receivedDate,
-      supplierId: formData.supplierId
+      expirationDate: formData.expiryDate,
+      receivedDate: new Date().toISOString().split('T')[0],
+      supplierId: formData.supplierId,
+      supplier: formData.supplierId,
+      status: 'Available'
     };
 
     const updatedLots = selectedLot
@@ -108,17 +109,18 @@ export const LotTrackingTab: React.FC = () => {
     return supplier ? supplier.name : "Unknown Supplier";
   };
 
-  const isExpiringSoon = (expiryDate: string) => {
-    if (!expiryDate) return false;
-    const expiry = new Date(expiryDate);
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    return expiry <= thirtyDaysFromNow;
-  };
-
   const isExpired = (expiryDate: string) => {
     if (!expiryDate) return false;
     return new Date(expiryDate) < new Date();
+  };
+
+  const isNearExpiry = (expiryDate: string) => {
+    if (!expiryDate) return false;
+    const expiry = new Date(expiryDate);
+    const today = new Date();
+    const timeDiff = expiry.getTime() - today.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    return daysDiff <= 30 && daysDiff > 0;
   };
 
   return (
@@ -126,7 +128,7 @@ export const LotTrackingTab: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle>Lot Tracking</CardTitle>
-          <CardDescription>Track inventory by lot/batch number with expiration dates</CardDescription>
+          <CardDescription>Track inventory items by lot numbers and expiration dates</CardDescription>
         </CardHeader>
         <CardContent>
           {lotTracking.length > 0 ? (
@@ -136,8 +138,7 @@ export const LotTrackingTab: React.FC = () => {
                   <TableHead>Item</TableHead>
                   <TableHead>Lot Number</TableHead>
                   <TableHead>Quantity</TableHead>
-                  <TableHead>Received Date</TableHead>
-                  <TableHead>Expiration Date</TableHead>
+                  <TableHead>Expiry Date</TableHead>
                   <TableHead>Supplier</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
@@ -146,35 +147,28 @@ export const LotTrackingTab: React.FC = () => {
               <TableBody>
                 {lotTracking.map((lot) => (
                   <TableRow key={lot.id}>
-                    <TableCell>{getItemName(lot.itemId)}</TableCell>
+                    <TableCell>{getItemName(lot.itemId || lot.inventoryItemId)}</TableCell>
                     <TableCell className="font-medium">{lot.lotNumber}</TableCell>
                     <TableCell>{lot.quantity}</TableCell>
-                    <TableCell>{new Date(lot.receivedDate).toLocaleDateString()}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        {lot.expiryDate && isExpired(lot.expiryDate) && (
-                          <AlertTriangle className="h-4 w-4 text-red-500" />
-                        )}
-                        {lot.expiryDate && isExpiringSoon(lot.expiryDate) && !isExpired(lot.expiryDate) && (
-                          <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                        )}
-                        {lot.expiryDate ? new Date(lot.expiryDate).toLocaleDateString() : 'No expiry'}
-                      </div>
+                      <span className={`${
+                        isExpired(lot.expiryDate || lot.expirationDate || '') 
+                          ? 'text-red-600 font-medium' 
+                          : isNearExpiry(lot.expiryDate || lot.expirationDate || '')
+                          ? 'text-yellow-600 font-medium'
+                          : ''
+                      }`}>
+                        {lot.expiryDate || lot.expirationDate || '-'}
+                        {isExpired(lot.expiryDate || lot.expirationDate || '') && ' (Expired)'}
+                        {isNearExpiry(lot.expiryDate || lot.expirationDate || '') && ' (Near Expiry)'}
+                      </span>
                     </TableCell>
-                    <TableCell>{lot.supplierId ? getSupplierName(lot.supplierId) : '-'}</TableCell>
+                    <TableCell>{getSupplierName(lot.supplierId || '')}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        lot.expiryDate && isExpired(lot.expiryDate) 
-                          ? 'bg-red-100 text-red-800' 
-                          : lot.expiryDate && isExpiringSoon(lot.expiryDate)
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-green-100 text-green-800'
+                        lot.status === 'Available' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
-                        {lot.expiryDate && isExpired(lot.expiryDate) 
-                          ? 'Expired' 
-                          : lot.expiryDate && isExpiringSoon(lot.expiryDate)
-                          ? 'Expiring Soon'
-                          : 'Active'}
+                        {lot.status}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -217,9 +211,9 @@ export const LotTrackingTab: React.FC = () => {
       <Dialog open={isLotDialogOpen} onOpenChange={setIsLotDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>{selectedLot ? 'Edit Lot' : 'Add New Lot'}</DialogTitle>
+            <DialogTitle>{selectedLot ? 'Edit Lot' : 'Add Lot'}</DialogTitle>
             <DialogDescription>
-              Track inventory by lot/batch numbers with expiration tracking
+              Track inventory by lot numbers for better traceability
             </DialogDescription>
           </DialogHeader>
           
@@ -246,7 +240,7 @@ export const LotTrackingTab: React.FC = () => {
                 <Input
                   value={formData.lotNumber}
                   onChange={(e) => setFormData({...formData, lotNumber: e.target.value})}
-                  placeholder="LOT-2025-042"
+                  placeholder="LOT-2024-001"
                 />
               </div>
               <div>
@@ -255,20 +249,12 @@ export const LotTrackingTab: React.FC = () => {
                   type="number"
                   value={formData.quantity}
                   onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                  placeholder="45"
+                  placeholder="100"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Received Date*</label>
-                <Input
-                  type="date"
-                  value={formData.receivedDate}
-                  onChange={(e) => setFormData({...formData, receivedDate: e.target.value})}
-                />
-              </div>
               <div>
                 <label className="text-sm font-medium">Expiry Date</label>
                 <Input
@@ -277,22 +263,21 @@ export const LotTrackingTab: React.FC = () => {
                   onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Supplier</label>
-              <Select value={formData.supplierId} onValueChange={(value) => setFormData({...formData, supplierId: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select supplier" />
-                </SelectTrigger>
-                <SelectContent>
-                  {currentCompany.inventory?.suppliers?.map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div>
+                <label className="text-sm font-medium">Supplier</label>
+                <Select value={formData.supplierId} onValueChange={(value) => setFormData({...formData, supplierId: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select supplier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currentCompany.inventory?.suppliers?.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           

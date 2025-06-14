@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompany } from "@/contexts/CompanyContext";
+import { safeStringReplace } from "@/utils/typeHelpers";
 
 interface IncomeExpensesTabProps {
   accountId: string;
@@ -16,11 +17,11 @@ export const IncomeExpensesTab: React.FC<IncomeExpensesTabProps> = ({ accountId 
     
     const income = transactions
       .filter(t => t.type === 'Credit' || t.type === 'Deposit')
-      .reduce((sum, t) => sum + (parseFloat(t.amount.replace(/[^0-9.-]+/g, "")) || 0), 0);
+      .reduce((sum, t) => sum + (parseFloat(safeStringReplace(t.amount, /[^0-9.-]+/g, "")) || 0), 0);
     
     const expenses = transactions
       .filter(t => t.type === 'Debit' || t.type === 'Withdrawal')
-      .reduce((sum, t) => sum + (parseFloat(t.amount.replace(/[^0-9.-]+/g, "")) || 0), 0);
+      .reduce((sum, t) => sum + (parseFloat(safeStringReplace(t.amount, /[^0-9.-]+/g, "")) || 0), 0);
     
     return { income, expenses, net: income - expenses };
   };

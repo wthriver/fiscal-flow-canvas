@@ -18,13 +18,9 @@ export const BundlesTab: React.FC = () => {
   const [formData, setFormData] = useState({
     name: "",
     sku: "",
-    price: "",
     description: "",
+    price: "",
     items: [] as BundleItem[]
-  });
-  const [newBundleItem, setNewBundleItem] = useState({
-    itemId: "",
-    quantity: ""
   });
 
   const bundles = currentCompany.inventory?.bundles || [];
@@ -34,8 +30,8 @@ export const BundlesTab: React.FC = () => {
     setFormData({
       name: "",
       sku: "",
-      price: "",
       description: "",
+      price: "",
       items: []
     });
     setIsBundleDialogOpen(true);
@@ -45,9 +41,9 @@ export const BundlesTab: React.FC = () => {
     setSelectedBundle(bundle);
     setFormData({
       name: bundle.name,
-      sku: bundle.sku,
-      price: bundle.price.toString(),
+      sku: bundle.sku || "",
       description: bundle.description || "",
+      price: bundle.price?.toString() || bundle.sellingPrice?.toString() || "",
       items: bundle.items
     });
     setIsBundleDialogOpen(true);
@@ -68,43 +64,49 @@ export const BundlesTab: React.FC = () => {
   };
 
   const addBundleItem = () => {
-    if (!newBundleItem.itemId || !newBundleItem.quantity) {
-      toast.error("Please select an item and quantity");
-      return;
-    }
-
-    const bundleItem: BundleItem = {
-      itemId: newBundleItem.itemId,
-      quantity: parseInt(newBundleItem.quantity)
+    const newItem: BundleItem = {
+      id: `item-${Date.now()}`,
+      inventoryItemId: "",
+      itemId: "",
+      quantity: 1,
+      unitCost: 0
     };
-
     setFormData({
       ...formData,
-      items: [...formData.items, bundleItem]
+      items: [...formData.items, newItem]
     });
+  };
 
-    setNewBundleItem({ itemId: "", quantity: "" });
+  const updateBundleItem = (index: number, field: keyof BundleItem, value: any) => {
+    const updatedItems = [...formData.items];
+    updatedItems[index] = { ...updatedItems[index], [field]: value };
+    setFormData({ ...formData, items: updatedItems });
   };
 
   const removeBundleItem = (index: number) => {
-    const updatedItems = [...formData.items];
-    updatedItems.splice(index, 1);
+    const updatedItems = formData.items.filter((_, i) => i !== index);
     setFormData({ ...formData, items: updatedItems });
   };
 
   const handleSaveBundle = () => {
-    if (!formData.name || !formData.sku || !formData.price || formData.items.length === 0) {
-      toast.error("Please fill in all required fields and add at least one item");
+    if (!formData.name || !formData.price) {
+      toast.error("Please fill in all required fields");
       return;
     }
+
+    const price = parseFloat(formData.price);
+    const totalCost = formData.items.reduce((sum, item) => sum + (item.unitCost * item.quantity), 0);
 
     const bundleData: Bundle = {
       id: selectedBundle?.id || `bundle-${Date.now()}`,
       name: formData.name,
       sku: formData.sku,
-      price: parseFloat(formData.price),
+      price: price,
       description: formData.description,
-      items: formData.items
+      items: formData.items,
+      totalCost: totalCost,
+      sellingPrice: price,
+      status: 'Active'
     };
 
     const updatedBundles = selectedBundle
@@ -119,7 +121,7 @@ export const BundlesTab: React.FC = () => {
       }
     });
 
-    toast.success(selectedBundle ? "Bundle updated successfully" : "Bundle created successfully");
+    toast.success(selectedBundle ? "Bundle updated successfully" : "Bundle added successfully");
     setIsBundleDialogOpen(false);
   };
 
@@ -132,8 +134,8 @@ export const BundlesTab: React.FC = () => {
     <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
-          <CardTitle>Bundles & Assemblies</CardTitle>
-          <CardDescription>Create and manage product bundles and assemblies</CardDescription>
+          <CardTitle>Product Bundles</CardTitle>
+          <CardDescription>Create and manage product bundles for simplified selling</CardDescription>
         </CardHeader>
         <CardContent>
           {bundles.length > 0 ? (
@@ -142,8 +144,10 @@ export const BundlesTab: React.FC = () => {
                 <TableRow>
                   <TableHead>Bundle Name</TableHead>
                   <TableHead>SKU</TableHead>
-                  <TableHead>Components</TableHead>
-                  <TableHead>Bundle Price</TableHead>
+                  <TableHead>Items Count</TableHead>
+                  <TableHead>Cost</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -151,9 +155,17 @@ export const BundlesTab: React.FC = () => {
                 {bundles.map((bundle) => (
                   <TableRow key={bundle.id}>
                     <TableCell className="font-medium">{bundle.name}</TableCell>
-                    <TableCell>{bundle.sku}</TableCell>
+                    <TableCell>{bundle.sku || '-'}</TableCell>
                     <TableCell>{bundle.items.length} items</TableCell>
-                    <TableCell>${bundle.price.toFixed(2)}</TableCell>
+                    <TableCell>${bundle.totalCost.toFixed(2)}</TableCell>
+                    <TableCell>${(bundle.price || bundle.sellingPrice).toFixed(2)}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        bundle.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {bundle.status}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => handleEditBundle(bundle)}>
@@ -192,11 +204,11 @@ export const BundlesTab: React.FC = () => {
       </Card>
 
       <Dialog open={isBundleDialogOpen} onOpenChange={setIsBundleDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
-            <DialogTitle>{selectedBundle ? 'Edit Bundle' : 'Create New Bundle'}</DialogTitle>
+            <DialogTitle>{selectedBundle ? 'Edit Bundle' : 'Create Bundle'}</DialogTitle>
             <DialogDescription>
-              Bundle multiple items together to sell as a single unit
+              Bundle multiple products together for easier selling
             </DialogDescription>
           </DialogHeader>
           
@@ -207,86 +219,101 @@ export const BundlesTab: React.FC = () => {
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="Complete Tool Set"
+                  placeholder="Winter Package"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">SKU*</label>
+                <label className="text-sm font-medium">SKU</label>
                 <Input
                   value={formData.sku}
                   onChange={(e) => setFormData({...formData, sku: e.target.value})}
-                  placeholder="BDL-001"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Bundle Price*</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData({...formData, price: e.target.value})}
-                  placeholder="125.00"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Description</label>
-                <Input
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Bundle description"
+                  placeholder="WP-001"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium">Bundle Items</label>
-              <div className="grid grid-cols-3 gap-2 mb-2">
-                <Select value={newBundleItem.itemId} onValueChange={(value) => setNewBundleItem({...newBundleItem, itemId: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select item" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {currentCompany.inventory?.items?.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name} - {item.sku}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input
-                  type="number"
-                  placeholder="Quantity"
-                  value={newBundleItem.quantity}
-                  onChange={(e) => setNewBundleItem({...newBundleItem, quantity: e.target.value})}
-                />
-                <Button onClick={addBundleItem}>Add</Button>
+              <label className="text-sm font-medium">Description</label>
+              <Input
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                placeholder="Bundle description"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Selling Price*</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.price}
+                onChange={(e) => setFormData({...formData, price: e.target.value})}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-sm font-medium">Bundle Items</label>
+                <Button type="button" variant="outline" size="sm" onClick={addBundleItem}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
               </div>
               
-              <div className="space-y-2 max-h-32 overflow-y-auto">
-                {formData.items.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 border rounded">
-                    <span>{getItemName(item.itemId)} (Qty: {item.quantity})</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
+              {formData.items.map((item, index) => (
+                <div key={index} className="grid grid-cols-12 gap-2 items-center">
+                  <div className="col-span-5">
+                    <Select value={item.itemId} onValueChange={(value) => updateBundleItem(index, 'itemId', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select item" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currentCompany.inventory?.items?.map((inventoryItem) => (
+                          <SelectItem key={inventoryItem.id} value={inventoryItem.id}>
+                            {inventoryItem.name} - {inventoryItem.sku}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-2">
+                    <Input
+                      type="number"
+                      value={item.quantity}
+                      onChange={(e) => updateBundleItem(index, 'quantity', parseInt(e.target.value))}
+                      placeholder="Qty"
+                    />
+                  </div>
+                  <div className="col-span-3">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={item.unitCost}
+                      onChange={(e) => updateBundleItem(index, 'unitCost', parseFloat(e.target.value))}
+                      placeholder="Unit Cost"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
                       onClick={() => removeBundleItem(index)}
                       className="text-red-600"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </div>
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsBundleDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveBundle}>
-              {selectedBundle ? 'Update Bundle' : 'Create Bundle'}
+              {selectedBundle ? 'Update' : 'Create'} Bundle
             </Button>
           </DialogFooter>
         </DialogContent>

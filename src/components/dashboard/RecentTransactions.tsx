@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
+import { safeStringStartsWith, safeStringReplace } from "@/utils/typeHelpers";
 
 const RecentTransactions = () => {
   const { currentCompany } = useCompany();
@@ -30,7 +31,7 @@ const RecentTransactions = () => {
       </CardHeader>
       <CardContent className="space-y-8">
         {recentTransactions.map((transaction) => {
-          const isDeposit = transaction.type === "Deposit" || transaction.amount.startsWith("+");
+          const isDeposit = transaction.type === "Deposit" || safeStringStartsWith(transaction.amount, "+");
 
           return (
             <div className="flex items-center" key={transaction.id}>
@@ -67,7 +68,7 @@ const RecentTransactions = () => {
                 )}
               >
                 {isDeposit
-                  ? transaction.amount.replace("-", "+")
+                  ? safeStringReplace(transaction.amount, "-", "+")
                   : transaction.amount}
               </div>
             </div>
