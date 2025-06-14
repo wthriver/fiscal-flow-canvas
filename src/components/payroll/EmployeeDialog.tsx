@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -31,8 +30,8 @@ export const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
     hireDate: "",
     salary: "",
     payRate: "",
-    payType: "Hourly",
-    status: "Active",
+    payType: "Hourly" as "Hourly" | "Salary",
+    status: "Active" as "Active" | "Inactive" | "Pending",
     department: "",
     manager: "",
     emergencyContact: "",
@@ -51,8 +50,8 @@ export const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
         hireDate: employee.hireDate || "",
         salary: typeof employee.salary === 'string' ? employee.salary : employee.salary?.toString() || "",
         payRate: typeof employee.payRate === 'string' ? employee.payRate : employee.payRate?.toString() || "",
-        payType: employee.payType || "Hourly",
-        status: employee.status || "Active",
+        payType: (employee.payType as "Hourly" | "Salary") || "Hourly",
+        status: (employee.status as "Active" | "Inactive" | "Pending") || "Active",
         department: employee.department || "",
         manager: employee.manager || "",
         emergencyContact: employee.emergencyContact || "",
@@ -95,7 +94,7 @@ export const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
       address: formData.address,
       hireDate: formData.hireDate,
       salary: parseFloat(formData.salary) || 0,
-      payRate: formData.payRate,
+      payRate: parseFloat(formData.payRate) || 0,
       payType: formData.payType,
       status: formData.status,
       department: formData.department,

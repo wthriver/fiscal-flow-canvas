@@ -9,6 +9,7 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { toast } from "sonner";
 import { InventoryItem } from "@/types/company";
 import { AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
+import { safeStringReplace } from "@/utils/typeHelpers";
 
 interface InventoryItemDialogProps {
   isOpen: boolean;
@@ -69,8 +70,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         sku: item.sku || "",
         barcode: item.barcode || "",
         quantity: item.quantity?.toString() || "0",
-        price: item.price ? (typeof item.price === 'string' ? item.price.replace(/[^0-9.-]+/g, "") : item.price.toString()) : "",
-        cost: item.cost ? (typeof item.cost === 'string' ? item.cost.replace(/[^0-9.-]+/g, "") : item.cost.toString()) : "",
+        price: item.price ? safeStringReplace(item.price, /[^0-9.-]+/g, "") : "",
+        cost: item.cost ? safeStringReplace(item.cost, /[^0-9.-]+/g, "") : "",
         category: item.category || "",
         location: item.location || "",
         supplier: item.supplier || "",

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,18 +17,24 @@ export const PayrollDashboard: React.FC<PayrollDashboardProps> = ({ onProcessPay
   const [editEmployeeDialogOpen, setEditEmployeeDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
 
-  // Ensure payrollData exists before accessing payPeriods
-  const payrollData = currentCompany.payrollData || { payPeriods: [] };
+  // Ensure payrollData exists with proper structure
+  const payrollData = currentCompany.payrollData || { 
+    payPeriods: [],
+    totalPayroll: 0,
+    employeeCount: 0,
+    averageSalary: 0
+  };
+  
   // Ensure employees array exists
   const employees = currentCompany.employees || [];
 
   // Find the next payroll date
-  const nextPayrollPeriod = payrollData.payPeriods.find(
+  const nextPayrollPeriod = payrollData.payPeriods?.find(
     period => new Date(period.payDate || '') > new Date() && period.status !== "Completed"
   );
 
   // Find the last completed payroll
-  const lastPayroll = [...payrollData.payPeriods]
+  const lastPayroll = [...(payrollData.payPeriods || [])]
     .filter(period => period.status === "Completed")
     .sort((a, b) => new Date((b.payDate || '')).getTime() - new Date((a.payDate || '')).getTime())[0];
 
@@ -58,8 +63,8 @@ export const PayrollDashboard: React.FC<PayrollDashboardProps> = ({ onProcessPay
   };
 
   const handleMarkAsPaid = (payrollId: string) => {
-    const updatedPayPeriods = payrollData.payPeriods.map(period => 
-      period.id === payrollId ? { ...period, status: "Completed" } : period
+    const updatedPayPeriods = (payrollData.payPeriods || []).map(period => 
+      period.id === payrollId ? { ...period, status: "Completed" as const } : period
     );
     
     const updatedPayrollData = {

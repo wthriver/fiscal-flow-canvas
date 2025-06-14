@@ -25,19 +25,19 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
     name: "",
     client: "",
     description: "",
-    status: "Planning",
-    priority: "Medium",
+    status: "Planning" as "Planning" | "In Progress" | "Active" | "Completed" | "On Hold",
+    priority: "Medium" as "Low" | "Medium" | "High",
     startDate: new Date().toISOString().split('T')[0],
     endDate: "",
     budget: "",
     progress: "0",
     teamMembers: [] as string[],
-    tasks: [] as Array<{id: string, name: string, status: string, assignee: string}>,
-    milestones: [] as Array<{id: string, name: string, date: string, completed: boolean}>
+    tasks: [] as Array<{id: string, title: string, status: string, assignedTo: string}>,
+    milestones: [] as Array<{id: string, title: string, dueDate: string, status: string}>
   });
 
-  const [newTask, setNewTask] = useState({ name: "", assignee: "" });
-  const [newMilestone, setNewMilestone] = useState({ name: "", date: "" });
+  const [newTask, setNewTask] = useState({ title: "", assignedTo: "" });
+  const [newMilestone, setNewMilestone] = useState({ title: "", dueDate: "" });
 
   useEffect(() => {
     if (project && isOpen) {
@@ -45,8 +45,8 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
         name: project.name || "",
         client: project.client || "",
         description: project.description || "",
-        status: project.status || "Planning",
-        priority: project.priority || "Medium",
+        status: (project.status as "Planning" | "In Progress" | "Active" | "Completed" | "On Hold") || "Planning",
+        priority: (project.priority as "Low" | "Medium" | "High") || "Medium",
         startDate: project.startDate || new Date().toISOString().split('T')[0],
         endDate: project.endDate || "",
         budget: project.budget?.toString() || "",
@@ -54,15 +54,15 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
         teamMembers: project.teamMembers || project.team || [],
         tasks: project.tasks?.map(task => ({
           id: task.id,
-          name: task.name,
+          title: task.title,
           status: task.status,
-          assignee: task.assignee || task.assigneeId || ""
+          assignedTo: task.assignedTo || ""
         })) || [],
         milestones: project.milestones?.map(milestone => ({
           id: milestone.id,
-          name: milestone.name,
-          date: milestone.date || milestone.dueDate,
-          completed: milestone.completed || milestone.status === "Completed"
+          title: milestone.title,
+          dueDate: milestone.dueDate,
+          status: milestone.status
         })) || []
       });
     } else if (!project && isOpen) {
@@ -84,33 +84,33 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
   }, [project, isOpen]);
 
   const addTask = () => {
-    if (!newTask.name) return;
+    if (!newTask.title) return;
     const task = {
       id: `task-${Date.now()}`,
-      name: newTask.name,
-      status: "To Do",
-      assignee: newTask.assignee
+      title: newTask.title,
+      status: "Todo",
+      assignedTo: newTask.assignedTo
     };
     setFormData(prev => ({
       ...prev,
       tasks: [...prev.tasks, task]
     }));
-    setNewTask({ name: "", assignee: "" });
+    setNewTask({ title: "", assignedTo: "" });
   };
 
   const addMilestone = () => {
-    if (!newMilestone.name || !newMilestone.date) return;
+    if (!newMilestone.title || !newMilestone.dueDate) return;
     const milestone = {
       id: `milestone-${Date.now()}`,
-      name: newMilestone.name,
-      date: newMilestone.date,
-      completed: false
+      title: newMilestone.title,
+      dueDate: newMilestone.dueDate,
+      status: "Pending"
     };
     setFormData(prev => ({
       ...prev,
       milestones: [...prev.milestones, milestone]
     }));
-    setNewMilestone({ name: "", date: "" });
+    setNewMilestone({ title: "", dueDate: "" });
   };
 
   const removeTask = (taskId: string) => {
@@ -136,6 +136,7 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
     const projectData: Project = {
       id: project?.id || `project-${Date.now()}`,
       name: formData.name,
+      clientId: project?.clientId || `client-${Date.now()}`,
       client: formData.client,
       description: formData.description,
       status: formData.status,
@@ -147,19 +148,19 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
       teamMembers: formData.teamMembers,
       tasks: formData.tasks.map(task => ({
         id: task.id,
-        name: task.name,
-        status: task.status,
-        assignee: task.assignee,
-        priority: "Medium",
+        title: task.title,
+        status: task.status as "Todo" | "In Progress" | "Done",
+        assignedTo: task.assignedTo,
+        priority: "Medium" as "Low" | "Medium" | "High",
         dueDate: "",
         description: ""
       })),
       milestones: formData.milestones.map(milestone => ({
         id: milestone.id,
-        name: milestone.name,
-        dueDate: milestone.date,
-        status: milestone.completed ? "Completed" : "Pending",
-        completed: milestone.completed
+        title: milestone.title,
+        dueDate: milestone.dueDate,
+        status: milestone.status as "Pending" | "Completed",
+        description: ""
       })),
       documents: project?.documents || []
     };
@@ -296,13 +297,13 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
             <div className="flex gap-2 mb-4">
               <Input
                 placeholder="Task name"
-                value={newTask.name}
-                onChange={(e) => setNewTask({...newTask, name: e.target.value})}
+                value={newTask.title}
+                onChange={(e) => setNewTask({...newTask, title: e.target.value})}
               />
               <Input
                 placeholder="Assignee"
-                value={newTask.assignee}
-                onChange={(e) => setNewTask({...newTask, assignee: e.target.value})}
+                value={newTask.assignedTo}
+                onChange={(e) => setNewTask({...newTask, assignedTo: e.target.value})}
               />
               <Button onClick={addTask}>Add Task</Button>
             </div>
@@ -310,8 +311,8 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
               {formData.tasks.map((task) => (
                 <div key={task.id} className="flex items-center justify-between p-2 border rounded">
                   <div>
-                    <span className="font-medium">{task.name}</span>
-                    {task.assignee && <span className="text-sm text-muted-foreground ml-2">• {task.assignee}</span>}
+                    <span className="font-medium">{task.title}</span>
+                    {task.assignedTo && <span className="text-sm text-muted-foreground ml-2">• {task.assignedTo}</span>}
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{task.status}</Badge>
@@ -328,13 +329,13 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
             <div className="flex gap-2 mb-4">
               <Input
                 placeholder="Milestone name"
-                value={newMilestone.name}
-                onChange={(e) => setNewMilestone({...newMilestone, name: e.target.value})}
+                value={newMilestone.title}
+                onChange={(e) => setNewMilestone({...newMilestone, title: e.target.value})}
               />
               <Input
                 type="date"
-                value={newMilestone.date}
-                onChange={(e) => setNewMilestone({...newMilestone, date: e.target.value})}
+                value={newMilestone.dueDate}
+                onChange={(e) => setNewMilestone({...newMilestone, dueDate: e.target.value})}
               />
               <Button onClick={addMilestone}>Add Milestone</Button>
             </div>
@@ -342,12 +343,12 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
               {formData.milestones.map((milestone) => (
                 <div key={milestone.id} className="flex items-center justify-between p-2 border rounded">
                   <div>
-                    <span className="font-medium">{milestone.name}</span>
-                    <span className="text-sm text-muted-foreground ml-2">• {milestone.date}</span>
+                    <span className="font-medium">{milestone.title}</span>
+                    <span className="text-sm text-muted-foreground ml-2">• {milestone.dueDate}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={milestone.completed ? "default" : "outline"}>
-                      {milestone.completed ? "Completed" : "Pending"}
+                    <Badge variant={milestone.status === "Completed" ? "default" : "outline"}>
+                      {milestone.status === "Completed" ? "Completed" : "Pending"}
                     </Badge>
                     <Button variant="ghost" size="sm" onClick={() => removeMilestone(milestone.id)}>×</Button>
                   </div>
