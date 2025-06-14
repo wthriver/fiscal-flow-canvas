@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -199,7 +200,7 @@ export const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
             </div>
             <div>
               <label className="text-sm font-medium">Status</label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
+              <Select value={formData.status} onValueChange={(value: "Active" | "Inactive" | "Pending") => setFormData({...formData, status: value})}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -217,7 +218,7 @@ export const EmployeeDialog: React.FC<EmployeeDialogProps> = ({
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-medium">Pay Type</label>
-              <Select value={formData.payType} onValueChange={(value) => setFormData({...formData, payType: value})}>
+              <Select value={formData.payType} onValueChange={(value: "Hourly" | "Salary") => setFormData({...formData, payType: value})}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

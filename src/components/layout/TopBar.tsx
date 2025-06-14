@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Bell, User, Menu, ChevronDown, Building, Plus } from "lucide-react";
 import { 
@@ -80,10 +79,15 @@ const TopBar: React.FC = () => {
       projects: [],
       timeEntries: [],
       taxRates: [],
-      payrollData: { payPeriods: [] },
+      payrollData: { 
+        payPeriods: [],
+        totalPayroll: 0,
+        employeeCount: 0,
+        averageSalary: 0
+      },
       budgets: [],
       revenue: { current: 0, previous: 0, percentChange: 0 },
-      profitMargin: { value: 30, trend: 0, percentChange: 0 },
+      profitMargin: { value: 30, previous: 25, percentChange: 20 },
       outstandingInvoices: { amount: 0, percentChange: 0 },
       activeCustomers: { count: 0, percentChange: 0 },
       inventory: { 
@@ -95,7 +99,6 @@ const TopBar: React.FC = () => {
         lotTracking: []
       },
       integrations: [],
-      auditTrail: [],
       sales: []
     };
     
