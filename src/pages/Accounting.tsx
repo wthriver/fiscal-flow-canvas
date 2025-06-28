@@ -9,6 +9,9 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { AdvancedJournalEntry } from "@/components/journal/AdvancedJournalEntry";
 import { FixedAssetsManager } from "@/components/fixedassets/FixedAssetsManager";
 import { ReportTabs } from "@/components/banking/reports/ReportTabs";
+import { ChartOfAccountsComponent } from "@/components/accounting/ChartOfAccountsComponent";
+import { FinancialReports } from "@/components/accounting/FinancialReports";
+import { GeneralLedger } from "@/components/accounting/GeneralLedger";
 import { safeNumberParse } from "@/utils/typeHelpers";
 
 const Accounting: React.FC = () => {
@@ -96,9 +99,11 @@ const Accounting: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="journal">Journal Entries</TabsTrigger>
+          <TabsTrigger value="journal">Journal</TabsTrigger>
+          <TabsTrigger value="chart">Chart of Accounts</TabsTrigger>
+          <TabsTrigger value="ledger">General Ledger</TabsTrigger>
           <TabsTrigger value="assets">Fixed Assets</TabsTrigger>
           <TabsTrigger value="reconciliation">Reconciliation</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -171,6 +176,14 @@ const Accounting: React.FC = () => {
           <AdvancedJournalEntry />
         </TabsContent>
 
+        <TabsContent value="chart">
+          <ChartOfAccountsComponent />
+        </TabsContent>
+
+        <TabsContent value="ledger">
+          <GeneralLedger />
+        </TabsContent>
+
         <TabsContent value="assets">
           <FixedAssetsManager />
         </TabsContent>
@@ -180,35 +193,7 @@ const Accounting: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="reports">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Balance Sheet</CardTitle>
-                <CardDescription>Assets, Liabilities & Equity</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button className="w-full">Generate Report</Button>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Income Statement</CardTitle>
-                <CardDescription>Revenue & Expenses</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button className="w-full">Generate Report</Button>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Cash Flow Statement</CardTitle>
-                <CardDescription>Cash movements</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button className="w-full">Generate Report</Button>
-              </CardContent>
-            </Card>
-          </div>
+          <FinancialReports />
         </TabsContent>
       </Tabs>
     </div>

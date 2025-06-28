@@ -4,13 +4,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Users, DollarSign, Calendar, Clock } from "lucide-react";
+import { PlusCircle, Users, DollarSign, Calendar, Clock, FileText, TrendingUp } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { PayrollDashboard } from "@/components/payroll/PayrollDashboard";
 import { PayrollProcessor } from "@/components/payroll/PayrollProcessor";
 import { TaxComplianceManager } from "@/components/payroll/TaxComplianceManager";
 import { BenefitsManager } from "@/components/payroll/BenefitsManager";
 import { TimeClockSystem } from "@/components/timetracking/TimeClockSystem";
+import { UserManagement } from "@/components/users/UserManagement";
+import { ComprehensiveAuditTrail } from "@/components/audit/ComprehensiveAuditTrail";
 import { safeStringReplace, safeNumberParse } from "@/utils/typeHelpers";
 
 const Payroll: React.FC = () => {
@@ -46,7 +48,7 @@ const Payroll: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Payroll & HR Management</h1>
-          <p className="text-muted-foreground">Complete payroll processing with tax compliance and benefits</p>
+          <p className="text-muted-foreground">Complete payroll processing with tax compliance, benefits, and HR management</p>
         </div>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -106,12 +108,14 @@ const Payroll: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="processing">Processing</TabsTrigger>
           <TabsTrigger value="tax">Tax Compliance</TabsTrigger>
           <TabsTrigger value="benefits">Benefits</TabsTrigger>
           <TabsTrigger value="timeclock">Time Clock</TabsTrigger>
+          <TabsTrigger value="hr">HR Management</TabsTrigger>
+          <TabsTrigger value="audit">Audit Trail</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
@@ -152,8 +156,16 @@ const Payroll: React.FC = () => {
           <TimeClockSystem />
         </TabsContent>
 
+        <TabsContent value="hr">
+          <UserManagement />
+        </TabsContent>
+
+        <TabsContent value="audit">
+          <ComprehensiveAuditTrail />
+        </TabsContent>
+
         <TabsContent value="reports">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardHeader>
                 <CardTitle>Payroll Register</CardTitle>
@@ -176,6 +188,15 @@ const Payroll: React.FC = () => {
               <CardHeader>
                 <CardTitle>Benefits Report</CardTitle>
                 <CardDescription>Employee benefits overview</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full">Generate Report</Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>HR Analytics</CardTitle>
+                <CardDescription>Employee performance metrics</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button className="w-full">Generate Report</Button>

@@ -146,16 +146,34 @@ const Sidebar: React.FC = () => {
               active={pathname === "/accounting"}
             />
             <SidebarItem
-              to="/advanced-accounting"
-              icon={<Landmark className="h-4 w-4" />}
-              label="Advanced Accounting"
-              active={pathname === "/advanced-accounting"}
+              to="/chart-of-accounts"
+              icon={<List className="h-4 w-4" />}
+              label="Chart of Accounts"
+              active={pathname === "/chart-of-accounts"}
             />
             <SidebarItem
               to="/expenses"
               icon={<Receipt className="h-4 w-4" />}
               label="Expenses"
               active={pathname === "/expenses"}
+            />
+            <SidebarItem
+              to="/purchase-orders"
+              icon={<ShoppingCart className="h-4 w-4" />}
+              label="Purchase Orders"
+              active={pathname === "/purchase-orders"}
+            />
+            <SidebarItem
+              to="/vendor-bills"
+              icon={<ReceiptText className="h-4 w-4" />}
+              label="Vendor Bills"
+              active={pathname === "/vendor-bills"}
+            />
+            <SidebarItem
+              to="/fixed-assets"
+              icon={<Building className="h-4 w-4" />}
+              label="Fixed Assets"
+              active={pathname === "/fixed-assets"}
             />
           </div>
         </div>
@@ -171,12 +189,6 @@ const Sidebar: React.FC = () => {
               active={pathname === "/projects"}
             />
             <SidebarItem
-              to="/advanced-projects"
-              icon={<Target className="h-4 w-4" />}
-              label="Advanced Projects"
-              active={pathname === "/advanced-projects"}
-            />
-            <SidebarItem
               to="/time-tracking"
               icon={<Clock className="h-4 w-4" />}
               label="Time Tracking"
@@ -189,22 +201,10 @@ const Sidebar: React.FC = () => {
               active={pathname === "/inventory"}
             />
             <SidebarItem
-              to="/purchase-orders"
-              icon={<ShoppingCart className="h-4 w-4" />}
-              label="Purchase Orders"
-              active={pathname === "/purchase-orders"}
-            />
-            <SidebarItem
               to="/payroll"
               icon={<CircleDollarSign className="h-4 w-4" />}
               label="Payroll"
               active={pathname === "/payroll"}
-            />
-            <SidebarItem
-              to="/advanced-payroll"
-              icon={<CircleDollarSign className="h-4 w-4" />}
-              label="Advanced Payroll"
-              active={pathname === "/advanced-payroll"}
             />
           </div>
         </div>
@@ -218,12 +218,6 @@ const Sidebar: React.FC = () => {
               icon={<FileBarChart className="h-4 w-4" />}
               label="Reports"
               active={pathname === "/reports"}
-            />
-            <SidebarItem
-              to="/advanced-reporting"
-              icon={<FileBarChart className="h-4 w-4" />}
-              label="Advanced Reporting"
-              active={pathname === "/advanced-reporting"}
             />
             <SidebarItem
               to="/taxes"
