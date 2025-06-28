@@ -1,84 +1,63 @@
 
 import React, { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Users, DollarSign, Calendar, TrendingUp } from "lucide-react";
+import { PlusCircle, Users, DollarSign, Calendar, Clock } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { PayrollDashboard } from "@/components/payroll/PayrollDashboard";
 import { PayrollProcessor } from "@/components/payroll/PayrollProcessor";
-import { BenefitsManager } from "@/components/payroll/BenefitsManager";
 import { TaxComplianceManager } from "@/components/payroll/TaxComplianceManager";
-import { PayrollData } from "@/types/company";
+import { BenefitsManager } from "@/components/payroll/BenefitsManager";
+import { TimeClockSystem } from "@/components/timetracking/TimeClockSystem";
 
 const Payroll: React.FC = () => {
   const { currentCompany } = useCompany();
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [selectedPayrollId, setSelectedPayrollId] = useState<string>("");
+
+  const payrollData = currentCompany?.payrollData || {
+    totalPayroll: 0,
+    employeeCount: 0,
+    averageSalary: 0,
+    payPeriods: [],
+    taxSettings: {},
+    deductionTypes: {}
+  };
 
   const employees = currentCompany?.employees || [];
-  const payrollData = currentCompany?.payrollData;
+  const totalMonthlyPayroll = employees.reduce((sum, emp) => {
+    const salary = typeof emp.salary === 'string' 
+      ? parseFloat(emp.salary.replace(/[$,]/g, '')) || 0 
+      : emp.salary || 0;
+    return sum + salary;
+  }, 0);
 
-  // Calculate payroll statistics
-  const activeEmployees = employees.filter(e => e.status === 'Active').length;
-  const totalMonthlySalary = employees
-    .filter(e => e.status === 'Active')
-    .reduce((sum, emp) => sum + (emp.salary || 0), 0);
-  const averageSalary = activeEmployees > 0 ? totalMonthlySalary / activeEmployees : 0;
-
-  // Create complete payroll data with required properties
-  const completePayrollData: PayrollData = {
-    totalPayroll: payrollData?.totalPayroll || totalMonthlySalary,
-    employeeCount: payrollData?.employeeCount || activeEmployees,
-    averageSalary: payrollData?.averageSalary || averageSalary,
-    payPeriods: payrollData?.payPeriods || [],
-    taxSettings: payrollData?.taxSettings || {},
-    deductionTypes: payrollData?.deductionTypes || {}
-  };
-
-  // Get current pay period
-  const currentPayPeriod = completePayrollData.payPeriods?.find(p => p.status === 'Current');
-  const processingPayPeriods = completePayrollData.payPeriods?.filter(p => p.status === 'Processing').length || 0;
-
-  const handleProcessPayroll = (payrollId: string) => {
-    setSelectedPayrollId(payrollId);
-    setActiveTab("processor");
-  };
+  const upcomingPayroll = payrollData.payPeriods.find(period => period.status === 'Pending');
 
   return (
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Payroll Management</h1>
-          <p className="text-muted-foreground">
-            Manage employee payroll, benefits, and tax compliance
-          </p>
+          <h1 className="text-3xl font-bold">Payroll & HR Management</h1>
+          <p className="text-muted-foreground">Complete payroll processing with tax compliance and benefits</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Calendar className="mr-2 h-4 w-4" />
-            Pay Periods
-          </Button>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Run Payroll
-          </Button>
-        </div>
+        <Button>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Process Payroll
+        </Button>
       </div>
 
-      {/* Payroll Statistics */}
+      {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Employees</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeEmployees}</div>
-            <p className="text-xs text-muted-foreground">
-              {employees.length} total employees
-            </p>
+            <div className="text-2xl font-bold">{employees.length}</div>
+            <p className="text-xs text-muted-foreground">Active employees</p>
           </CardContent>
         </Card>
 
@@ -88,172 +67,115 @@ const Payroll: React.FC = () => {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              ${completePayrollData.totalPayroll.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Total monthly cost
-            </p>
+            <div className="text-2xl font-bold">${totalMonthlyPayroll.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Total monthly cost</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Salary</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${completePayrollData.averageSalary.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Per employee
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pay Periods</CardTitle>
+            <CardTitle className="text-sm font-medium">Next Payroll</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{processingPayPeriods}</div>
-            <p className="text-xs text-muted-foreground">
-              Processing
-            </p>
+            <div className="text-2xl font-bold">
+              {upcomingPayroll ? upcomingPayroll.payDate : 'Not scheduled'}
+            </div>
+            <p className="text-xs text-muted-foreground">Due date</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Salary</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${employees.length > 0 ? (totalMonthlyPayroll / employees.length).toLocaleString() : '0'}
+            </div>
+            <p className="text-xs text-muted-foreground">Per employee</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Current Pay Period Status */}
-      {currentPayPeriod && (
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle>Current Pay Period</CardTitle>
-                <CardDescription>
-                  {currentPayPeriod.startDate} - {currentPayPeriod.endDate}
-                </CardDescription>
-              </div>
-              <Badge variant="default">
-                {currentPayPeriod.status}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Pay Date</p>
-                <p className="font-medium">{currentPayPeriod.payDate}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Total Gross</p>
-                <p className="font-medium">
-                  ${typeof currentPayPeriod.totalGross === 'string' 
-                    ? currentPayPeriod.totalGross 
-                    : (currentPayPeriod.totalGross || 0).toLocaleString()
-                  }
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Total Taxes</p>
-                <p className="font-medium">
-                  ${typeof currentPayPeriod.totalTaxes === 'string' 
-                    ? currentPayPeriod.totalTaxes 
-                    : (currentPayPeriod.totalTaxes || 0).toLocaleString()
-                  }
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Total Net</p>
-                <p className="font-medium">
-                  ${typeof currentPayPeriod.totalNet === 'string' 
-                    ? currentPayPeriod.totalNet 
-                    : (currentPayPeriod.totalNet || 0).toLocaleString()
-                  }
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="processor">Process Payroll</TabsTrigger>
+          <TabsTrigger value="processing">Processing</TabsTrigger>
+          <TabsTrigger value="tax">Tax Compliance</TabsTrigger>
           <TabsTrigger value="benefits">Benefits</TabsTrigger>
-          <TabsTrigger value="compliance">Tax Compliance</TabsTrigger>
-          <TabsTrigger value="employees">Employees</TabsTrigger>
+          <TabsTrigger value="timeclock">Time Clock</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard">
-          <PayrollDashboard 
-            payrollData={completePayrollData} 
-            onProcessPayroll={handleProcessPayroll}
-          />
+          <PayrollDashboard payrollData={payrollData} />
         </TabsContent>
 
-        <TabsContent value="processor">
-          <PayrollProcessor 
-            payrollData={completePayrollData}
-            payrollId={selectedPayrollId || completePayrollData.payPeriods[0]?.id || ""}
-          />
+        <TabsContent value="processing">
+          <div className="space-y-6">
+            {payrollData.payPeriods.length > 0 ? (
+              payrollData.payPeriods.map((period) => (
+                <PayrollProcessor
+                  key={period.id}
+                  payrollData={payrollData}
+                  payrollId={period.id}
+                />
+              ))
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <p className="text-muted-foreground mb-4">No payroll periods configured</p>
+                  <Button>Create First Payroll Period</Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="tax">
+          <TaxComplianceManager />
         </TabsContent>
 
         <TabsContent value="benefits">
           <BenefitsManager />
         </TabsContent>
 
-        <TabsContent value="compliance">
-          <TaxComplianceManager />
+        <TabsContent value="timeclock">
+          <TimeClockSystem />
         </TabsContent>
 
-        <TabsContent value="employees">
-          <Card>
-            <CardHeader>
-              <CardTitle>Employee Payroll Information</CardTitle>
-              <CardDescription>
-                Manage employee compensation and payroll settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {employees.map((employee) => (
-                  <div key={employee.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="font-medium">
-                          {employee.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium">{employee.name}</p>
-                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                          <span>{employee.position}</span>
-                          <span>•</span>
-                          <span>{employee.department}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">${employee.salary.toLocaleString()}</p>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={employee.status === 'Active' ? 'default' : 'secondary'}>
-                          {employee.status}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {employee.payType || 'Salary'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="reports">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Payroll Register</CardTitle>
+                <CardDescription>Detailed payroll breakdown</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full">Generate Report</Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Tax Summary</CardTitle>
+                <CardDescription>Tax withholdings & liabilities</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full">Generate Report</Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Benefits Report</CardTitle>
+                <CardDescription>Employee benefits overview</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full">Generate Report</Button>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -1,225 +1,304 @@
 
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ProjectDialog } from "@/components/projects/ProjectDialog";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PlusCircle, Users, Calendar, DollarSign, Clock, Target } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
-import { Plus, Search, MoreHorizontal, Edit, Trash, FolderOpen, Users, DollarSign } from "lucide-react";
-import { toast } from "sonner";
-import { Project } from "@/types/company";
+import { AdvancedProjectManagement } from "@/components/projects/AdvancedProjectManagement";
+import { safeNumberParse } from "@/utils/typeHelpers";
 
 const Projects: React.FC = () => {
-  const { currentCompany, updateCompany } = useCompany();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const { currentCompany } = useCompany();
+  const [activeTab, setActiveTab] = useState("overview");
 
-  const projects = currentCompany.projects || [];
-  
-  const filteredProjects = projects.filter(project =>
-    project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.status.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const projects = currentCompany?.projects || [];
+  const timeEntries = currentCompany?.timeEntries || [];
+  const employees = currentCompany?.employees || [];
 
-  const totalProjects = projects.length;
-  const activeProjects = projects.filter(p => p.status === "In Progress").length;
-  const totalBudget = projects.reduce((sum, p) => sum + (p.budget || 0), 0);
+  // Calculate total billable hours and amount
+  const totalBillableHours = timeEntries
+    .filter(entry => entry.billable)
+    .reduce((total, entry) => total + entry.hours, 0);
 
-  const handleEditProject = (project: Project) => {
-    setEditingProject(project);
-    setIsProjectDialogOpen(true);
-  };
+  const totalBillableAmount = timeEntries
+    .filter(entry => entry.billable)
+    .reduce((total, entry) => {
+      const rate = entry.billingRate || entry.hourlyRate || 0;
+      return total + (entry.hours * rate);
+    }, 0);
 
-  const handleDeleteProject = (projectId: string) => {
-    if (confirm("Are you sure you want to delete this project?")) {
-      const updatedProjects = projects.filter(p => p.id !== projectId);
-      updateCompany({
-        ...currentCompany,
-        projects: updatedProjects
-      });
-      toast.success("Project deleted successfully!");
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      "Planning": "bg-blue-100 text-blue-800",
-      "In Progress": "bg-green-100 text-green-800",
-      "On Hold": "bg-yellow-100 text-yellow-800",
-      "Completed": "bg-gray-100 text-gray-800",
-      "Cancelled": "bg-red-100 text-red-800"
-    };
-    return colors[status] || "bg-gray-100 text-gray-800";
-  };
-
-  const getPriorityColor = (priority: string) => {
-    const colors: Record<string, string> = {
-      "High": "bg-red-100 text-red-800",
-      "Medium": "bg-yellow-100 text-yellow-800",
-      "Low": "bg-green-100 text-green-800"
-    };
-    return colors[priority] || "bg-gray-100 text-gray-800";
-  };
+  const activeProjects = projects.filter(p => p.status === 'Active' || p.status === 'In Progress');
+  const completedProjects = projects.filter(p => p.status === 'Completed');
+  const totalBudget = projects.reduce((sum, p) => sum + safeNumberParse(p.budget), 0);
+  const totalBilled = projects.reduce((sum, p) => sum + safeNumberParse(p.billed || 0), 0);
 
   return (
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Projects</h1>
-          <p className="text-muted-foreground">Manage your client projects and track progress</p>
+          <h1 className="text-3xl font-bold">Project Management</h1>
+          <p className="text-muted-foreground">
+            Comprehensive project tracking, time management, and resource allocation
+          </p>
         </div>
-        <Button onClick={() => setIsProjectDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button>
+          <PlusCircle className="mr-2 h-4 w-4" />
           New Project
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Project Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <FolderOpen className="h-5 w-5 text-blue-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Projects</p>
-                <p className="text-xl font-semibold">{totalProjects}</p>
-              </div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{activeProjects.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {projects.length} total projects
+            </p>
           </CardContent>
         </Card>
+
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Active Projects</p>
-                <p className="text-xl font-semibold">{activeProjects}</p>
-              </div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{completedProjects.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Projects delivered
+            </p>
           </CardContent>
         </Card>
+
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-purple-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Budget</p>
-                <p className="text-xl font-semibold">${totalBudget.toLocaleString()}</p>
-              </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Billable Hours</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalBillableHours.toFixed(1)}</div>
+            <p className="text-xs text-muted-foreground">
+              This period
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalBillableAmount.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              From billable hours
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalBudget.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              All projects combined
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Billed</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalBilled.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              Revenue generated
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{employees.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Available resources
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Utilization</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {totalBudget > 0 ? ((totalBilled / totalBudget) * 100).toFixed(1) : 0}%
             </div>
+            <p className="text-xs text-muted-foreground">
+              Budget utilization
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search */}
-      <div className="flex gap-4 items-center">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search projects..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
+          <TabsTrigger value="resources">Resources</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+        </TabsList>
 
-      {/* Projects Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Project List</CardTitle>
-          <CardDescription>Overview of all your projects</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Project Name</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Start Date</TableHead>
-                <TableHead>Budget</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProjects.length > 0 ? (
-                filteredProjects.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell className="font-medium">{project.name}</TableCell>
-                    <TableCell>{project.client}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(project.status)}>
-                        {project.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getPriorityColor(project.priority || 'Medium')}>
-                        {project.priority || 'Medium'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{project.startDate}</TableCell>
-                    <TableCell>${(project.budget || 0).toLocaleString()}</TableCell>
-                    <TableCell>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${project.progress || 0}%` }}
-                        />
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Project Status Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {['Active', 'In Progress', 'Completed', 'On Hold'].map(status => {
+                    const count = projects.filter(p => p.status === status).length;
+                    const percentage = projects.length > 0 ? (count / projects.length) * 100 : 0;
+                    return (
+                      <div key={status} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={status === 'Active' || status === 'In Progress' ? 'default' : 'secondary'}>
+                            {status}
+                          </Badge>
+                          <span className="text-sm">{count} projects</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Progress value={percentage} className="w-20" />
+                          <span className="text-sm text-muted-foreground">{percentage.toFixed(0)}%</span>
+                        </div>
                       </div>
-                      <span className="text-xs text-muted-foreground">{project.progress || 0}%</span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditProject(project)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit Project
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteProject(project.id)}
-                            className="text-red-600"
-                          >
-                            <Trash className="h-4 w-4 mr-2" />
-                            Delete Project
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-4">
-                    No projects found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
 
-      <ProjectDialog
-        isOpen={isProjectDialogOpen}
-        onClose={() => {
-          setIsProjectDialogOpen(false);
-          setEditingProject(null);
-        }}
-        project={editingProject}
-      />
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {timeEntries.slice(0, 5).map(entry => (
+                    <div key={entry.id} className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">{entry.description}</p>
+                        <p className="text-xs text-muted-foreground">{entry.date}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{entry.hours}h</p>
+                        {entry.billable && <Badge variant="outline" className="text-xs">Billable</Badge>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="projects">
+          <AdvancedProjectManagement />
+        </TabsContent>
+
+        <TabsContent value="resources">
+          <Card>
+            <CardHeader>
+              <CardTitle>Resource Allocation</CardTitle>
+              <CardDescription>Team member assignments and utilization</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {employees.map(employee => {
+                  const employeeProjects = projects.filter(p => 
+                    p.teamMembers?.includes(employee.id) || p.team?.includes(employee.name)
+                  );
+                  return (
+                    <div key={employee.id} className="flex items-center justify-between p-3 border rounded">
+                      <div>
+                        <p className="font-medium">{employee.name}</p>
+                        <p className="text-sm text-muted-foreground">{employee.position}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{employeeProjects.length} projects</p>
+                        <p className="text-xs text-muted-foreground">Active assignments</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="reports">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Project Performance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {projects.map(project => (
+                    <div key={project.id} className="border rounded p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-medium">{project.name}</h3>
+                          <p className="text-sm text-muted-foreground">{project.client}</p>
+                        </div>
+                        <Badge variant={project.status === 'Completed' ? 'default' : 'secondary'}>
+                          {project.status}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Budget</p>
+                          <p className="font-medium">${safeNumberParse(project.budget).toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Billed</p>
+                          <p className="font-medium">${safeNumberParse(project.billed || 0).toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Progress</p>
+                          <div className="flex items-center space-x-2">
+                            <Progress value={project.progress || 0} className="flex-1" />
+                            <span className="text-xs">{project.progress || 0}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
