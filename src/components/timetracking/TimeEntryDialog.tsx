@@ -97,7 +97,6 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
       endTime: formData.endTime,
       hours: parseFloat(formData.hours) || 0,
       hourlyRate: parseFloat(formData.hourlyRate) || 0,
-      amount: calculateAmount(),
       description: formData.description,
       billable: formData.billable,
       status: formData.status

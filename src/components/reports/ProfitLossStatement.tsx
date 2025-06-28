@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useCompany } from "@/contexts/CompanyContext";
 import { Download, TrendingUp, TrendingDown } from "lucide-react";
 import { toast } from "sonner";
+import { safeStringReplace, safeNumberParse } from "@/utils/typeHelpers";
 
 export const ProfitLossStatement = () => {
   const { currentCompany } = useCompany();
@@ -15,14 +16,14 @@ export const ProfitLossStatement = () => {
   const generatePLData = () => {
     // Revenue
     const salesRevenue = currentCompany.invoices?.reduce((sum, invoice) => 
-      sum + parseFloat(invoice.amount?.replace(/[^0-9.-]+/g, "") || "0"), 0) || 0;
+      sum + parseFloat(safeStringReplace(invoice.amount || "0", /[^0-9.-]+/g, "")), 0) || 0;
     const serviceRevenue = currentCompany.sales?.reduce((sum, sale) => 
-      sum + parseFloat(sale.amount?.toString().replace(/[^0-9.-]+/g, "") || "0"), 0) || 0;
+      sum + safeNumberParse(sale.amount), 0) || 0;
     const totalRevenue = salesRevenue + serviceRevenue;
 
     // Cost of Goods Sold
     const materialCosts = currentCompany.expenses?.reduce((sum, expense) => 
-      expense.category === "Materials" ? sum + parseFloat(expense.amount?.toString().replace(/[^0-9.-]+/g, "") || "0") : sum, 0) || 0;
+      expense.category === "Materials" ? sum + safeNumberParse(expense.amount) : sum, 0) || 0;
     const laborCosts = totalRevenue * 0.25; // Estimated 25% of revenue
     const totalCOGS = materialCosts + laborCosts;
 
@@ -36,11 +37,11 @@ export const ProfitLossStatement = () => {
     const rentExpense = 12000; // Annual rent
     const utilitiesExpense = 3600; // Annual utilities
     const marketingExpense = currentCompany.expenses?.reduce((sum, expense) => 
-      expense.category === "Marketing" ? sum + parseFloat(expense.amount?.toString().replace(/[^0-9.-]+/g, "") || "0") : sum, 0) || 0;
+      expense.category === "Marketing" ? sum + parseFloat(safeStringReplace(expense.amount?.toString() || "0", /[^0-9.-]+/g, "")) : sum, 0) || 0;
     const insuranceExpense = 6000; // Annual insurance
     const professionalFees = 4800; // Annual professional fees
     const officeExpenses = currentCompany.expenses?.reduce((sum, expense) => 
-      expense.category === "Office" ? sum + parseFloat(expense.amount?.toString().replace(/[^0-9.-]+/g, "") || "0") : sum, 0) || 0;
+      expense.category === "Office" ? sum + parseFloat(safeStringReplace(expense.amount?.toString() || "0", /[^0-9.-]+/g, "")) : sum, 0) || 0;
     
     const totalOperatingExpenses = salariesAndWages + rentExpense + utilitiesExpense + 
                                  marketingExpense + insuranceExpense + professionalFees + officeExpenses;

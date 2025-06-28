@@ -39,7 +39,7 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({
       description: item.description,
       quantity: item.quantity,
       unitPrice: `$${item.price.toFixed(2)}`,
-      amount: `$${item.total.toFixed(2)}`
+      amount: `$${item.amount.toFixed(2)}`
     })) || [
       {
         id: `item-${Date.now()}`,
@@ -151,13 +151,13 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({
       }, 0);
     };
     
-    // Convert our estimate items format to InvoiceItem format required by Estimate interface
-    const invoiceItems = estimateData.items.map(item => ({
+    // Convert our estimate items format to EstimateItem format required by Estimate interface
+    const estimateItems = estimateData.items.map(item => ({
       id: item.id,
       description: item.description,
       quantity: item.quantity,
       price: parseFloat(item.unitPrice.replace(/[^0-9.-]+/g, "")),
-      total: parseFloat(item.amount.replace(/[^0-9.-]+/g, ""))
+      amount: parseFloat(item.amount.replace(/[^0-9.-]+/g, ""))
     }));
     
     const newEstimate: Estimate = {
@@ -167,7 +167,7 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({
       expiryDate: estimateData.expiryDate,
       total: calculateTotal(estimateData.items),
       status: estimateData.status,
-      items: invoiceItems,
+      items: estimateItems,
       estimateNumber: estimate?.estimateNumber || `EST-${Date.now().toString().slice(-6)}`,
     };
     

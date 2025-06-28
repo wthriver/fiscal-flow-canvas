@@ -1,4 +1,3 @@
-
 import React, { useMemo } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useCompany } from "@/contexts/CompanyContext";
+import { safeStringReplace } from "@/utils/typeHelpers";
 
 interface SaleDialogProps {
   open: boolean;
@@ -53,8 +53,8 @@ export const SaleDialog: React.FC<SaleDialogProps> = ({
       id: sale?.id || generateSaleId(),
       customer: sale?.customer || "",
       date: sale?.date || today,
-      amount: typeof sale?.amount === 'number' ? sale.amount.toString() : sale?.amount?.replace(/[^0-9.]/g, '') || "",
-      status: sale?.status || "Completed",
+      amount: typeof sale?.amount === 'number' ? sale.amount.toString() : safeStringReplace(sale?.amount || "0", /[^0-9.]/g, ""),
+      status: sale?.status || "Completed" as "Completed" | "Pending",
       paymentMethod: sale?.paymentMethod || "Cash",
       notes: sale?.notes || "",
     },
@@ -70,10 +70,10 @@ export const SaleDialog: React.FC<SaleDialogProps> = ({
     
     const saleItem: SaleItem = {
       id: `item-${Date.now()}`,
-      itemId: 'general-sale',
+      description: 'General Sale',
       quantity: 1,
-      unitPrice: amount,
-      total: amount
+      price: amount,
+      amount: amount
     };
     
     const saleData: Sale = {
@@ -82,7 +82,7 @@ export const SaleDialog: React.FC<SaleDialogProps> = ({
       customerId: selectedCustomer?.id,
       date: data.date,
       amount: amount,
-      status: data.status,
+      status: data.status as "Completed" | "Pending",
       items: [saleItem],
       paymentMethod: data.paymentMethod,
       notes: data.notes

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { useCompany } from "@/contexts/CompanyContext";
 import { Download, TrendingUp, TrendingDown, DollarSign, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { safeStringReplace } from "@/utils/typeHelpers";
 
 export const FinancialReports = () => {
   const { currentCompany } = useCompany();
@@ -20,10 +20,10 @@ export const FinancialReports = () => {
     const expenses = currentCompany.expenses || [];
     
     const revenue = invoices.reduce((sum, invoice) => 
-      sum + parseFloat(invoice.amount?.replace(/[^0-9.-]+/g, "") || "0"), 0);
+      sum + parseFloat(safeStringReplace(invoice.amount || "0", /[^0-9.-]+/g, "")), 0);
     
     const totalExpenses = expenses.reduce((sum, expense) => 
-      sum + parseFloat(expense.amount?.toString().replace(/[^0-9.-]+/g, "") || "0"), 0);
+      sum + parseFloat(safeStringReplace(expense.amount || "0", /[^0-9.-]+/g, "")), 0);
     
     const netIncome = revenue - totalExpenses;
     const grossMargin = revenue > 0 ? ((revenue - totalExpenses) / revenue) * 100 : 0;
