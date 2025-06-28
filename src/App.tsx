@@ -17,7 +17,6 @@ import PaymentProcessing from './pages/PaymentProcessing';
 import Accounting from './pages/Accounting';
 import Expenses from './pages/Expenses';
 import Projects from './pages/Projects';
-import AdvancedProjects from './pages/AdvancedProjects';
 import TimeTracking from './pages/TimeTracking';
 import Inventory from './pages/Inventory';
 import Payroll from './pages/Payroll';
@@ -64,7 +63,6 @@ const App = () => {
             
             {/* Tracking & Planning */}
             <Route path="/projects" element={<Projects />} />
-            <Route path="/advanced-projects" element={<AdvancedProjects />} />
             <Route path="/time-tracking" element={<TimeTracking />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/payroll" element={<Payroll />} />

@@ -11,6 +11,7 @@ import { PayrollProcessor } from "@/components/payroll/PayrollProcessor";
 import { TaxComplianceManager } from "@/components/payroll/TaxComplianceManager";
 import { BenefitsManager } from "@/components/payroll/BenefitsManager";
 import { TimeClockSystem } from "@/components/timetracking/TimeClockSystem";
+import { safeStringReplace, safeNumberParse } from "@/utils/typeHelpers";
 
 const Payroll: React.FC = () => {
   const { currentCompany } = useCompany();
@@ -28,12 +29,17 @@ const Payroll: React.FC = () => {
   const employees = currentCompany?.employees || [];
   const totalMonthlyPayroll = employees.reduce((sum, emp) => {
     const salary = typeof emp.salary === 'string' 
-      ? parseFloat(emp.salary.replace(/[$,]/g, '')) || 0 
-      : emp.salary || 0;
+      ? safeNumberParse(safeStringReplace(emp.salary, /[$,]/g, '')) 
+      : safeNumberParse(emp.salary || 0);
     return sum + salary;
   }, 0);
 
-  const upcomingPayroll = payrollData.payPeriods.find(period => period.status === 'Pending');
+  const upcomingPayroll = payrollData.payPeriods?.find(period => period.status === 'Current');
+
+  const handleProcessPayroll = (payrollId: string) => {
+    console.log('Processing payroll:', payrollId);
+    // Implementation would be handled by the PayrollProcessor component
+  };
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -110,12 +116,12 @@ const Payroll: React.FC = () => {
         </TabsList>
 
         <TabsContent value="dashboard">
-          <PayrollDashboard payrollData={payrollData} />
+          <PayrollDashboard payrollData={payrollData} onProcessPayroll={handleProcessPayroll} />
         </TabsContent>
 
         <TabsContent value="processing">
           <div className="space-y-6">
-            {payrollData.payPeriods.length > 0 ? (
+            {payrollData.payPeriods && payrollData.payPeriods.length > 0 ? (
               payrollData.payPeriods.map((period) => (
                 <PayrollProcessor
                   key={period.id}

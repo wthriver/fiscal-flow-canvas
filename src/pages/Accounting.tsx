@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +9,7 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { AdvancedJournalEntry } from "@/components/journal/AdvancedJournalEntry";
 import { FixedAssetsManager } from "@/components/fixedassets/FixedAssetsManager";
 import { ReportTabs } from "@/components/banking/reports/ReportTabs";
+import { safeNumberParse } from "@/utils/typeHelpers";
 
 const Accounting: React.FC = () => {
   const { currentCompany } = useCompany();
@@ -20,20 +20,20 @@ const Accounting: React.FC = () => {
   const expenses = currentCompany?.expenses || [];
   const revenue = currentCompany?.revenue || { current: 0, previous: 0, percentChange: 0 };
 
-  // Calculate key metrics
+  // Calculate key metrics with safe number parsing
   const totalAssets = accounts
     .filter(acc => acc.type === 'Asset')
-    .reduce((sum, acc) => sum + (acc.balance || 0), 0);
+    .reduce((sum, acc) => sum + safeNumberParse(acc.balance || 0), 0);
 
   const totalLiabilities = accounts
     .filter(acc => acc.type === 'Liability')
-    .reduce((sum, acc) => sum + (acc.balance || 0), 0);
+    .reduce((sum, acc) => sum + safeNumberParse(acc.balance || 0), 0);
 
   const totalEquity = accounts
     .filter(acc => acc.type === 'Equity')
-    .reduce((sum, acc) => sum + (acc.balance || 0), 0);
+    .reduce((sum, acc) => sum + safeNumberParse(acc.balance || 0), 0);
 
-  const netIncome = revenue.current - expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+  const netIncome = revenue.current - expenses.reduce((sum, exp) => sum + safeNumberParse(exp.amount || 0), 0);
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -115,7 +115,7 @@ const Accounting: React.FC = () => {
                 <div className="space-y-4">
                   {['Asset', 'Liability', 'Equity', 'Revenue', 'Expense'].map(type => {
                     const typeAccounts = accounts.filter(acc => acc.type === type);
-                    const typeTotal = typeAccounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
+                    const typeTotal = typeAccounts.reduce((sum, acc) => sum + safeNumberParse(acc.balance || 0), 0);
                     return (
                       <div key={type}>
                         <div className="flex justify-between items-center mb-2">
@@ -126,7 +126,7 @@ const Accounting: React.FC = () => {
                           {typeAccounts.slice(0, 3).map(account => (
                             <div key={account.id} className="flex justify-between text-sm">
                               <span>{account.name}</span>
-                              <span>${(account.balance || 0).toLocaleString()}</span>
+                              <span>${safeNumberParse(account.balance || 0).toLocaleString()}</span>
                             </div>
                           ))}
                           {typeAccounts.length > 3 && (
