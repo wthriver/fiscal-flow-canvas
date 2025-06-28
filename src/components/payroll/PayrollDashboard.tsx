@@ -7,24 +7,18 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { PayrollData } from "@/types/company";
 
 interface PayrollDashboardProps {
+  payrollData: PayrollData;
   onProcessPayroll: (payrollId: string) => void;
 }
 
-export const PayrollDashboard: React.FC<PayrollDashboardProps> = ({ onProcessPayroll }) => {
+export const PayrollDashboard: React.FC<PayrollDashboardProps> = ({ payrollData, onProcessPayroll }) => {
   const { currentCompany, updateCompany } = useCompany();
   const [editEmployeeDialogOpen, setEditEmployeeDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
 
-  // Ensure payrollData exists with proper structure
-  const payrollData = currentCompany.payrollData || { 
-    payPeriods: [],
-    totalPayroll: 0,
-    employeeCount: 0,
-    averageSalary: 0
-  };
-  
   // Ensure employees array exists
   const employees = currentCompany.employees || [];
 

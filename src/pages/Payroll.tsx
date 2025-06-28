@@ -15,6 +15,7 @@ import { PayrollData } from "@/types/company";
 const Payroll: React.FC = () => {
   const { currentCompany } = useCompany();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [selectedPayrollId, setSelectedPayrollId] = useState<string>("");
 
   const employees = currentCompany?.employees || [];
   const payrollData = currentCompany?.payrollData;
@@ -39,6 +40,11 @@ const Payroll: React.FC = () => {
   // Get current pay period
   const currentPayPeriod = completePayrollData.payPeriods?.find(p => p.status === 'Current');
   const processingPayPeriods = completePayrollData.payPeriods?.filter(p => p.status === 'Processing').length || 0;
+
+  const handleProcessPayroll = (payrollId: string) => {
+    setSelectedPayrollId(payrollId);
+    setActiveTab("processor");
+  };
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -184,11 +190,17 @@ const Payroll: React.FC = () => {
         </TabsList>
 
         <TabsContent value="dashboard">
-          <PayrollDashboard payrollData={completePayrollData} />
+          <PayrollDashboard 
+            payrollData={completePayrollData} 
+            onProcessPayroll={handleProcessPayroll}
+          />
         </TabsContent>
 
         <TabsContent value="processor">
-          <PayrollProcessor payrollData={completePayrollData} />
+          <PayrollProcessor 
+            payrollData={completePayrollData}
+            payrollId={selectedPayrollId || completePayrollData.payPeriods[0]?.id || ""}
+          />
         </TabsContent>
 
         <TabsContent value="benefits">

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -11,188 +11,176 @@ import { toast } from "sonner";
 import { TaxRate } from "@/types/company";
 
 interface TaxRateDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  taxRate?: TaxRate | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  taxRate: TaxRate | null;
+  onSave: () => void;
 }
 
-export const TaxRateDialog: React.FC<TaxRateDialogProps> = ({ 
-  isOpen, 
-  onClose, 
-  taxRate 
+export const TaxRateDialog: React.FC<TaxRateDialogProps> = ({
+  open,
+  onOpenChange,
+  taxRate,
+  onSave,
 }) => {
-  const { addTaxRate, updateTaxRate } = useCompany();
-  const [formData, setFormData] = useState({
-    name: "",
-    rate: "",
-    description: "",
-    category: "",
-    jurisdiction: "",
-    effectiveDate: new Date().toISOString().split('T')[0],
-    isDefault: false
-  });
+  const { currentCompany, updateCompany } = useCompany();
+  const [name, setName] = useState("");
+  const [rate, setRate] = useState("");
+  const [description, setDescription] = useState("");
+  const [jurisdiction, setJurisdiction] = useState("");
+  const [effectiveDate, setEffectiveDate] = useState("");
+  const [isDefault, setIsDefault] = useState(false);
 
   useEffect(() => {
-    if (taxRate && isOpen) {
-      setFormData({
-        name: taxRate.name || "",
-        rate: taxRate.rate?.toString() || "",
-        description: taxRate.description || "",
-        category: taxRate.category || "",
-        jurisdiction: taxRate.jurisdiction || "",
-        effectiveDate: taxRate.effectiveDate || new Date().toISOString().split('T')[0],
-        isDefault: taxRate.isDefault || false
-      });
-    } else if (!taxRate && isOpen) {
-      setFormData({
-        name: "",
-        rate: "",
-        description: "",
-        category: "",
-        jurisdiction: "",
-        effectiveDate: new Date().toISOString().split('T')[0],
-        isDefault: false
-      });
+    if (taxRate) {
+      setName(taxRate.name);
+      setRate(taxRate.rate.toString());
+      setDescription(taxRate.description || "");
+      setJurisdiction(taxRate.jurisdiction || "");
+      setEffectiveDate(taxRate.effectiveDate || "");
+      setIsDefault(taxRate.isDefault || false);
+    } else {
+      // Reset form for new tax rate
+      setName("");
+      setRate("");
+      setDescription("");
+      setJurisdiction("");
+      setEffectiveDate("");
+      setIsDefault(false);
     }
-  }, [taxRate, isOpen]);
+  }, [taxRate, open]);
 
   const handleSave = () => {
-    if (!formData.name || !formData.rate) {
-      toast.error("Please fill in all required fields");
+    if (!name || !rate) {
+      toast.error("Please fill in the required fields");
       return;
     }
 
-    const rateValue = parseFloat(formData.rate);
-    if (isNaN(rateValue) || rateValue < 0) {
+    const rateNumber = parseFloat(rate);
+    if (isNaN(rateNumber) || rateNumber < 0) {
       toast.error("Please enter a valid tax rate");
       return;
     }
 
-    const taxRateData: TaxRate = {
+    const newTaxRate: TaxRate = {
       id: taxRate?.id || `tax-${Date.now()}`,
-      name: formData.name,
-      rate: rateValue,
-      description: formData.description,
-      category: formData.category,
-      jurisdiction: formData.jurisdiction,
-      effectiveDate: formData.effectiveDate,
-      isDefault: formData.isDefault
+      name,
+      rate: rateNumber,
+      description,
+      jurisdiction,
+      effectiveDate,
+      isDefault,
     };
 
+    const existingTaxRates = currentCompany.taxRates || [];
+    let updatedTaxRates;
+
     if (taxRate) {
-      updateTaxRate(taxRateData);
-      toast.success("Tax rate updated successfully!");
+      // Update existing tax rate
+      updatedTaxRates = existingTaxRates.map(t => 
+        t.id === taxRate.id ? newTaxRate : t
+      );
     } else {
-      addTaxRate(taxRateData);
-      toast.success("Tax rate added successfully!");
+      // Add new tax rate
+      updatedTaxRates = [...existingTaxRates, newTaxRate];
     }
-    
-    onClose();
+
+    // If this is set as default, remove default from others
+    if (isDefault) {
+      updatedTaxRates = updatedTaxRates.map(t => 
+        t.id === newTaxRate.id ? t : { ...t, isDefault: false }
+      );
+    }
+
+    updateCompany({
+      ...currentCompany,
+      taxRates: updatedTaxRates,
+    });
+
+    toast.success(taxRate ? "Tax rate updated successfully" : "Tax rate created successfully");
+    onSave();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{taxRate ? 'Edit Tax Rate' : 'Add New Tax Rate'}</DialogTitle>
+          <DialogTitle>{taxRate ? "Edit Tax Rate" : "Add Tax Rate"}</DialogTitle>
           <DialogDescription>
-            {taxRate ? 'Update tax rate details' : 'Configure a new tax rate for your business'}
+            {taxRate ? "Update the tax rate information" : "Create a new tax rate for your company"}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label className="text-right text-sm font-medium">Name*</label>
+          <div className="space-y-2">
+            <Label htmlFor="tax-name">Name *</Label>
             <Input
-              className="col-span-3"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              placeholder="Tax rate name (e.g., Sales Tax, VAT)"
+              id="tax-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., Sales Tax, VAT"
             />
           </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label className="text-right text-sm font-medium">Rate (%)*</label>
+
+          <div className="space-y-2">
+            <Label htmlFor="tax-rate">Rate (%) *</Label>
             <Input
+              id="tax-rate"
               type="number"
-              step="0.01"
               min="0"
-              max="100"
-              className="col-span-3"
-              value={formData.rate}
-              onChange={(e) => setFormData({...formData, rate: e.target.value})}
-              placeholder="0.00"
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label className="text-right text-sm font-medium">Category</label>
-            <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Sales Tax">Sales Tax</SelectItem>
-                <SelectItem value="VAT">VAT (Value Added Tax)</SelectItem>
-                <SelectItem value="Income Tax">Income Tax</SelectItem>
-                <SelectItem value="Property Tax">Property Tax</SelectItem>
-                <SelectItem value="Excise Tax">Excise Tax</SelectItem>
-                <SelectItem value="Use Tax">Use Tax</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label className="text-right text-sm font-medium">Jurisdiction</label>
-            <Input
-              className="col-span-3"
-              value={formData.jurisdiction}
-              onChange={(e) => setFormData({...formData, jurisdiction: e.target.value})}
-              placeholder="Federal, State, County, City"
+              step="0.01"
+              value={rate}
+              onChange={(e) => setRate(e.target.value)}
+              placeholder="e.g., 8.25"
             />
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label className="text-right text-sm font-medium">Effective Date</label>
-            <Input
-              type="date"
-              className="col-span-3"
-              value={formData.effectiveDate}
-              onChange={(e) => setFormData({...formData, effectiveDate: e.target.value})}
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-start gap-4">
-            <label className="text-right text-sm font-medium">Description</label>
+          <div className="space-y-2">
+            <Label htmlFor="tax-description">Description</Label>
             <Textarea
-              className="col-span-3"
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              placeholder="Description of when this tax rate applies"
-              rows={3}
+              id="tax-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Optional description of this tax rate"
             />
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label className="text-right text-sm font-medium">Default Rate</label>
-            <div className="col-span-3 flex items-center space-x-2">
-              <Checkbox
-                id="isDefault"
-                checked={formData.isDefault}
-                onCheckedChange={(checked) => setFormData({...formData, isDefault: checked as boolean})}
-              />
-              <label htmlFor="isDefault" className="text-sm">
-                Use as default tax rate for new transactions
-              </label>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="tax-jurisdiction">Jurisdiction</Label>
+            <Input
+              id="tax-jurisdiction"
+              value={jurisdiction}
+              onChange={(e) => setJurisdiction(e.target.value)}
+              placeholder="e.g., California, New York City"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tax-effective-date">Effective Date</Label>
+            <Input
+              id="tax-effective-date"
+              type="date"
+              value={effectiveDate}
+              onChange={(e) => setEffectiveDate(e.target.value)}
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="tax-default"
+              checked={isDefault}
+              onCheckedChange={(checked) => setIsDefault(checked as boolean)}
+            />
+            <Label htmlFor="tax-default">Set as default tax rate</Label>
           </div>
         </div>
-        
+
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button onClick={handleSave}>
-            {taxRate ? 'Update Rate' : 'Add Rate'}
+            {taxRate ? "Update" : "Create"} Tax Rate
           </Button>
         </DialogFooter>
       </DialogContent>

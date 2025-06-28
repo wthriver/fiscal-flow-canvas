@@ -5,17 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useCompany } from "@/contexts/CompanyContext";
+import { PayrollData } from "@/types/company";
 
 interface PayrollProcessorProps {
+  payrollData: PayrollData;
   payrollId: string;
 }
 
-export const PayrollProcessor: React.FC<PayrollProcessorProps> = ({ payrollId }) => {
+export const PayrollProcessor: React.FC<PayrollProcessorProps> = ({ payrollData, payrollId }) => {
   const { currentCompany, processPayroll } = useCompany();
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [processingComplete, setProcessingComplete] = useState(false);
   
-  const payPeriod = currentCompany.payrollData.payPeriods.find(period => period.id === payrollId);
+  const payPeriod = payrollData.payPeriods.find(period => period.id === payrollId);
   
   if (!payPeriod) {
     return <div>Payroll period not found</div>;

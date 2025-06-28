@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,20 +8,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
-import { useCompany } from "@/contexts/CompanyContext";
-import { toast } from "@/hooks/use-toast";
-import { InvoiceItem } from "@/types/company";
+import { toast } from "sonner";
+import { InvoiceItem, Customer, Invoice } from "@/types/company";
 
 interface NewInvoiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSubmit: (invoiceData: Invoice) => void;
+  customers: Customer[];
 }
 
 export const NewInvoiceDialog: React.FC<NewInvoiceDialogProps> = ({
   open,
   onOpenChange,
+  onSubmit,
+  customers,
 }) => {
-  const { addInvoice, currentCompany } = useCompany();
   const [customer, setCustomer] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [items, setItems] = useState([
@@ -76,11 +79,7 @@ export const NewInvoiceDialog: React.FC<NewInvoiceDialogProps> = ({
     e.preventDefault();
     
     if (!customer || !dueDate || items.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields and add at least one item",
-        variant: "destructive",
-      });
+      toast.error("Please fill in all required fields and add at least one item");
       return;
     }
 
@@ -92,7 +91,7 @@ export const NewInvoiceDialog: React.FC<NewInvoiceDialogProps> = ({
       amount: item.quantity * item.price
     }));
 
-    const newInvoice = {
+    const newInvoice: Invoice = {
       id: `INV-${Math.floor(Math.random() * 9000) + 1000}`,
       customer,
       date: new Date().toISOString().split('T')[0],
@@ -106,13 +105,8 @@ export const NewInvoiceDialog: React.FC<NewInvoiceDialogProps> = ({
       notes: notes || ""
     };
 
-    addInvoice(newInvoice);
-    
-    toast({
-      title: "Success",
-      description: "Invoice created successfully",
-    });
-    
+    onSubmit(newInvoice);
+    toast.success("Invoice created successfully");
     resetForm();
     onOpenChange(false);
   };
@@ -136,7 +130,7 @@ export const NewInvoiceDialog: React.FC<NewInvoiceDialogProps> = ({
                   <SelectValue placeholder="Select a customer" />
                 </SelectTrigger>
                 <SelectContent>
-                  {currentCompany?.customers?.map((customer) => (
+                  {customers?.map((customer) => (
                     <SelectItem key={customer.id} value={customer.name}>
                       {customer.name}
                     </SelectItem>
