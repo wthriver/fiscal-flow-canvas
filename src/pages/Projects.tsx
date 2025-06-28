@@ -11,6 +11,7 @@ import { AdvancedProjectManagement } from "@/components/projects/AdvancedProject
 import { ProjectDocuments } from "@/components/projects/ProjectDocuments";
 import { ProjectDialog } from "@/components/projects/ProjectDialog";
 import { TimeClockSystem } from "@/components/timetracking/TimeClockSystem";
+import { ProjectDocument } from "@/types/company";
 
 const Projects: React.FC = () => {
   const { currentCompany } = useCompany();
@@ -23,6 +24,14 @@ const Projects: React.FC = () => {
   const completedProjects = projects.filter(p => p.status === 'Completed').length;
   const totalBudget = projects.reduce((sum, p) => sum + (p.budget || 0), 0);
   const totalRevenue = projects.reduce((sum, p) => sum + (p.revenue || 0), 0);
+
+  // Collect all documents from all projects
+  const allDocuments = projects.flatMap(p => p.documents || []);
+
+  const handleViewDocument = (document: ProjectDocument) => {
+    console.log('Viewing document:', document);
+    // Implementation for viewing documents
+  };
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -153,7 +162,10 @@ const Projects: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="documents">
-          <ProjectDocuments />
+          <ProjectDocuments 
+            documents={allDocuments}
+            onViewDocument={handleViewDocument}
+          />
         </TabsContent>
 
         <TabsContent value="time">
@@ -183,7 +195,7 @@ const Projects: React.FC = () => {
                     {projects.map(project => (
                       <div key={project.id} className="flex justify-between items-center">
                         <span className="text-sm">{project.name}</span>
-                        <span className="text-sm font-medium">${project.revenue?.toLocaleString()}</span>
+                        <span className="text-sm font-medium">${(project.revenue || 0).toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
@@ -227,8 +239,8 @@ const Projects: React.FC = () => {
       </Tabs>
 
       <ProjectDialog 
-        open={isProjectDialogOpen} 
-        onOpenChange={setIsProjectDialogOpen}
+        isOpen={isProjectDialogOpen} 
+        onClose={() => setIsProjectDialogOpen(false)}
       />
     </div>
   );

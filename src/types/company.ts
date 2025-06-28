@@ -127,6 +127,7 @@ export interface Project {
   startDate: string;
   endDate?: string;
   budget: number;
+  revenue?: number;
   description?: string;
   priority?: 'Low' | 'Medium' | 'High';
   billed?: number;
