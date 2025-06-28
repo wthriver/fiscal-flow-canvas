@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useCompany } from "@/contexts/CompanyContext";
 import { EstimateDialog } from "@/components/sales/EstimateDialog";
 import { SaleDialog } from "@/components/sales/SaleDialog";
-import { safeReplaceForNumber } from "@/components/timetracking/utils/timeTrackingUtils";
+import { safeStringReplace } from "@/utils/typeHelpers";
 import { Sale, Estimate } from "@/types/company";
 import { useToast } from "@/hooks/use-toast";
 
@@ -43,7 +42,7 @@ const SalesPage: React.FC = () => {
   const totalEstimatesValue = estimates.reduce((total, estimate) => total + estimate.total, 0);
   const totalSalesValue = salesData.reduce((total, sale) => {
     const amount = typeof sale.amount === 'string'
-      ? parseFloat(safeReplaceForNumber(sale.amount))
+      ? parseFloat(safeStringReplace(sale.amount, /[^0-9.-]/g, ""))
       : sale.amount || 0;
     return total + amount;
   }, 0);
@@ -235,8 +234,9 @@ const SalesPage: React.FC = () => {
                           <TableCell className="text-right">${estimate.total.toFixed(2)}</TableCell>
                           <TableCell>
                             <span className={`px-2 py-1 rounded-full text-xs ${
-                              estimate.status === "Approved" ? "bg-green-100 text-green-800" :
-                              estimate.status === "Pending" ? "bg-yellow-100 text-yellow-800" :
+                              estimate.status === "Accepted" ? "bg-green-100 text-green-800" :
+                              estimate.status === "Draft" ? "bg-yellow-100 text-yellow-800" :
+                              estimate.status === "Sent" ? "bg-blue-100 text-blue-800" :
                               "bg-gray-100 text-gray-800"
                             }`}>
                               {estimate.status}
@@ -305,13 +305,12 @@ const SalesPage: React.FC = () => {
                           <TableCell className="text-right">
                             ${typeof sale.amount === 'number' 
                                ? sale.amount.toFixed(2)
-                               : parseFloat(safeReplaceForNumber(sale.amount)).toFixed(2)}
+                               : parseFloat(safeStringReplace(sale.amount, /[^0-9.-]/g, "")).toFixed(2)}
                           </TableCell>
                           <TableCell>
                             <span className={`px-2 py-1 rounded-full text-xs ${
                               sale.status === "Completed" ? "bg-green-100 text-green-800" :
-                              sale.status === "In Progress" ? "bg-blue-100 text-blue-800" :
-                              sale.status === "Cancelled" ? "bg-red-100 text-red-800" :
+                              sale.status === "Pending" ? "bg-yellow-100 text-yellow-800" :
                               "bg-gray-100 text-gray-800"
                             }`}>
                               {sale.status}

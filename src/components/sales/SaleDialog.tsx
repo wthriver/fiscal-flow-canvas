@@ -54,7 +54,7 @@ export const SaleDialog: React.FC<SaleDialogProps> = ({
       customer: sale?.customer || "",
       date: sale?.date || today,
       amount: typeof sale?.amount === 'number' ? sale.amount.toString() : safeStringReplace(sale?.amount || "0", /[^0-9.]/g, ""),
-      status: sale?.status || "Completed" as "Completed" | "Pending",
+      status: sale?.status || "Completed",
       paymentMethod: sale?.paymentMethod || "Cash",
       notes: sale?.notes || "",
     },
@@ -79,7 +79,6 @@ export const SaleDialog: React.FC<SaleDialogProps> = ({
     const saleData: Sale = {
       id: data.id,
       customer: data.customer,
-      customerId: selectedCustomer?.id,
       date: data.date,
       amount: amount,
       status: data.status as "Completed" | "Pending",

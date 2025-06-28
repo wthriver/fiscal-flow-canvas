@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({
   const { currentCompany, addEstimate } = useCompany();
   const [estimateData, setEstimateData] = useState({
     id: estimate?.id || `est-${Date.now()}`,
-    customerId: estimate?.customer || "",
+    customerId: estimate?.customerId || "",
     date: estimate?.date || new Date().toISOString().split('T')[0],
     expiryDate: estimate?.expiryDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     items: estimate?.items.map(item => ({
@@ -162,6 +163,7 @@ export const EstimateDialog: React.FC<EstimateDialogProps> = ({
     
     const newEstimate: Estimate = {
       id: estimate?.id || `est-${Date.now()}`,
+      customerId: estimateData.customerId,
       customer: estimateData.customerId,
       date: estimateData.date,
       expiryDate: estimateData.expiryDate,
