@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { CompanyContextType } from '@/types/context';
-import { Customer, Invoice, Expense, Project, Transaction, Employee } from '@/types/company';
+import { Customer, Invoice, Expense, Project, Transaction, Employee, Sale, Estimate, Budget, TimeEntry } from '@/types/company';
 import { sampleCompany } from '@/data/sampleData';
+import { safeNumberParse, safeStringReplace } from '@/utils/typeHelpers';
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
@@ -125,9 +126,9 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setCurrentCompany(prev => {
       const updatedBankAccounts = prev.bankAccounts?.map(account => {
         if (account.id === transaction.account || account.name === transaction.account) {
-          const amount = parseFloat(transaction.amount.replace(/[^0-9.-]+/g, ''));
+          const amount = safeNumberParse(transaction.amount);
           const currentBalance = typeof account.balance === 'string' 
-            ? parseFloat(account.balance.replace(/[^0-9.-]+/g, '')) 
+            ? safeNumberParse(account.balance)
             : account.balance;
           return {
             ...account,
@@ -154,11 +155,11 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           const updatedTransaction = { ...oldTransaction, ...updates };
           
           // Update balance if amount changed
-          const oldAmount = parseFloat(oldTransaction.amount.replace(/[^0-9.-]+/g, ''));
-          const newAmount = parseFloat(updatedTransaction.amount.replace(/[^0-9.-]+/g, ''));
+          const oldAmount = safeNumberParse(oldTransaction.amount);
+          const newAmount = safeNumberParse(updatedTransaction.amount);
           const balanceDiff = newAmount - oldAmount;
           const currentBalance = typeof account.balance === 'string' 
-            ? parseFloat(account.balance.replace(/[^0-9.-]+/g, '')) 
+            ? safeNumberParse(account.balance)
             : account.balance;
 
           const updatedTransactions = [...account.transactions!];
@@ -185,9 +186,9 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const updatedBankAccounts = prev.bankAccounts?.map(account => {
         if (account.id === bankAccountId) {
           const transaction = account.transactions?.find(t => t.id === transactionId);
-          const amount = transaction ? parseFloat(transaction.amount.replace(/[^0-9.-]+/g, '')) : 0;
+          const amount = transaction ? safeNumberParse(transaction.amount) : 0;
           const currentBalance = typeof account.balance === 'string' 
-            ? parseFloat(account.balance.replace(/[^0-9.-]+/g, '')) 
+            ? safeNumberParse(account.balance)
             : account.balance;
           
           return {
@@ -252,6 +253,50 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }));
   }, []);
 
+  // Sales operations
+  const addSale = useCallback((sale: Sale) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      sales: [...(prev.sales || []), sale]
+    }));
+  }, []);
+
+  const updateSale = useCallback((sale: Sale) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      sales: prev.sales?.map(s => s.id === sale.id ? sale : s) || []
+    }));
+  }, []);
+
+  const deleteSale = useCallback((saleId: string) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      sales: prev.sales?.filter(s => s.id !== saleId) || []
+    }));
+  }, []);
+
+  // Estimates operations
+  const addEstimate = useCallback((estimate: Estimate) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      estimates: [...(prev.estimates || []), estimate]
+    }));
+  }, []);
+
+  const updateEstimate = useCallback((estimate: Estimate) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      estimates: prev.estimates?.map(e => e.id === estimate.id ? estimate : e) || []
+    }));
+  }, []);
+
+  const deleteEstimate = useCallback((estimateId: string) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      estimates: prev.estimates?.filter(e => e.id !== estimateId) || []
+    }));
+  }, []);
+
   // Enhanced utility functions
   const calculateTotalRevenue = useCallback(() => {
     return currentCompany.invoices?.reduce((total, invoice) => total + invoice.total, 0) || 0;
@@ -309,6 +354,16 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     updateEmployee,
     deleteEmployee,
     
+    // Sales operations
+    addSale,
+    updateSale,
+    deleteSale,
+    
+    // Estimates operations
+    addEstimate,
+    updateEstimate,
+    deleteEstimate,
+    
     // Utility functions
     calculateTotalRevenue,
     calculateTotalExpenses,
@@ -325,18 +380,12 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addBankAccount: () => {},
     updateBankAccount: () => {},
     deleteBankAccount: () => {},
-    addEstimate: () => {},
-    updateEstimate: () => {},
-    deleteEstimate: () => {},
     addBudget: () => {},
     updateBudget: () => {},
     deleteBudget: () => {},
     addTimeEntry: () => {},
     updateTimeEntry: () => {},
     deleteTimeEntry: () => {},
-    addSale: () => {},
-    updateSale: () => {},
-    deleteSale: () => {},
     processPayroll: () => {}
   };
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,7 @@ const SalesPage: React.FC = () => {
   
   // Filter data based on search
   const filteredEstimates = estimates.filter(estimate => 
-    estimate.customer.toLowerCase().includes(searchText.toLowerCase()) ||
+    estimate.customer?.toLowerCase().includes(searchText.toLowerCase()) ||
     estimate.id.toLowerCase().includes(searchText.toLowerCase())
   );
   
@@ -167,8 +168,8 @@ const SalesPage: React.FC = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Estimates</p>
-                <p className="text-2xl font-bold">{estimates.filter(e => e.status === "Pending").length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Draft Estimates</p>
+                <p className="text-2xl font-bold">{estimates.filter(e => e.status === "Draft").length}</p>
               </div>
             </div>
           </CardContent>

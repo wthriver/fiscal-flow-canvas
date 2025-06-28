@@ -1,3 +1,4 @@
+
 import React, { useMemo } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -68,21 +69,12 @@ export const SaleDialog: React.FC<SaleDialogProps> = ({
   const handleSubmit = (data: z.infer<typeof saleSchema>) => {
     const amount = parseFloat(data.amount.replace(/[^0-9.]/g, ''));
     
-    const saleItem: SaleItem = {
-      id: `item-${Date.now()}`,
-      description: 'General Sale',
-      quantity: 1,
-      price: amount,
-      amount: amount
-    };
-    
     const saleData: Sale = {
       id: data.id,
       customer: data.customer,
       date: data.date,
       amount: amount,
       status: data.status as "Completed" | "Pending",
-      items: [saleItem],
       paymentMethod: data.paymentMethod,
       notes: data.notes
     };
@@ -221,9 +213,7 @@ export const SaleDialog: React.FC<SaleDialogProps> = ({
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="Completed">Completed</SelectItem>
-                        <SelectItem value="In Progress">In Progress</SelectItem>
-                        <SelectItem value="Cancelled">Cancelled</SelectItem>
-                        <SelectItem value="Refunded">Refunded</SelectItem>
+                        <SelectItem value="Pending">Pending</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

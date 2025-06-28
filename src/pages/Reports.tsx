@@ -2,9 +2,9 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FinancialReports } from "@/components/reports/FinancialReports";
-import { CashFlowStatement } from "@/components/reports/CashFlowStatement";
+import CashFlowStatement from "@/components/reports/CashFlowStatement";
 import { BalanceSheet } from "@/components/reports/BalanceSheet";
-import { ProfitLossStatement } from "@/components/reports/ProfitLossStatement";
+import ProfitLossStatement from "@/components/reports/ProfitLossStatement";
 import { AccountsReceivableAging } from "@/components/accounting/AccountsReceivableAging";
 import { CustomReportBuilder } from "@/components/reports/CustomReportBuilder";
 

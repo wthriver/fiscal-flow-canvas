@@ -40,6 +40,14 @@ export interface Company {
     previous: number;
     percentChange: number;
   };
+  outstandingInvoices?: {
+    amount: number;
+    percentChange: number;
+  };
+  activeCustomers?: {
+    count: number;
+    percentChange: number;
+  };
   payrollData?: {
     totalPayroll: number;
     employeeCount: number;
@@ -65,6 +73,8 @@ export interface Customer {
   status: 'Active' | 'Inactive';
   customerSince: string;
   totalSales?: number;
+  contactName?: string;
+  type?: string;
 }
 
 export interface Invoice {
@@ -291,10 +301,12 @@ export interface Sale {
   id: string;
   date: string;
   customer: string;
+  customerId?: string;
   amount: number;
   status: 'Completed' | 'Pending';
   paymentMethod?: string;
   notes?: string;
+  items?: SaleItem[];
 }
 
 export interface PayPeriod {
