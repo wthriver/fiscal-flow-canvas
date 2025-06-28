@@ -1,74 +1,75 @@
 
 import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { BankingIntegration } from "@/components/banking/BankingIntegration";
-import { ReportTabs } from "@/components/banking/reports/ReportTabs";
-import { TransactionDialog } from "@/components/banking/TransactionDialog";
+import { PlusCircle, Download, Upload } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
-import { Plus, Search, MoreHorizontal, Edit, Trash, DollarSign, TrendingUp, Building } from "lucide-react";
-import { toast } from "sonner";
-import { Transaction } from "@/types/company";
+import { BankingIntegration } from "@/components/banking/BankingIntegration";
+import { BankReconciliation } from "@/components/banking/BankReconciliation";
+import { CashFlowForecasting } from "@/components/banking/CashFlowForecasting";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AddTransactionDialog } from "@/components/banking/AddTransactionDialog";
+import { safeStringReplace, safeNumberParse } from "@/utils/typeHelpers";
 
 const Banking: React.FC = () => {
-  const { currentCompany, deleteTransaction, updateTransaction } = useCompany();
+  const { currentCompany, addTransaction } = useCompany();
   const [activeTab, setActiveTab] = useState("accounts");
+  const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const [selectedAccountId, setSelectedAccountId] = useState("");
 
-  const allTransactions = currentCompany.bankAccounts.flatMap(account => 
-    account.transactions.map(transaction => ({
+  const bankAccounts = currentCompany?.bankAccounts || [];
+  const transactions = currentCompany?.transactions || [];
+
+  // Get all transactions from all bank accounts
+  const allTransactions = bankAccounts.flatMap(account => 
+    (account.transactions || []).map(transaction => ({
       ...transaction,
-      accountName: account.name,
-      accountId: account.id
+      accountName: account.name
     }))
   );
 
-  const filteredTransactions = allTransactions.filter(transaction =>
-    transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.accountName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter transactions based on search term
+  const filteredTransactions = allTransactions.filter(transaction => {
+    const searchLower = searchTerm.toLowerCase();
+    const amountStr = typeof transaction.amount === 'string' 
+      ? transaction.amount 
+      : transaction.amount.toString();
+    
+    return (
+      transaction.description.toLowerCase().includes(searchLower) ||
+      transaction.category.toLowerCase().includes(searchLower) ||
+      safeStringReplace(amountStr, /[^0-9.-]/g, '').includes(searchTerm) ||
+      transaction.accountName.toLowerCase().includes(searchLower)
+    );
+  });
 
-  const totalBalance = currentCompany.bankAccounts.reduce((total, account) => {
+  // Calculate totals
+  const totalBalance = bankAccounts.reduce((sum, account) => {
     const balance = typeof account.balance === 'string' 
-      ? parseFloat(account.balance.replace(/[^0-9.-]+/g, "") || "0")
+      ? safeNumberParse(account.balance)
       : account.balance;
-    return total + balance;
+    return sum + balance;
   }, 0);
 
-  const monthlyChange = 15.2; // This would be calculated from actual data
-  const accountCount = currentCompany.bankAccounts.length;
+  const monthlyIncome = allTransactions
+    .filter(t => t.type === 'Credit' || t.type === 'Deposit')
+    .reduce((sum, transaction) => {
+      const amount = safeNumberParse(transaction.amount);
+      return sum + amount;
+    }, 0);
 
-  const handleEditTransaction = (transaction: Transaction & { accountId: string }) => {
-    setEditingTransaction(transaction);
-    setSelectedAccountId(transaction.accountId);
-    setIsTransactionDialogOpen(true);
-  };
+  const monthlyExpenses = allTransactions
+    .filter(t => t.type === 'Debit' || t.type === 'Withdrawal')
+    .reduce((sum, transaction) => {
+      const amount = safeNumberParse(transaction.amount);
+      return sum + Math.abs(amount);
+    }, 0);
 
-  const handleDeleteTransaction = (transactionId: string, accountId: string) => {
-    if (confirm("Are you sure you want to delete this transaction?")) {
-      deleteTransaction(transactionId, accountId);
-      toast.success("Transaction deleted successfully!");
-    }
-  };
-
-  const handleAddTransaction = (accountId: string) => {
-    setSelectedAccountId(accountId);
-    setEditingTransaction(null);
-    setIsTransactionDialogOpen(true);
-  };
-
-  const toggleReconciled = (transaction: Transaction & { accountId: string }) => {
-    updateTransaction(transaction.id, { reconciled: !transaction.reconciled });
-    toast.success(`Transaction ${transaction.reconciled ? 'unreconciled' : 'reconciled'}`);
+  const handleAddTransaction = (transactionData: any) => {
+    addTransaction(transactionData);
+    setIsAddTransactionOpen(false);
   };
 
   return (
@@ -78,81 +79,176 @@ const Banking: React.FC = () => {
           <h1 className="text-3xl font-bold">Banking</h1>
           <p className="text-muted-foreground">Manage your bank accounts and transactions</p>
         </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
+          <Button variant="outline" size="sm">
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+          <Button onClick={() => setIsAddTransactionOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Transaction
+          </Button>
+        </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Balance</p>
-                <p className="text-xl font-semibold">${totalBalance.toLocaleString()}</p>
-              </div>
-            </div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalBalance.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              Across {bankAccounts.length} accounts
+            </p>
           </CardContent>
         </Card>
+
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-blue-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Monthly Change</p>
-                <p className="text-xl font-semibold">+{monthlyChange}%</p>
-              </div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Income</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              ${monthlyIncome.toLocaleString()}
             </div>
+            <p className="text-xs text-muted-foreground">
+              This month
+            </p>
           </CardContent>
         </Card>
+
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Building className="h-5 w-5 text-purple-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Bank Accounts</p>
-                <p className="text-xl font-semibold">{accountCount}</p>
-              </div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              ${monthlyExpenses.toLocaleString()}
             </div>
+            <p className="text-xs text-muted-foreground">
+              This month
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="accounts">Accounts</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="accounts">Bank Accounts</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
+          <TabsTrigger value="reconciliation">Reconciliation</TabsTrigger>
           <TabsTrigger value="integration">Integration</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="forecasting">Forecasting</TabsTrigger>
         </TabsList>
 
         <TabsContent value="accounts" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {bankAccounts.map((account) => (
+              <Card key={account.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg">{account.name}</CardTitle>
+                      <CardDescription>
+                        {account.bankName} • {account.type}
+                      </CardDescription>
+                    </div>
+                    <Badge variant={account.isActive ? "default" : "secondary"}>
+                      {account.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Balance</span>
+                      <span className="font-medium">
+                        ${typeof account.balance === 'string' 
+                          ? safeNumberParse(account.balance).toLocaleString()
+                          : account.balance.toLocaleString()
+                        }
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Account Number</span>
+                      <span className="font-mono text-sm">
+                        ****{account.accountNumber.slice(-4)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Transactions</span>
+                      <span className="text-sm">
+                        {account.transactions?.length || 0}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="transactions" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <Input
+              placeholder="Search transactions..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-sm"
+            />
+            <div className="text-sm text-muted-foreground">
+              {filteredTransactions.length} transactions
+            </div>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Bank Accounts</CardTitle>
-              <CardDescription>Overview of all your connected bank accounts</CardDescription>
+              <CardTitle>Recent Transactions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {currentCompany.bankAccounts.map(account => {
-                  const balance = typeof account.balance === 'string' 
-                    ? parseFloat(account.balance.replace(/[^0-9.-]+/g, "") || "0")
-                    : account.balance;
+              <div className="space-y-2">
+                {filteredTransactions.slice(0, 10).map((transaction) => {
+                  const amount = safeNumberParse(transaction.amount);
+                  const isPositive = amount >= 0;
+                  const transactionType = transaction.type;
+                  const shouldShowPositive = transactionType === 'Credit' || transactionType === 'Deposit';
+                  const displayAmount = shouldShowPositive ? Math.abs(amount) : -Math.abs(amount);
                   
                   return (
-                    <div key={account.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h3 className="font-medium">{account.name}</h3>
-                        <p className="text-sm text-muted-foreground">{account.type || 'Checking'}</p>
+                    <div
+                      key={transaction.id}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{transaction.description}</p>
+                          <Badge variant="outline" className="text-xs">
+                            {transaction.type}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>{transaction.date}</span>
+                          <span>{transaction.category}</span>
+                          <span>{transaction.accountName}</span>
+                        </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">${balance.toLocaleString()}</p>
-                        <p className="text-sm text-muted-foreground">{account.transactions.length} transactions</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleAddTransaction(account.id)}>
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add Transaction
-                        </Button>
+                        <p className={`font-medium ${
+                          shouldShowPositive ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          ${Math.abs(displayAmount).toLocaleString()}
+                        </p>
+                        {transaction.reconciled && (
+                          <Badge variant="outline" className="text-xs">
+                            Reconciled
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   );
@@ -162,108 +258,24 @@ const Banking: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="transactions" className="space-y-4">
-          <div className="flex gap-4 items-center">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search transactions..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Transactions</CardTitle>
-              <CardDescription>All transactions across your bank accounts</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Account</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTransactions.length > 0 ? (
-                    filteredTransactions.map((transaction) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell>{transaction.date}</TableCell>
-                        <TableCell className="font-medium">{transaction.description}</TableCell>
-                        <TableCell>{transaction.accountName}</TableCell>
-                        <TableCell>{transaction.category}</TableCell>
-                        <TableCell className={transaction.amount.startsWith('+') ? 'text-green-600' : 'text-red-600'}>
-                          {transaction.amount}
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={transaction.reconciled ? "default" : "secondary"}
-                            className="cursor-pointer"
-                            onClick={() => toggleReconciled(transaction)}
-                          >
-                            {transaction.reconciled ? "Reconciled" : "Pending"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEditTransaction(transaction)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleDeleteTransaction(transaction.id, transaction.accountId)}
-                                className="text-red-600"
-                              >
-                                <Trash className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-4">
-                        No transactions found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+        <TabsContent value="reconciliation">
+          <BankReconciliation />
         </TabsContent>
 
-        <TabsContent value="integration" className="mt-6">
+        <TabsContent value="integration">
           <BankingIntegration />
         </TabsContent>
 
-        <TabsContent value="reports" className="mt-6">
-          <ReportTabs accountId="" />
+        <TabsContent value="forecasting">
+          <CashFlowForecasting />
         </TabsContent>
       </Tabs>
 
-      <TransactionDialog
-        isOpen={isTransactionDialogOpen}
-        onClose={() => setIsTransactionDialogOpen(false)}
-        transaction={editingTransaction}
-        bankAccountId={selectedAccountId}
+      <AddTransactionDialog 
+        open={isAddTransactionOpen}
+        onOpenChange={setIsAddTransactionOpen}
+        onSubmit={handleAddTransaction}
+        bankAccounts={bankAccounts}
       />
     </div>
   );
