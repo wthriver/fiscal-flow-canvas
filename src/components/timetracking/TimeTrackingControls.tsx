@@ -80,7 +80,7 @@ export const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
       hours: hours,
       description: description,
       billable: true,
-      status: "Pending"
+      status: "Draft" // Changed from "Pending" to "Draft"
     };
     
     onEntryComplete(newTimeEntry);

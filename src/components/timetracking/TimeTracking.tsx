@@ -141,7 +141,6 @@ export const TimeTracking: React.FC = () => {
         billable: formData.billable
       };
       
-      // Updated: Fix the type mismatch by passing the timeEntryId as string instead of the whole object
       updateTimeEntry(updatedEntry.id, {
         projectId: formData.projectId,
         date: formData.date,
@@ -162,7 +161,7 @@ export const TimeTracking: React.FC = () => {
         hours: formData.hours,
         description: formData.description,
         billable: formData.billable,
-        status: "Pending" // Default status for new entries
+        status: "Draft" // Changed from "Pending" to "Draft"
       };
       
       addTimeEntry(newTimeEntry);

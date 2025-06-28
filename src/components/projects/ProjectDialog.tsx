@@ -223,7 +223,7 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-medium">Status</label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
+              <Select value={formData.status} onValueChange={(value: "Planning" | "In Progress" | "Active" | "Completed" | "On Hold") => setFormData({...formData, status: value})}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -238,7 +238,7 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
             </div>
             <div>
               <label className="text-sm font-medium">Priority</label>
-              <Select value={formData.priority} onValueChange={(value) => setFormData({...formData, priority: value})}>
+              <Select value={formData.priority} onValueChange={(value: "Low" | "Medium" | "High") => setFormData({...formData, priority: value})}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

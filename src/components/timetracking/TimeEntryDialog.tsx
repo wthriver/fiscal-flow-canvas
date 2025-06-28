@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -32,7 +31,7 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
     hourlyRate: "",
     description: "",
     billable: true,
-    status: "Draft"
+    status: "Draft" as "Draft" | "Submitted" | "Approved"
   });
 
   useEffect(() => {
@@ -237,7 +236,7 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
             </div>
             <div>
               <label className="text-sm font-medium">Status</label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
+              <Select value={formData.status} onValueChange={(value: "Draft" | "Submitted" | "Approved") => setFormData({...formData, status: value})}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -245,7 +244,6 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
                   <SelectItem value="Draft">Draft</SelectItem>
                   <SelectItem value="Submitted">Submitted</SelectItem>
                   <SelectItem value="Approved">Approved</SelectItem>
-                  <SelectItem value="Billed">Billed</SelectItem>
                 </SelectContent>
               </Select>
             </div>

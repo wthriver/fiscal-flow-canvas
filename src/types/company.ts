@@ -1,4 +1,3 @@
-
 export interface Company {
   id: string;
   name: string;
@@ -423,4 +422,12 @@ export interface SerialNumber {
   location?: string;
   soldTo?: string;
   saleDate?: string;
+}
+
+export interface SaleItem {
+  id: string;
+  description: string;
+  quantity: number;
+  price: number;
+  amount: number;
 }
