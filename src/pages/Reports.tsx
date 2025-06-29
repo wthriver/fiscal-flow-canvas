@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +7,8 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { FinancialReports } from "@/components/reports/FinancialReports";
 import { CustomReportBuilder } from "@/components/reports/CustomReportBuilder";
 import { BalanceSheet } from "@/components/reports/BalanceSheet";
-import { ProfitLossStatement } from "@/components/reports/ProfitLossStatement";
-import { CashFlowStatement } from "@/components/reports/CashFlowStatement";
+import ProfitLossStatement from "@/components/reports/ProfitLossStatement";
+import CashFlowStatement from "@/components/reports/CashFlowStatement";
 
 const Reports: React.FC = () => {
   const { currentCompany } = useCompany();
