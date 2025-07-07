@@ -1,14 +1,18 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ViewButton, ActionDropdown } from "@/components/common/ActionButtons";
 import { Invoice } from "@/types/company";
+import { useCompany } from "@/contexts/CompanyContext";
 
 interface InvoiceListProps {
   invoices: Invoice[];
 }
 
 const InvoiceList: React.FC<InvoiceListProps> = ({ invoices }) => {
+  const { updateInvoice, deleteInvoice } = useCompany();
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   return (
     <Table>
       <TableHeader>

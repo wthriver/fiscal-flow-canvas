@@ -11,12 +11,16 @@ import { BankReconciliation } from "@/components/banking/BankReconciliation";
 import { CashFlowForecasting } from "@/components/banking/CashFlowForecasting";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddTransactionDialog } from "@/components/banking/AddTransactionDialog";
+import { BankAccountDialog } from "@/components/banking/BankAccountDialog";
 import { safeStringReplace, safeNumberParse } from "@/utils/typeHelpers";
+import { toast } from "sonner";
 
 const Banking: React.FC = () => {
-  const { currentCompany, addTransaction } = useCompany();
+  const { currentCompany, addTransaction, addBankAccount, updateBankAccount } = useCompany();
   const [activeTab, setActiveTab] = useState("accounts");
   const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
+  const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   const bankAccounts = currentCompany?.bankAccounts || [];
@@ -72,6 +76,61 @@ const Banking: React.FC = () => {
     setIsAddTransactionOpen(false);
   };
 
+  const handleAddBankAccount = (accountData: any) => {
+    if (editingAccount) {
+      updateBankAccount(accountData);
+    } else {
+      addBankAccount(accountData);
+    }
+    setIsAddAccountOpen(false);
+    setEditingAccount(null);
+  };
+
+  const handleEditAccount = (account: any) => {
+    setEditingAccount(account);
+    setIsAddAccountOpen(true);
+  };
+
+  const handleImportTransactions = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,.xlsx,.xls';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        toast.success(`Importing transactions from ${file.name}`);
+        // Here you would implement actual CSV/Excel parsing
+      }
+    };
+    input.click();
+  };
+
+  const handleExportTransactions = () => {
+    const data = allTransactions.map(t => ({
+      Date: t.date,
+      Description: t.description,
+      Account: t.accountName,
+      Category: t.category,
+      Type: t.type,
+      Amount: t.amount,
+      Reconciled: t.reconciled ? 'Yes' : 'No'
+    }));
+    
+    const csvContent = [
+      Object.keys(data[0]).join(','),
+      ...data.map(row => Object.values(row).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    toast.success('Transactions exported successfully');
+  };
+
   return (
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center">
@@ -80,11 +139,11 @@ const Banking: React.FC = () => {
           <p className="text-muted-foreground">Manage your bank accounts and transactions</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleImportTransactions}>
             <Upload className="mr-2 h-4 w-4" />
             Import
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExportTransactions}>
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
@@ -148,9 +207,16 @@ const Banking: React.FC = () => {
         </TabsList>
 
         <TabsContent value="accounts" className="space-y-4">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Bank Accounts</h3>
+            <Button onClick={() => setIsAddAccountOpen(true)}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Account
+            </Button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {bankAccounts.map((account) => (
-              <Card key={account.id}>
+              <Card key={account.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
@@ -187,10 +253,40 @@ const Banking: React.FC = () => {
                         {account.transactions?.length || 0}
                       </span>
                     </div>
+                    <div className="flex justify-between pt-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleEditAccount(account)}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setActiveTab("transactions")}
+                      >
+                        View Transactions
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
+            
+            {bankAccounts.length === 0 && (
+              <div className="col-span-2 text-center py-8">
+                <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
+                  <PlusCircle className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No bank accounts</h3>
+                <p className="text-muted-foreground mb-4">Connect your first bank account to get started</p>
+                <Button onClick={() => setIsAddAccountOpen(true)}>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Your First Account
+                </Button>
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -276,6 +372,13 @@ const Banking: React.FC = () => {
         onOpenChange={setIsAddTransactionOpen}
         onSubmit={handleAddTransaction}
         bankAccounts={bankAccounts}
+      />
+
+      <BankAccountDialog 
+        open={isAddAccountOpen}
+        onOpenChange={setIsAddAccountOpen}
+        onSubmit={handleAddBankAccount}
+        account={editingAccount}
       />
     </div>
   );

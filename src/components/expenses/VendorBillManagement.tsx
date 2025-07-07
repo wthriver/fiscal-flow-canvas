@@ -40,12 +40,44 @@ interface BillItem {
 }
 
 export const VendorBillManagement = () => {
-  const { currentCompany } = useCompany();
+  const { currentCompany, addExpense } = useCompany();
   const [newBillOpen, setNewBillOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [billForm, setBillForm] = useState({
+    billNumber: "",
+    vendor: "",
+    date: new Date().toISOString().split('T')[0],
+    dueDate: "",
+    amount: "",
+    category: "",
+    description: "",
+    poNumber: ""
+  });
 
-  // Mock vendor bills data
-  const vendorBills: VendorBill[] = [
+  // Get vendor bills from company expenses or create initial data
+  const getVendorBills = (): VendorBill[] => {
+    const expenses = currentCompany?.expenses || [];
+    const existingBills = expenses
+      .filter(expense => expense.vendor && expense.category)
+      .map(expense => ({
+        id: expense.id,
+        billNumber: expense.id,
+        vendor: expense.vendor,
+        vendorId: expense.id,
+        date: expense.date,
+        dueDate: expense.date, // Use same date if no due date
+        amount: typeof expense.amount === 'string' 
+          ? parseFloat(expense.amount.replace(/[$,]/g, '')) || 0
+          : expense.amount,
+        status: expense.status === 'Paid' ? 'Paid' as const : 'Pending Approval' as const,
+        category: expense.category,
+        description: expense.description || 'No description',
+        poNumber: expense.id
+      }));
+
+    // Add some sample bills if none exist
+    if (existingBills.length === 0) {
+      return [
     {
       id: "VB-001",
       billNumber: "BILL-2024-001",
@@ -79,8 +111,84 @@ export const VendorBillManagement = () => {
       status: "Approved",
       category: "Software",
       description: "Annual software licensing"
+      }
+    ];
+  }
+  
+  return existingBills.length > 0 ? existingBills : [
+    {
+      id: "VB-001",
+      billNumber: "BILL-2024-001",
+      vendor: "Office Supplies Inc",
+      date: "2024-01-15",
+      dueDate: "2024-02-15",
+      amount: 1250.00,
+      status: "Pending Approval" as const,
+      category: "Office Supplies",
+      description: "Monthly office supplies order",
+      poNumber: "PO-001"
+    },
+    {
+      id: "VB-002",
+      billNumber: "BILL-2024-002",
+      vendor: "Electric Company",
+      date: "2024-01-10",
+      dueDate: "2024-01-25",
+      amount: 450.00,
+      status: "Overdue" as const,
+      category: "Utilities",
+      description: "Monthly electricity bill"
+    },
+    {
+      id: "VB-003",
+      billNumber: "BILL-2024-003",
+      vendor: "Software Solutions LLC",
+      date: "2024-01-20",
+      dueDate: "2024-02-20",
+      amount: 2500.00,
+      status: "Approved" as const,
+      category: "Software",
+      description: "Annual software licensing"
     }
   ];
+};
+
+const vendorBills = getVendorBills();
+
+const handleCreateBill = () => {
+  if (!billForm.billNumber || !billForm.vendor || !billForm.amount || !billForm.category) {
+    toast.error("Please fill in all required fields");
+    return;
+  }
+
+  const newExpense = {
+    id: billForm.billNumber || `VB-${Date.now()}`,
+    date: billForm.date,
+    category: billForm.category,
+    vendor: billForm.vendor,
+    amount: parseFloat(billForm.amount),
+    status: 'Pending' as const,
+    paymentMethod: 'Vendor Bill',
+    description: billForm.description || `Bill from ${billForm.vendor}`
+  };
+
+  addExpense(newExpense);
+  toast.success("Vendor bill created successfully");
+  
+  // Reset form
+  setBillForm({
+    billNumber: "",
+    vendor: "",
+    date: new Date().toISOString().split('T')[0],
+    dueDate: "",
+    amount: "",
+    category: "",
+    description: "",
+    poNumber: ""
+  });
+  
+  setNewBillOpen(false);
+};
 
   const getStatusIcon = (status: VendorBill["status"]) => {
     switch (status) {
@@ -154,66 +262,96 @@ export const VendorBillManagement = () => {
             </DialogHeader>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Bill Number</Label>
-                <Input placeholder="BILL-2024-004" />
+                <Label>Bill Number*</Label>
+                <Input 
+                  placeholder="BILL-2024-004" 
+                  value={billForm.billNumber}
+                  onChange={(e) => setBillForm({...billForm, billNumber: e.target.value})}
+                />
               </div>
               <div>
-                <Label>Vendor</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select vendor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="office-supplies">Office Supplies Inc</SelectItem>
-                    <SelectItem value="electric">Electric Company</SelectItem>
-                    <SelectItem value="software">Software Solutions LLC</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Vendor*</Label>
+                <Input 
+                  placeholder="Enter vendor name" 
+                  value={billForm.vendor}
+                  onChange={(e) => setBillForm({...billForm, vendor: e.target.value})}
+                />
               </div>
               <div>
-                <Label>Bill Date</Label>
-                <Input type="date" />
+                <Label>Bill Date*</Label>
+                <Input 
+                  type="date" 
+                  value={billForm.date}
+                  onChange={(e) => setBillForm({...billForm, date: e.target.value})}
+                />
               </div>
               <div>
                 <Label>Due Date</Label>
-                <Input type="date" />
+                <Input 
+                  type="date" 
+                  value={billForm.dueDate}
+                  onChange={(e) => setBillForm({...billForm, dueDate: e.target.value})}
+                />
               </div>
               <div>
-                <Label>Amount</Label>
-                <Input type="number" placeholder="0.00" />
+                <Label>Amount*</Label>
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 border border-r-0 border-input rounded-l-md bg-muted text-muted-foreground">
+                    $
+                  </span>
+                  <Input 
+                    type="number" 
+                    placeholder="0.00" 
+                    step="0.01"
+                    min="0"
+                    className="rounded-l-none"
+                    value={billForm.amount}
+                    onChange={(e) => setBillForm({...billForm, amount: e.target.value})}
+                  />
+                </div>
               </div>
               <div>
-                <Label>Category</Label>
-                <Select>
+                <Label>Category*</Label>
+                <Select value={billForm.category} onValueChange={(value) => setBillForm({...billForm, category: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="office-supplies">Office Supplies</SelectItem>
-                    <SelectItem value="utilities">Utilities</SelectItem>
-                    <SelectItem value="software">Software</SelectItem>
-                    <SelectItem value="rent">Rent</SelectItem>
-                    <SelectItem value="insurance">Insurance</SelectItem>
+                    <SelectItem value="Office Supplies">Office Supplies</SelectItem>
+                    <SelectItem value="Utilities">Utilities</SelectItem>
+                    <SelectItem value="Software">Software</SelectItem>
+                    <SelectItem value="Rent">Rent</SelectItem>
+                    <SelectItem value="Insurance">Insurance</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="Travel">Travel</SelectItem>
+                    <SelectItem value="Professional Services">Professional Services</SelectItem>
+                    <SelectItem value="Equipment">Equipment</SelectItem>
+                    <SelectItem value="Maintenance">Maintenance</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="col-span-2">
                 <Label>Description</Label>
-                <Textarea placeholder="Bill description..." />
+                <Textarea 
+                  placeholder="Bill description..." 
+                  value={billForm.description}
+                  onChange={(e) => setBillForm({...billForm, description: e.target.value})}
+                />
               </div>
               <div className="col-span-2">
                 <Label>PO Number (Optional)</Label>
-                <Input placeholder="PO-001" />
+                <Input 
+                  placeholder="PO-001" 
+                  value={billForm.poNumber}
+                  onChange={(e) => setBillForm({...billForm, poNumber: e.target.value})}
+                />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4">
               <Button variant="outline" onClick={() => setNewBillOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={() => {
-                toast.success("Vendor bill created successfully");
-                setNewBillOpen(false);
-              }}>
+              <Button onClick={handleCreateBill}>
                 Create Bill
               </Button>
             </div>
