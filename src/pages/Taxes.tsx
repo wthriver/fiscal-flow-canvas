@@ -1,18 +1,16 @@
-
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Calculator, FileText, AlertCircle, TrendingUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { PlusCircle, Calculator, FileText, TrendingUp, Calendar } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { TaxRateDialog } from "@/components/taxes/TaxRateDialog";
-import { safeNumberParse } from "@/utils/typeHelpers";
+import { DataTable, Column } from "@/components/common/DataTable";
 import { TaxRate } from "@/types/company";
 
 const Taxes: React.FC = () => {
-  const { currentCompany } = useCompany();
-  const [activeTab, setActiveTab] = useState("overview");
+  const { currentCompany, addTaxRate, updateTaxRate, deleteTaxRate } = useCompany();
   const [isTaxRateDialogOpen, setIsTaxRateDialogOpen] = useState(false);
   const [editingTaxRate, setEditingTaxRate] = useState<TaxRate | null>(null);
 
@@ -20,26 +18,51 @@ const Taxes: React.FC = () => {
   const invoices = currentCompany?.invoices || [];
   const expenses = currentCompany?.expenses || [];
 
-  // Calculate tax statistics
+  // Calculate tax summaries
   const totalTaxCollected = invoices.reduce((sum, invoice) => {
-    return sum + (invoice.taxAmount || 0);
+    const taxRate = taxRates.find(tr => tr.name === invoice.taxRate);
+    const rate = taxRate ? taxRate.rate / 100 : 0;
+    const amount = typeof invoice.amount === 'string' 
+      ? parseFloat(invoice.amount.replace(/[^0-9.-]+/g, "")) 
+      : invoice.amount;
+    return sum + (amount * rate);
   }, 0);
 
-  const totalTaxableIncome = invoices.reduce((sum, invoice) => {
-    return sum + invoice.total;
+  const totalTaxPaid = expenses.reduce((sum, expense) => {
+    const amount = typeof expense.amount === 'string' 
+      ? parseFloat(expense.amount.replace(/[^0-9.-]+/g, "")) 
+      : expense.amount;
+    return sum + (amount * 0.08); // Assuming 8% tax on expenses
   }, 0);
 
-  const totalDeductibleExpenses = expenses
-    .filter(expense => expense.status === 'Paid')
-    .reduce((sum, expense) => {
-      const amount = safeNumberParse(expense.amount);
-      return sum + amount;
-    }, 0);
+  const taxOwed = totalTaxCollected - totalTaxPaid;
 
-  const estimatedTaxLiability = totalTaxableIncome * 0.25; // Simplified calculation
-
-  // Get default tax rate
-  const defaultTaxRate = taxRates.find(rate => rate.isDefault);
+  const taxRateColumns: Column<TaxRate>[] = [
+    {
+      key: 'name',
+      header: 'Tax Name',
+      sortable: true
+    },
+    {
+      key: 'rate',
+      header: 'Rate',
+      sortable: true,
+      render: (value) => `${value}%`
+    },
+    {
+      key: 'description',
+      header: 'Description'
+    },
+    {
+      key: 'isActive',
+      header: 'Status',
+      render: (value) => (
+        <Badge variant={value ? 'default' : 'secondary'}>
+          {value ? 'Active' : 'Inactive'}
+        </Badge>
+      )
+    }
+  ];
 
   const handleAddTaxRate = () => {
     setEditingTaxRate(null);
@@ -51,28 +74,32 @@ const Taxes: React.FC = () => {
     setIsTaxRateDialogOpen(true);
   };
 
+  const handleSaveTaxRate = (taxRateData: Partial<TaxRate>) => {
+    if (editingTaxRate) {
+      updateTaxRate({ ...editingTaxRate, ...taxRateData } as TaxRate);
+    } else {
+      const newTaxRate: TaxRate = {
+        id: `tax-${Date.now()}`,
+        name: taxRateData.name!,
+        rate: taxRateData.rate!,
+        description: taxRateData.description || '',
+        isActive: taxRateData.isActive ?? true
+      };
+      addTaxRate(newTaxRate);
+    }
+    setIsTaxRateDialogOpen(false);
+  };
+
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Tax Management</h1>
-          <p className="text-muted-foreground">
-            Manage tax rates, compliance, and calculations
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <FileText className="mr-2 h-4 w-4" />
-            Generate Report
-          </Button>
-          <Button onClick={handleAddTaxRate}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Tax Rate
-          </Button>
+          <p className="text-muted-foreground">Manage tax rates and track tax obligations</p>
         </div>
       </div>
 
-      {/* Tax Overview Cards */}
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -80,281 +107,148 @@ const Taxes: React.FC = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalTaxCollected.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              From {invoices.length} invoices
-            </p>
+            <div className="text-2xl font-bold text-green-600">
+              ${totalTaxCollected.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">From sales</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxable Income</CardTitle>
+            <CardTitle className="text-sm font-medium">Tax Paid</CardTitle>
             <Calculator className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalTaxableIncome.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              Total revenue
-            </p>
+            <div className="text-2xl font-bold text-red-600">
+              ${totalTaxPaid.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">On expenses</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Deductible Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">Net Tax Owed</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalDeductibleExpenses.toLocaleString()}</div>
+            <div className={`text-2xl font-bold ${taxOwed >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+              ${Math.abs(taxOwed).toLocaleString()}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Tax deductions
+              {taxOwed >= 0 ? 'Amount owed' : 'Overpaid'}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Estimated Liability</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Tax Rates</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${estimatedTaxLiability.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              Estimated tax due
-            </p>
+            <div className="text-2xl font-bold">{taxRates.length}</div>
+            <p className="text-xs text-muted-foreground">Active rates</p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs defaultValue="rates" className="w-full">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="rates">Tax Rates</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="compliance">Compliance</TabsTrigger>
+          <TabsTrigger value="reports">Tax Reports</TabsTrigger>
+          <TabsTrigger value="filings">Tax Filings</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tax Summary</CardTitle>
-                <CardDescription>Current period tax information</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Gross Revenue</span>
-                    <span className="font-medium">${totalTaxableIncome.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Deductible Expenses</span>
-                    <span className="font-medium">-${totalDeductibleExpenses.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Net Taxable Income</span>
-                    <span className="font-medium">
-                      ${(totalTaxableIncome - totalDeductibleExpenses).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="border-t pt-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">Estimated Tax Liability</span>
-                      <span className="font-bold text-lg">${estimatedTaxLiability.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Active Tax Rates</CardTitle>
-                <CardDescription>Currently configured tax rates</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {taxRates.slice(0, 5).map((rate) => (
-                    <div key={rate.id} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium">{rate.name}</span>
-                        {rate.isDefault && (
-                          <Badge variant="outline" className="text-xs">Default</Badge>
-                        )}
-                      </div>
-                      <span className="font-medium">{rate.rate}%</span>
-                    </div>
-                  ))}
-                  {taxRates.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No tax rates configured</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Monthly Tax Breakdown</CardTitle>
-              <CardDescription>Tax collected and paid by month</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {['January', 'February', 'March', 'April', 'May', 'June'].map((month) => {
-                  // This is a simplified example - in a real app, you'd calculate actual monthly data
-                  const monthlyTax = totalTaxCollected / 6; // Simplified calculation
-                  
-                  return (
-                    <div key={month} className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">{month}</span>
-                      <span className="font-medium">${monthlyTax.toLocaleString()}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="rates" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Tax Rates</h2>
+            <Button onClick={handleAddTaxRate}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Tax Rate
+            </Button>
+          </div>
+          
           <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Tax Rates</CardTitle>
-                  <CardDescription>Manage your tax rates and jurisdictions</CardDescription>
-                </div>
-                <Button onClick={handleAddTaxRate}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Tax Rate
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {taxRates.map((rate) => (
-                  <div key={rate.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-medium">{rate.name}</span>
-                        {rate.isDefault && (
-                          <Badge variant="default" className="text-xs">Default</Badge>
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {rate.description || 'No description'}
-                        {rate.jurisdiction && ` • ${rate.jurisdiction}`}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-lg">{rate.rate}%</div>
-                      {rate.effectiveDate && (
-                        <div className="text-xs text-muted-foreground">
-                          Effective: {rate.effectiveDate}
-                        </div>
-                      )}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditTaxRate(rate)}
-                      className="ml-2"
-                    >
-                      Edit
-                    </Button>
-                  </div>
-                ))}
-                {taxRates.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No tax rates configured</p>
-                    <Button onClick={handleAddTaxRate} className="mt-2">
-                      Add Your First Tax Rate
-                    </Button>
-                  </div>
-                )}
-              </div>
+            <CardContent className="p-6">
+              <DataTable
+                data={taxRates}
+                columns={taxRateColumns}
+                onEdit={handleEditTaxRate}
+                onDelete={(taxRate) => deleteTaxRate(taxRate.id)}
+                searchPlaceholder="Search tax rates..."
+                emptyMessage="No tax rates found. Add your first tax rate to get started."
+              />
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="reports">
-          <div className="space-y-6">
+        <TabsContent value="reports" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Tax Reports</CardTitle>
-                <CardDescription>Generate various tax reports for compliance</CardDescription>
+                <CardTitle>Sales Tax Report</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 border rounded-lg">
-                    <h3 className="font-medium mb-2">Sales Tax Report</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Detailed breakdown of sales tax collected
-                    </p>
-                    <Button variant="outline" size="sm">Generate Report</Button>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span>Total Sales:</span>
+                    <span>${invoices.reduce((sum, inv) => {
+                      const amount = typeof inv.amount === 'string' 
+                        ? parseFloat(inv.amount.replace(/[^0-9.-]+/g, "")) 
+                        : inv.amount;
+                      return sum + amount;
+                    }, 0).toLocaleString()}</span>
                   </div>
-                  <div className="p-4 border rounded-lg">
-                    <h3 className="font-medium mb-2">Income Tax Summary</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Summary of taxable income and deductions
-                    </p>
-                    <Button variant="outline" size="sm">Generate Report</Button>
+                  <div className="flex justify-between">
+                    <span>Tax Collected:</span>
+                    <span>${totalTaxCollected.toLocaleString()}</span>
                   </div>
-                  <div className="p-4 border rounded-lg">
-                    <h3 className="font-medium mb-2">Quarterly Tax Report</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Quarterly tax filing report
-                    </p>
-                    <Button variant="outline" size="sm">Generate Report</Button>
+                  <Button className="w-full">Generate Report</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Expense Tax Report</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span>Total Expenses:</span>
+                    <span>${expenses.reduce((sum, exp) => {
+                      const amount = typeof exp.amount === 'string' 
+                        ? parseFloat(exp.amount.replace(/[^0-9.-]+/g, "")) 
+                        : exp.amount;
+                      return sum + amount;
+                    }, 0).toLocaleString()}</span>
                   </div>
-                  <div className="p-4 border rounded-lg">
-                    <h3 className="font-medium mb-2">Annual Tax Summary</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Year-end tax summary and analysis
-                    </p>
-                    <Button variant="outline" size="sm">Generate Report</Button>
+                  <div className="flex justify-between">
+                    <span>Tax Paid:</span>
+                    <span>${totalTaxPaid.toLocaleString()}</span>
                   </div>
+                  <Button className="w-full">Generate Report</Button>
                 </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="compliance">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tax Compliance</CardTitle>
-                <CardDescription>Ensure your tax compliance is up to date</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">Quarterly Filing</p>
-                      <p className="text-sm text-muted-foreground">Next due: March 31, 2024</p>
-                    </div>
-                    <Badge variant="outline">Pending</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">Sales Tax Remittance</p>
-                      <p className="text-sm text-muted-foreground">Monthly filing required</p>
-                    </div>
-                    <Badge variant="default">Current</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">Annual Tax Return</p>
-                      <p className="text-sm text-muted-foreground">Due: April 15, 2024</p>
-                    </div>
-                    <Badge variant="outline">Upcoming</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <TabsContent value="filings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upcoming Tax Filings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No upcoming tax filings</p>
+                <Button className="mt-4">Schedule Filing</Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
@@ -362,7 +256,7 @@ const Taxes: React.FC = () => {
         open={isTaxRateDialogOpen}
         onOpenChange={setIsTaxRateDialogOpen}
         taxRate={editingTaxRate}
-        onSave={() => setIsTaxRateDialogOpen(false)}
+        onSave={handleSaveTaxRate}
       />
     </div>
   );

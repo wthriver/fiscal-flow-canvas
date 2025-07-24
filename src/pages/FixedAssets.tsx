@@ -1,13 +1,8 @@
-
 import React from "react";
-import { FixedAssetsTracking } from "@/components/accounting/FixedAssetsTracking";
+import { FixedAssetsManager } from "@/components/fixedassets/FixedAssetsManager";
 
 const FixedAssets: React.FC = () => {
-  return (
-    <div className="container mx-auto p-4 space-y-6">
-      <FixedAssetsTracking />
-    </div>
-  );
+  return <FixedAssetsManager />;
 };
 
 export default FixedAssets;

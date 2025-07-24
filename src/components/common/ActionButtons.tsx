@@ -31,30 +31,53 @@ export const ExportButton: React.FC<{ type: string }> = ({ type }) => (
   </>
 );
 
-export const ViewButton: React.FC<{ id: string; type: string }> = ({ id, type }) => (
-  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+interface ActionButtonProps {
+  id: string;
+  type: string;
+  onView?: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
+}
+
+export const ViewButton: React.FC<ActionButtonProps> = ({ id, onView }) => (
+  <Button 
+    variant="ghost" 
+    size="sm" 
+    className="h-8 w-8 p-0"
+    onClick={() => onView?.(id)}
+  >
     <Eye className="h-4 w-4" />
   </Button>
 );
 
-export const ActionDropdown: React.FC<{ id: string; type: string }> = ({ id, type }) => (
+export const ActionDropdown: React.FC<ActionButtonProps> = ({ 
+  id, 
+  type, 
+  onEdit, 
+  onDelete, 
+  onDuplicate 
+}) => (
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
       <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
         <MoreHorizontal className="h-4 w-4" />
       </Button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent align="end">
-      <DropdownMenuItem>
+    <DropdownMenuContent align="end" className="bg-popover border shadow-md">
+      <DropdownMenuItem onClick={() => onEdit?.(id)}>
         <Edit className="mr-2 h-4 w-4" />
         Edit {type}
       </DropdownMenuItem>
-      <DropdownMenuItem>
+      <DropdownMenuItem onClick={() => onDuplicate?.(id)}>
         <Copy className="mr-2 h-4 w-4" />
         Duplicate
       </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem className="text-red-600">
+      <DropdownMenuItem 
+        className="text-destructive focus:text-destructive"
+        onClick={() => onDelete?.(id)}
+      >
         <Trash2 className="mr-2 h-4 w-4" />
         Delete
       </DropdownMenuItem>

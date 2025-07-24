@@ -48,8 +48,29 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ invoices }) => {
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end items-center gap-1">
-                  <ViewButton id={invoice.id} type="Invoice" />
-                  <ActionDropdown id={invoice.id} type="Invoice" />
+                  <ViewButton 
+                    id={invoice.id} 
+                    type="Invoice"
+                    onView={(id) => {
+                      setSelectedInvoice(invoice);
+                      setStatusDialogOpen(true);
+                    }}
+                  />
+                  <ActionDropdown 
+                    id={invoice.id} 
+                    type="Invoice"
+                    onEdit={(id) => {
+                      // Handle edit functionality
+                      console.log('Edit invoice:', id);
+                    }}
+                    onDelete={(id) => {
+                      deleteInvoice(id);
+                    }}
+                    onDuplicate={(id) => {
+                      const duplicate = { ...invoice, id: `dup-${Date.now()}` };
+                      updateInvoice(duplicate);
+                    }}
+                  />
                 </div>
               </TableCell>
             </TableRow>

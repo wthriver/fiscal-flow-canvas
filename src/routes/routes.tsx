@@ -18,6 +18,16 @@ import CRM from '@/pages/CRM';
 import Integrations from '@/pages/Integrations';
 import PurchaseOrders from '@/pages/PurchaseOrders';
 import PaymentProcessing from '@/pages/PaymentProcessing';
+import Sales from '@/pages/Sales';
+import BankingIntegration from '@/pages/BankingIntegration';
+import ChartOfAccounts from '@/pages/ChartOfAccounts';
+import VendorBills from '@/pages/VendorBills';
+import FixedAssets from '@/pages/FixedAssets';
+import Taxes from '@/pages/Taxes';
+import Journal from '@/pages/Journal';
+import UserManagement from '@/pages/UserManagement';
+import AuditTrail from '@/pages/AuditTrail';
+import MultiCurrency from '@/pages/MultiCurrency';
 import NotFound from '@/pages/NotFound';
 
 export const AppRoutes = () => {
@@ -39,6 +49,16 @@ export const AppRoutes = () => {
       <Route path="/integrations" element={<Integrations />} />
       <Route path="/purchase-orders" element={<PurchaseOrders />} />
       <Route path="/payment-processing" element={<PaymentProcessing />} />
+      <Route path="/sales" element={<Sales />} />
+      <Route path="/banking-integration" element={<BankingIntegration />} />
+      <Route path="/chart-of-accounts" element={<ChartOfAccounts />} />
+      <Route path="/vendor-bills" element={<VendorBills />} />
+      <Route path="/fixed-assets" element={<FixedAssets />} />
+      <Route path="/taxes" element={<Taxes />} />
+      <Route path="/journal" element={<Journal />} />
+      <Route path="/user-management" element={<UserManagement />} />
+      <Route path="/audit-trail" element={<AuditTrail />} />
+      <Route path="/multi-currency" element={<MultiCurrency />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
