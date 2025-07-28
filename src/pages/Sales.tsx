@@ -21,7 +21,7 @@ const Sales: React.FC = () => {
   const sales = currentCompany?.sales || [];
 
   const totalEstimateValue = estimates.reduce((sum, est) => sum + (est.total || 0), 0);
-  const totalSalesValue = sales.reduce((sum, sale) => sum + (sale.total || 0), 0);
+  const totalSalesValue = sales.reduce((sum, sale) => sum + (sale.amount || 0), 0);
   const conversionRate = estimates.length > 0 ? (sales.length / estimates.length) * 100 : 0;
 
   const estimateColumns: Column<Estimate>[] = [
@@ -41,7 +41,7 @@ const Sales: React.FC = () => {
       sortable: true
     },
     {
-      key: 'validUntil',
+      key: 'expiryDate',
       header: 'Valid Until',
       sortable: true
     },
@@ -79,7 +79,7 @@ const Sales: React.FC = () => {
       sortable: true
     },
     {
-      key: 'total',
+      key: 'amount',
       header: 'Total',
       sortable: true,
       render: (value) => `$${(value || 0).toLocaleString()}`
@@ -111,11 +111,13 @@ const Sales: React.FC = () => {
     } else {
       const newEstimate: Estimate = {
         id: `est-${Date.now()}`,
+        estimateNumber: `EST-${Date.now()}`,
+        customerId: estimateData.customer!,
         customer: estimateData.customer!,
         date: estimateData.date || new Date().toISOString().split('T')[0],
-        validUntil: estimateData.validUntil!,
+        expiryDate: estimateData.expiryDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         total: estimateData.total || 0,
-        status: estimateData.status || 'Pending',
+        status: (estimateData.status as 'Draft' | 'Sent' | 'Accepted' | 'Declined') || 'Draft',
         items: estimateData.items || []
       };
       addEstimate(newEstimate);
@@ -141,7 +143,7 @@ const Sales: React.FC = () => {
         id: `sale-${Date.now()}`,
         customer: saleData.customer!,
         date: saleData.date || new Date().toISOString().split('T')[0],
-        total: saleData.total || 0,
+        amount: saleData.amount || 0,
         status: saleData.status || 'Pending',
         items: saleData.items || []
       };
@@ -262,8 +264,8 @@ const Sales: React.FC = () => {
       </Tabs>
 
       <EstimateDialog
-        open={isEstimateDialogOpen}
-        onOpenChange={setIsEstimateDialogOpen}
+        isOpen={isEstimateDialogOpen}
+        onClose={() => setIsEstimateDialogOpen(false)}
         estimate={editingEstimate}
         onSave={handleSaveEstimate}
       />
@@ -271,8 +273,9 @@ const Sales: React.FC = () => {
       <SaleDialog
         open={isSaleDialogOpen}
         onOpenChange={setIsSaleDialogOpen}
+        onSubmit={handleSaveSale}
+        customers={currentCompany?.customers || []}
         sale={editingSale}
-        onSave={handleSaveSale}
       />
     </div>
   );
