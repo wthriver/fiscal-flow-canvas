@@ -370,23 +370,118 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     getCustomerInvoices,
     getProjectsByCustomer,
     
-    // Legacy operations (keeping for compatibility)
-    updateTaxRate: () => {},
-    addTaxRate: () => {},
-    deleteTaxRate: () => {},
-    updateAccount: () => {},
-    addAccount: () => {},
-    deleteAccount: () => {},
-    addBankAccount: () => {},
-    updateBankAccount: () => {},
-    deleteBankAccount: () => {},
-    addBudget: () => {},
-    updateBudget: () => {},
-    deleteBudget: () => {},
-    addTimeEntry: () => {},
-    updateTimeEntry: () => {},
-    deleteTimeEntry: () => {},
-    processPayroll: () => {}
+    // Tax Rate operations
+    updateTaxRate: (taxRate) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        taxRates: prev.taxRates?.map(tr => tr.id === taxRate.id ? taxRate : tr) || []
+      }));
+    },
+    addTaxRate: (taxRate) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        taxRates: [...(prev.taxRates || []), taxRate]
+      }));
+    },
+    deleteTaxRate: (taxRateId) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        taxRates: prev.taxRates?.filter(tr => tr.id !== taxRateId) || []
+      }));
+    },
+    
+    // Account operations
+    updateAccount: (account) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        accounts: prev.accounts?.map(acc => acc.id === account.id ? account : acc) || []
+      }));
+    },
+    addAccount: (account) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        accounts: [...(prev.accounts || []), account]
+      }));
+    },
+    deleteAccount: (accountId) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        accounts: prev.accounts?.filter(acc => acc.id !== accountId) || []
+      }));
+    },
+    
+    // Bank Account operations
+    addBankAccount: (bankAccount) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        bankAccounts: [...(prev.bankAccounts || []), bankAccount]
+      }));
+    },
+    updateBankAccount: (bankAccount) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        bankAccounts: prev.bankAccounts?.map(ba => ba.id === bankAccount.id ? bankAccount : ba) || []
+      }));
+    },
+    deleteBankAccount: (bankAccountId) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        bankAccounts: prev.bankAccounts?.filter(ba => ba.id !== bankAccountId) || []
+      }));
+    },
+    
+    // Budget operations
+    addBudget: (budget) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        budgets: [...(prev.budgets || []), budget]
+      }));
+    },
+    updateBudget: (budget) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        budgets: prev.budgets?.map(b => b.id === budget.id ? budget : b) || []
+      }));
+    },
+    deleteBudget: (budgetId) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        budgets: prev.budgets?.filter(b => b.id !== budgetId) || []
+      }));
+    },
+    
+    // Time Entry operations
+    addTimeEntry: (timeEntry) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        timeEntries: [...(prev.timeEntries || []), timeEntry]
+      }));
+    },
+    updateTimeEntry: (timeEntryId, updates) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        timeEntries: prev.timeEntries?.map(te => 
+          te.id === timeEntryId ? { ...te, ...updates } : te
+        ) || []
+      }));
+    },
+    deleteTimeEntry: (timeEntryId) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        timeEntries: prev.timeEntries?.filter(te => te.id !== timeEntryId) || []
+      }));
+    },
+    
+    // Payroll operations
+    processPayroll: (payrollData) => {
+      setCurrentCompany(prev => ({
+        ...prev,
+        payrollData: {
+          ...prev.payrollData,
+          ...payrollData
+        }
+      }));
+    }
   };
 
   return (

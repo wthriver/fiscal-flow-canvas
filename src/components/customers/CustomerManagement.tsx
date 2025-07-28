@@ -174,6 +174,8 @@ export const CustomerManagement: React.FC = () => {
         open={isViewDialogOpen}
         onOpenChange={setIsViewDialogOpen}
         customer={viewingCustomer}
+        invoices={currentCompany?.invoices || []}
+        projects={currentCompany?.projects || []}
       />
 
       <ConfirmDialog
