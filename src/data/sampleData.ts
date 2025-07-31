@@ -11,6 +11,13 @@ export const sampleCompany: Company = {
   taxId: '12-3456789',
   industry: 'Technology',
   
+  // Required enhanced properties
+  currency: 'USD',
+  dateFormat: 'MM/dd/yyyy',
+  timeZone: 'America/New_York',
+  businessType: 'Corporation',
+  accountingMethod: 'Accrual',
+  
   // Initialize with empty arrays for all collections
   customers: [],
   invoices: [],

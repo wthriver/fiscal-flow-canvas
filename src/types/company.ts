@@ -10,6 +10,21 @@ export interface Company {
   fiscalYearStart?: string;
   fiscalYear?: string;
   
+  // Enhanced Company Settings
+  logo?: string;
+  currency: string;
+  dateFormat: string;
+  timeZone: string;
+  businessType: 'LLC' | 'Corporation' | 'Partnership' | 'Sole Proprietorship' | 'Other';
+  ein?: string;
+  stateOfIncorporation?: string;
+  incorporationDate?: string;
+  accountingMethod: 'Cash' | 'Accrual';
+  payrollSettings?: PayrollSettings;
+  taxSettings?: TaxSettings;
+  bankingSettings?: BankingSettings;
+  reportingSettings?: ReportingSettings;
+  
   customers?: Customer[];
   invoices?: Invoice[];
   expenses?: Expense[];
@@ -443,4 +458,608 @@ export interface SaleItem {
   quantity: number;
   price: number;
   amount: number;
+}
+
+// Enhanced Enterprise Interfaces for QuickBooks-like functionality
+
+export interface PayrollSettings {
+  payFrequency: 'Weekly' | 'Bi-weekly' | 'Semi-monthly' | 'Monthly';
+  federalTaxId: string;
+  stateTaxId?: string;
+  stateUnemploymentId?: string;
+  workersCompId?: string;
+  directDepositEnabled: boolean;
+  autoCalculateTaxes: boolean;
+  payrollServiceProvider?: string;
+}
+
+export interface TaxSettings {
+  defaultSalesTaxRate: string;
+  salesTaxAgency?: string;
+  salesTaxNumber?: string;
+  taxableByDefault: boolean;
+  taxBasis: 'Cash' | 'Accrual';
+  multiJurisdictionTax: boolean;
+  taxExemptions: TaxExemption[];
+  taxCodes: EnhancedTaxRate[];
+}
+
+export interface BankingSettings {
+  defaultBankAccount?: string;
+  enableBankFeeds: boolean;
+  autoReconcile: boolean;
+  duplicateDetection: boolean;
+  bankRules: BankRule[];
+  reconciliationSettings: ReconciliationSettings;
+}
+
+export interface ReportingSettings {
+  defaultReportPeriod: 'Monthly' | 'Quarterly' | 'Yearly';
+  consolidateReports: boolean;
+  showComparativePeriods: boolean;
+  customReportTemplates: CustomReport[];
+  scheduledReports: ScheduledReport[];
+}
+
+export interface TaxExemption {
+  id: string;
+  customerId: string;
+  exemptionType: string;
+  exemptionNumber: string;
+  validFrom: string;
+  validTo?: string;
+  jurisdiction: string;
+}
+
+export interface EnhancedTaxRate extends TaxRate {
+  jurisdiction: string;
+  taxType: 'Sales' | 'Use' | 'VAT' | 'GST' | 'Other';
+  compound: boolean;
+  includedInPrice: boolean;
+  validFrom: string;
+  validTo?: string;
+  reportingCode?: string;
+}
+
+export interface BankRule {
+  id: string;
+  name: string;
+  conditions: BankRuleCondition[];
+  actions: BankRuleAction[];
+  enabled: boolean;
+  priority: number;
+}
+
+export interface BankRuleCondition {
+  field: 'description' | 'amount' | 'payee';
+  operator: 'contains' | 'equals' | 'starts_with' | 'ends_with' | 'greater_than' | 'less_than';
+  value: string;
+}
+
+export interface BankRuleAction {
+  type: 'categorize' | 'assign_vendor' | 'assign_customer' | 'add_memo';
+  value: string;
+}
+
+export interface ReconciliationSettings {
+  autoMatchThreshold: number;
+  suggestMatches: boolean;
+  requireApproval: boolean;
+  lockPeriod: number; // days after reconciliation
+}
+
+export interface CustomReport {
+  id: string;
+  name: string;
+  type: 'BalanceSheet' | 'ProfitLoss' | 'CashFlow' | 'Custom';
+  template: any;
+  filters: ReportFilter[];
+  columns: ReportColumn[];
+}
+
+export interface ScheduledReport {
+  id: string;
+  reportId: string;
+  frequency: 'Daily' | 'Weekly' | 'Monthly' | 'Quarterly';
+  recipients: string[];
+  enabled: boolean;
+  nextRun: string;
+}
+
+export interface ReportFilter {
+  field: string;
+  operator: string;
+  value: string;
+}
+
+export interface ReportColumn {
+  field: string;
+  label: string;
+  width?: number;
+  format?: 'currency' | 'number' | 'percentage' | 'date';
+}
+
+// Enhanced Banking Interfaces
+export interface EnhancedBankAccount extends BankAccount {
+  institution: BankInstitution;
+  connectionStatus: 'Connected' | 'Disconnected' | 'Error' | 'Pending';
+  lastSync?: string;
+  autoReconcile: boolean;
+  feedType: 'Direct' | 'Manual' | 'CSV' | 'API';
+  rules: BankRule[];
+  openingBalance: number;
+  openingDate: string;
+  interestRate?: number;
+  minimumBalance?: number;
+  overdraftLimit?: number;
+  accountHolder: string;
+  signatories: string[];
+  monthlyFees?: number;
+  statementFrequency: 'Monthly' | 'Quarterly';
+}
+
+export interface BankInstitution {
+  id: string;
+  name: string;
+  logo?: string;
+  website?: string;
+  routingNumber: string;
+  supportedFeatures: string[];
+}
+
+export interface EnhancedTransaction extends Transaction {
+  bankTransactionId?: string;
+  cleared: boolean;
+  locked: boolean;
+  splitTransactions?: TransactionSplit[];
+  attachments: TransactionAttachment[];
+  tags: string[];
+  locationId?: string;
+  classId?: string;
+  customerId?: string;
+  vendorId?: string;
+  projectId?: string;
+  billableHours?: number;
+  exchangeRate?: number;
+  originalCurrency?: string;
+  originalAmount?: number;
+  approvedBy?: string;
+  approvalDate?: string;
+  notes?: string;
+}
+
+export interface TransactionSplit {
+  id: string;
+  accountId: string;
+  amount: number;
+  description?: string;
+  customerId?: string;
+  vendorId?: string;
+  classId?: string;
+}
+
+export interface TransactionAttachment {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  url: string;
+  uploadDate: string;
+  uploadedBy: string;
+}
+
+// Enhanced Project Management
+export interface EnhancedProject extends Project {
+  projectType: 'Fixed Fee' | 'Time & Materials' | 'Non-Billable';
+  billingMethod: 'Per Hour' | 'Per Project' | 'Milestone';
+  hourlyRates: ProjectHourlyRate[];
+  expenses: ProjectExpense[];
+  timesheets: ProjectTimesheet[];
+  invoices: string[]; // invoice IDs
+  estimates: string[]; // estimate IDs
+  profitability: ProjectProfitability;
+  phases: ProjectPhase[];
+  resources: ProjectResource[];
+  risks: ProjectRisk[];
+  changeOrders: ChangeOrder[];
+  contracts: ProjectContract[];
+}
+
+export interface ProjectHourlyRate {
+  employeeId: string;
+  role: string;
+  rate: number;
+  effectiveFrom: string;
+  effectiveTo?: string;
+}
+
+export interface ProjectExpense {
+  id: string;
+  date: string;
+  category: string;
+  description: string;
+  amount: number;
+  billable: boolean;
+  approved: boolean;
+  receipt?: string;
+  employeeId: string;
+}
+
+export interface ProjectTimesheet {
+  id: string;
+  employeeId: string;
+  weekEnding: string;
+  entries: TimesheetEntry[];
+  status: 'Draft' | 'Submitted' | 'Approved' | 'Rejected';
+  totalHours: number;
+  totalBillableHours: number;
+}
+
+export interface TimesheetEntry {
+  date: string;
+  projectId: string;
+  taskId?: string;
+  hours: number;
+  description: string;
+  billable: boolean;
+  hourlyRate: number;
+}
+
+export interface ProjectProfitability {
+  budgetedCost: number;
+  actualCost: number;
+  budgetedRevenue: number;
+  actualRevenue: number;
+  grossMargin: number;
+  grossMarginPercent: number;
+}
+
+export interface ProjectPhase {
+  id: string;
+  name: string;
+  description?: string;
+  startDate: string;
+  endDate: string;
+  budget: number;
+  actualCost: number;
+  status: 'Planning' | 'Active' | 'Completed' | 'On Hold';
+  dependencies: string[];
+}
+
+export interface ProjectResource {
+  id: string;
+  employeeId: string;
+  role: string;
+  allocation: number; // percentage
+  startDate: string;
+  endDate?: string;
+  costCenter?: string;
+}
+
+export interface ProjectRisk {
+  id: string;
+  description: string;
+  impact: 'Low' | 'Medium' | 'High';
+  probability: 'Low' | 'Medium' | 'High';
+  mitigation: string;
+  owner: string;
+  status: 'Open' | 'Mitigated' | 'Closed';
+}
+
+export interface ChangeOrder {
+  id: string;
+  description: string;
+  requestedBy: string;
+  requestDate: string;
+  estimatedCost: number;
+  estimatedHours: number;
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Implemented';
+  approvedBy?: string;
+  approvalDate?: string;
+}
+
+export interface ProjectContract {
+  id: string;
+  number: string;
+  type: 'Master' | 'Statement of Work' | 'Amendment';
+  startDate: string;
+  endDate: string;
+  value: number;
+  terms: string;
+  signedDate?: string;
+  documents: string[];
+}
+
+// Enhanced Vendor Management
+export interface Vendor {
+  id: string;
+  name: string;
+  displayName?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  taxId?: string;
+  address: VendorAddress;
+  contactPerson?: string;
+  paymentTerms: string;
+  creditLimit?: number;
+  accountNumber?: string;
+  status: 'Active' | 'Inactive';
+  vendorType: 'Service' | 'Material' | 'Both';
+  paymentMethods: string[];
+  category: string;
+  notes?: string;
+  w9OnFile: boolean;
+  insuranceCertOnFile: boolean;
+  performanceRating: number;
+  preferredVendor: boolean;
+  minimumOrderAmount?: number;
+  leadTime?: number;
+  qualifications: string[];
+  customFields: Record<string, string>;
+}
+
+export interface VendorAddress {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
+export interface VendorBill {
+  id: string;
+  vendorId: string;
+  billNumber: string;
+  referenceNumber?: string;
+  date: string;
+  dueDate: string;
+  terms: string;
+  items: VendorBillItem[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  amountDue: number;
+  status: 'Open' | 'Paid' | 'Overdue' | 'Void';
+  paymentStatus: 'Unpaid' | 'Partially Paid' | 'Paid';
+  poNumber?: string;
+  memo?: string;
+  attachments: string[];
+  approvals: BillApproval[];
+  matching: ThreeWayMatching;
+}
+
+export interface VendorBillItem {
+  id: string;
+  description: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+  account: string;
+  customer?: string;
+  class?: string;
+  location?: string;
+  billable?: boolean;
+}
+
+export interface BillApproval {
+  level: number;
+  approver: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  date?: string;
+  comments?: string;
+}
+
+export interface ThreeWayMatching {
+  purchaseOrderId?: string;
+  receiptId?: string;
+  matched: boolean;
+  discrepancies: string[];
+}
+
+// Enhanced Inventory Management
+export interface EnhancedInventoryItem extends InventoryItem {
+  manufacturerPartNumber?: string;
+  vendorPartNumber?: string;
+  alternateItems: string[];
+  assemblies: AssemblyItem[];
+  stockAdjustments: StockAdjustment[];
+  stockTransfers: StockTransfer[];
+  minQuantity: number;
+  maxQuantity: number;
+  averageCost: number;
+  standardCost: number;
+  lastCost: number;
+  priceHistory: PriceHistory[];
+  vendors: ItemVendor[];
+  locations: ItemLocation[];
+  attributes: ItemAttribute[];
+  qualityControl: QualityControl;
+  compliance: ComplianceInfo;
+}
+
+export interface AssemblyItem {
+  id: string;
+  name: string;
+  components: AssemblyComponent[];
+  laborCost: number;
+  overheadCost: number;
+  totalCost: number;
+  sellingPrice: number;
+  buildInstructions?: string;
+}
+
+export interface AssemblyComponent {
+  itemId: string;
+  quantity: number;
+  unitCost: number;
+  optional: boolean;
+}
+
+export interface StockAdjustment {
+  id: string;
+  date: string;
+  adjustmentType: 'Physical Count' | 'Damaged' | 'Obsolete' | 'Other';
+  quantityBefore: number;
+  quantityAfter: number;
+  quantityAdjusted: number;
+  unitCost: number;
+  totalValueAdjustment: number;
+  reason: string;
+  adjustedBy: string;
+  approved: boolean;
+  approvedBy?: string;
+}
+
+export interface StockTransfer {
+  id: string;
+  date: string;
+  fromLocation: string;
+  toLocation: string;
+  quantity: number;
+  reason: string;
+  transferredBy: string;
+  status: 'Pending' | 'In Transit' | 'Completed';
+}
+
+export interface PriceHistory {
+  date: string;
+  price: number;
+  priceType: 'Purchase' | 'Selling';
+  vendor?: string;
+  reason?: string;
+}
+
+export interface ItemVendor {
+  vendorId: string;
+  vendorPartNumber?: string;
+  cost: number;
+  leadTime: number;
+  minimumOrderQuantity: number;
+  preferred: boolean;
+  lastOrderDate?: string;
+}
+
+export interface ItemLocation {
+  locationId: string;
+  quantity: number;
+  binLocation?: string;
+  reservedQuantity: number;
+  availableQuantity: number;
+}
+
+export interface ItemAttribute {
+  name: string;
+  value: string;
+  type: 'Text' | 'Number' | 'Date' | 'Boolean';
+}
+
+export interface QualityControl {
+  inspectionRequired: boolean;
+  testingRequired: boolean;
+  certificationRequired: boolean;
+  quarantinePeriod?: number;
+  qualityStandards: string[];
+}
+
+export interface ComplianceInfo {
+  regulatoryInfo: string[];
+  msdsRequired: boolean;
+  hazardousClassification?: string;
+  storageRequirements?: string;
+  handlingInstructions?: string;
+}
+
+// Enhanced Financial Reporting
+export interface FinancialPeriod {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  closed: boolean;
+  adjustments: PeriodAdjustment[];
+}
+
+export interface PeriodAdjustment {
+  id: string;
+  description: string;
+  amount: number;
+  account: string;
+  date: string;
+  type: 'Accrual' | 'Prepaid' | 'Depreciation' | 'Other';
+  reversalDate?: string;
+}
+
+// Enhanced User Management and Permissions
+export interface UserRole {
+  id: string;
+  name: string;
+  description: string;
+  permissions: Permission[];
+  restrictedModules: string[];
+  accessLevel: 'Full' | 'Limited' | 'View Only';
+}
+
+export interface Permission {
+  module: string;
+  actions: PermissionAction[];
+  restrictions?: PermissionRestriction[];
+}
+
+export interface PermissionAction {
+  action: 'view' | 'create' | 'edit' | 'delete' | 'approve' | 'export';
+  allowed: boolean;
+}
+
+export interface PermissionRestriction {
+  field: string;
+  condition: string;
+  value: string;
+}
+
+export interface AuditLog {
+  id: string;
+  userId: string;
+  action: string;
+  module: string;
+  recordId?: string;
+  timestamp: string;
+  ipAddress: string;
+  userAgent: string;
+  changes?: AuditChange[];
+}
+
+export interface AuditChange {
+  field: string;
+  oldValue: any;
+  newValue: any;
+}
+
+// Enhanced Multi-Entity and Consolidation
+export interface BusinessUnit {
+  id: string;
+  name: string;
+  type: 'Division' | 'Department' | 'Location' | 'Project';
+  parentId?: string;
+  manager: string;
+  costCenter: string;
+  profitCenter: string;
+  active: boolean;
+}
+
+export interface Class {
+  id: string;
+  name: string;
+  description?: string;
+  parentId?: string;
+  active: boolean;
+}
+
+export interface Location {
+  id: string;
+  name: string;
+  address?: string;
+  type: 'Office' | 'Warehouse' | 'Store' | 'Remote';
+  manager?: string;
+  active: boolean;
 }

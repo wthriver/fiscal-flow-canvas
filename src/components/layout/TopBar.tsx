@@ -28,6 +28,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useCompany } from "@/contexts/CompanyContext";
+import { Company } from "@/types/company";
 
 const TopBar: React.FC = () => {
   const navigate = useNavigate();
@@ -64,13 +65,20 @@ const TopBar: React.FC = () => {
     }
 
     // Add the new company with default data
-    const newCompany = {
+    const newCompany: Company = {
       id: `company-${Date.now()}`,
       ...newCompanyData,
+      
+      // Required enhanced properties
+      currency: 'USD',
+      dateFormat: 'MM/dd/yyyy',
+      timeZone: 'America/New_York',
+      businessType: 'Corporation' as const,
+      accountingMethod: 'Accrual' as const,
+      
       accounts: [], // Add required accounts field
       customers: [],
       invoices: [],
-      products: [],
       estimates: [],
       expenses: [],
       transactions: [],
@@ -92,13 +100,10 @@ const TopBar: React.FC = () => {
       activeCustomers: { count: 0, percentChange: 0 },
       inventory: { 
         items: [], 
-        categories: [], 
-        locations: [],
         bundles: [],
         serialNumbers: [],
         lotTracking: []
       },
-      integrations: [],
       sales: []
     };
     
