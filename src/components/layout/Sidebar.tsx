@@ -128,12 +128,6 @@ const Sidebar: React.FC = () => {
               active={pathname === "/banking"}
             />
             <SidebarItem
-              to="/banking-integration"
-              icon={<Building className="h-4 w-4" />}
-              label="Bank Integration"
-              active={pathname === "/banking-integration"}
-            />
-            <SidebarItem
               to="/payment-processing"
               icon={<CreditCard className="h-4 w-4" />}
               label="Payment Processing"
@@ -144,12 +138,6 @@ const Sidebar: React.FC = () => {
               icon={<Landmark className="h-4 w-4" />}
               label="Accounting"
               active={pathname === "/accounting"}
-            />
-            <SidebarItem
-              to="/chart-of-accounts"
-              icon={<List className="h-4 w-4" />}
-              label="Chart of Accounts"
-              active={pathname === "/chart-of-accounts"}
             />
             <SidebarItem
               to="/expenses"

@@ -12,7 +12,7 @@ import CRM from './pages/CRM';
 import Invoices from './pages/Invoices';
 import Sales from './pages/Sales';
 import Banking from './pages/Banking';
-import BankingIntegrationPage from './pages/BankingIntegration';
+
 import PaymentProcessing from './pages/PaymentProcessing';
 import Accounting from './pages/Accounting';
 import Expenses from './pages/Expenses';
@@ -29,7 +29,7 @@ import AuditTrailPage from './pages/AuditTrail';
 import MultiCurrency from './pages/MultiCurrency';
 import Integrations from './pages/Integrations';
 import Settings from './pages/Settings';
-import ChartOfAccounts from './pages/ChartOfAccounts';
+
 import PurchaseOrders from './pages/PurchaseOrders';
 import FixedAssets from './pages/FixedAssets';
 import VendorBills from './pages/VendorBills';
@@ -52,10 +52,10 @@ const App = () => {
             
             {/* Money Management */}
             <Route path="/banking" element={<Banking />} />
-            <Route path="/banking-integration" element={<BankingIntegrationPage />} />
+            
             <Route path="/payment-processing" element={<PaymentProcessing />} />
             <Route path="/accounting" element={<Accounting />} />
-            <Route path="/chart-of-accounts" element={<ChartOfAccounts />} />
+            
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/purchase-orders" element={<PurchaseOrders />} />
             <Route path="/vendor-bills" element={<VendorBills />} />
