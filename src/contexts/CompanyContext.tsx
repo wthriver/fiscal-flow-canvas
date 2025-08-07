@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { CompanyContextType } from '@/types/context';
-import { Customer, Invoice, Expense, Project, Transaction, Employee, Sale, Estimate, Budget, TimeEntry } from '@/types/company';
+import { Customer, Invoice, Expense, Project, Transaction, Employee, Sale, Estimate, Budget, TimeEntry, PurchaseOrder, PurchaseOrderStatus } from '@/types/company';
 import { sampleCompany } from '@/data/sampleData';
 import { safeNumberParse, safeStringReplace } from '@/utils/typeHelpers';
 
@@ -295,6 +295,69 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ...prev,
       estimates: prev.estimates?.filter(e => e.id !== estimateId) || []
     }));
+  }, []);
+
+  // Purchase Order operations
+  const addPurchaseOrder = useCallback((po: PurchaseOrder) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      purchaseOrders: [...(prev.purchaseOrders || []), po]
+    }));
+  }, []);
+
+  const updatePurchaseOrder = useCallback((po: PurchaseOrder) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      purchaseOrders: prev.purchaseOrders?.map(p => p.id === po.id ? po : p) || []
+    }));
+  }, []);
+
+  const deletePurchaseOrder = useCallback((poId: string) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      purchaseOrders: prev.purchaseOrders?.filter(p => p.id !== poId) || []
+    }));
+  }, []);
+
+  const approvePurchaseOrder = useCallback((poId: string) => {
+    setCurrentCompany(prev => ({
+      ...prev,
+      purchaseOrders: prev.purchaseOrders?.map(p => p.id === poId ? { ...p, status: 'Approved' } : p) || []
+    }));
+  }, []);
+
+  const receivePurchaseOrder = useCallback((poId: string, items: { itemId: string; quantity: number }[]) => {
+    setCurrentCompany(prev => {
+      const updatedPOs = (prev.purchaseOrders || []).map(po => {
+        if (po.id !== poId) return po;
+        const updatedItems = po.items.map(it => {
+          const found = items.find(i => i.itemId === (it.inventoryItemId || it.id));
+          if (!found) return it;
+          const newReceived = Math.min(it.quantity, (it.receivedQuantity || 0) + found.quantity);
+          return { ...it, receivedQuantity: newReceived };
+        });
+        const fullyReceived = updatedItems.every(it => (it.receivedQuantity || 0) >= it.quantity);
+        const status = fullyReceived ? 'Received' : 'Partially Received';
+        return { ...po, items: updatedItems, status };
+      });
+
+      const updatedInventory = prev.inventory
+        ? {
+            ...prev.inventory,
+            items: (prev.inventory.items || []).map(inv => {
+              const inc = items.find(i => i.itemId === inv.id);
+              if (!inc) return inv;
+              return {
+                ...inv,
+                quantity: inv.quantity + inc.quantity,
+                lastUpdated: new Date().toISOString().slice(0, 10)
+              };
+            })
+          }
+        : prev.inventory;
+
+      return { ...prev, purchaseOrders: updatedPOs, inventory: updatedInventory };
+    });
   }, []);
 
   // Enhanced utility functions

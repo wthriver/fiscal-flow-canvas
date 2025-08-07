@@ -38,6 +38,8 @@ export interface Company {
   timeEntries?: TimeEntry[];
   sales?: Sale[];
   transactions?: Transaction[];
+  vendors?: Vendor[];
+  purchaseOrders?: PurchaseOrder[];
   inventory?: {
     items: InventoryItem[];
     bundles: Bundle[];
@@ -855,6 +857,56 @@ export interface ThreeWayMatching {
   receiptId?: string;
   matched: boolean;
   discrepancies: string[];
+}
+
+// Purchase Orders
+export type PurchaseOrderStatus =
+  | 'Draft'
+  | 'Pending Approval'
+  | 'Approved'
+  | 'Sent'
+  | 'Partially Received'
+  | 'Received'
+  | 'Closed'
+  | 'Cancelled'
+  | 'Void';
+
+export interface PurchaseOrderItem {
+  id: string;
+  inventoryItemId?: string;
+  description: string;
+  sku?: string;
+  quantity: number;
+  receivedQuantity: number;
+  unitCost: number;
+  taxRate?: number;
+  discount?: number;
+  amount: number;
+  notes?: string;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  poNumber: string;
+  vendorId: string;
+  vendorName: string;
+  date: string;
+  expectedDate?: string;
+  status: PurchaseOrderStatus;
+  currency?: string;
+  terms?: string;
+  shipTo?: string;
+  billTo?: string;
+  reference?: string;
+  notes?: string;
+  items: PurchaseOrderItem[];
+  subtotal: number;
+  taxTotal: number;
+  shipping?: number;
+  otherCharges?: number;
+  total: number;
+  approvals?: BillApproval[];
+  attachments?: string[];
 }
 
 // Enhanced Inventory Management

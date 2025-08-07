@@ -1,5 +1,5 @@
 
-import { Company, Invoice, Expense, TaxRate, Account, Transaction, Budget, Estimate, BankAccount, TimeEntry, Project, Sale, Customer, Employee } from './company';
+import { Company, Invoice, Expense, TaxRate, Account, Transaction, Budget, Estimate, BankAccount, TimeEntry, Project, Sale, Customer, Employee, PurchaseOrder } from './company';
 
 export interface CompanyContextType {
   currentCompany: Company;
@@ -37,6 +37,13 @@ export interface CompanyContextType {
   addInvoice: (invoice: Invoice) => void;
   updateInvoice: (invoice: Invoice) => void;
   deleteInvoice: (invoiceId: string) => void;
+  
+  // Purchase Order operations
+  addPurchaseOrder: (po: PurchaseOrder) => void;
+  updatePurchaseOrder: (po: PurchaseOrder) => void;
+  deletePurchaseOrder: (poId: string) => void;
+  approvePurchaseOrder: (poId: string) => void;
+  receivePurchaseOrder: (poId: string, items: { itemId: string; quantity: number }[]) => void;
   
   // Estimate operations
   addEstimate: (estimate: Estimate) => void;
