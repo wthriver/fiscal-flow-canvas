@@ -71,5 +71,7 @@ export const sampleCompany: Company = {
   estimates: [],
   timeEntries: [],
   sales: [],
-  transactions: []
+  transactions: [],
+  vendors: [],
+  purchaseOrders: []
 };

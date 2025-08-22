@@ -322,7 +322,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const approvePurchaseOrder = useCallback((poId: string) => {
     setCurrentCompany(prev => ({
       ...prev,
-      purchaseOrders: prev.purchaseOrders?.map(p => p.id === poId ? { ...p, status: 'Approved' } : p) || []
+      purchaseOrders: prev.purchaseOrders?.map(p => p.id === poId ? { ...p, status: 'Approved' as PurchaseOrderStatus } : p) || []
     }));
   }, []);
 
@@ -337,7 +337,7 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           return { ...it, receivedQuantity: newReceived };
         });
         const fullyReceived = updatedItems.every(it => (it.receivedQuantity || 0) >= it.quantity);
-        const status = fullyReceived ? 'Received' : 'Partially Received';
+        const status: PurchaseOrderStatus = fullyReceived ? 'Received' : 'Partially Received';
         return { ...po, items: updatedItems, status };
       });
 
@@ -426,6 +426,13 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addEstimate,
     updateEstimate,
     deleteEstimate,
+    
+    // Purchase Order operations
+    addPurchaseOrder,
+    updatePurchaseOrder,
+    deletePurchaseOrder,
+    approvePurchaseOrder,
+    receivePurchaseOrder,
     
     // Utility functions
     calculateTotalRevenue,
