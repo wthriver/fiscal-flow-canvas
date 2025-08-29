@@ -30,6 +30,16 @@ import MultiCurrency from './pages/MultiCurrency';
 import Integrations from './pages/Integrations';
 import Settings from './pages/Settings';
 
+// New QuickBooks Enterprise Features
+import AdvancedPayments from './pages/AdvancedPayments';
+import SalesTaxAutomation from './pages/SalesTaxAutomation';
+import AdvancedInventoryPage from './pages/AdvancedInventoryPage';
+import BillManagement from './pages/BillManagement';
+import AdvancedBanking from './pages/AdvancedBanking';
+import CustomerPortal from './pages/CustomerPortal';
+import AdvancedReporting from './pages/AdvancedReporting';
+import DataManagement from './pages/DataManagement';
+
 import PurchaseOrders from './pages/PurchaseOrders';
 import FixedAssets from './pages/FixedAssets';
 import VendorBills from './pages/VendorBills';
@@ -78,6 +88,16 @@ const App = () => {
             <Route path="/audit-trail" element={<AuditTrailPage />} />
             <Route path="/multi-currency" element={<MultiCurrency />} />
             <Route path="/integrations" element={<Integrations />} />
+
+            {/* QuickBooks Enterprise Features */}
+            <Route path="/advanced-payments" element={<AdvancedPayments />} />
+            <Route path="/sales-tax-automation" element={<SalesTaxAutomation />} />
+            <Route path="/advanced-inventory" element={<AdvancedInventoryPage />} />
+            <Route path="/bill-management" element={<BillManagement />} />
+            <Route path="/advanced-banking" element={<AdvancedBanking />} />
+            <Route path="/customer-portal" element={<CustomerPortal />} />
+            <Route path="/advanced-reporting" element={<AdvancedReporting />} />
+            <Route path="/data-management" element={<DataManagement />} />
             
             {/* Settings */}
             <Route path="/settings" element={<Settings />} />

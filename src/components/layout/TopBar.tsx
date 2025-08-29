@@ -197,6 +197,15 @@ const TopBar: React.FC = () => {
       
       <div className="flex items-center gap-2">
         <Button 
+          variant="outline"
+          size="sm"
+          onClick={() => window.location.href = 'https://skillsim.vercel.app/dashboard'}
+          className="hidden sm:flex"
+        >
+          Master Dashboard
+        </Button>
+        
+        <Button 
           variant="ghost" 
           size="icon"
           onClick={handleNotificationsClick}
