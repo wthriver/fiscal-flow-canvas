@@ -40,6 +40,12 @@ import CustomerPortal from './pages/CustomerPortal';
 import AdvancedReporting from './pages/AdvancedReporting';
 import DataManagement from './pages/DataManagement';
 
+// New Enhanced Features
+import RecurringInvoices from './pages/RecurringInvoices';
+import DocumentCenter from './pages/DocumentCenter';
+import AdvancedSearchPage from './pages/AdvancedSearch';
+import PaymentTrackingPage from './pages/PaymentTracking';
+
 import PurchaseOrders from './pages/PurchaseOrders';
 import FixedAssets from './pages/FixedAssets';
 import VendorBills from './pages/VendorBills';
@@ -98,6 +104,11 @@ const App = () => {
             <Route path="/customer-portal" element={<CustomerPortal />} />
             <Route path="/advanced-reporting" element={<AdvancedReporting />} />
             <Route path="/data-management" element={<DataManagement />} />
+            {/* New Enhanced Features */}
+            <Route path="/recurring-invoices" element={<RecurringInvoices />} />
+            <Route path="/document-center" element={<DocumentCenter />} />
+            <Route path="/advanced-search" element={<AdvancedSearchPage />} />
+            <Route path="/payment-tracking" element={<PaymentTrackingPage />} />
             
             {/* Settings */}
             <Route path="/settings" element={<Settings />} />

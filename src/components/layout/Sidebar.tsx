@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   CircleDollarSign,
+  DollarSign,
   FileText,
   Home,
   Users,
@@ -109,10 +110,28 @@ const Sidebar: React.FC = () => {
               active={pathname === "/invoices"}
             />
             <SidebarItem
-              to="/sales"
-              icon={<Tag className="h-4 w-4" />}
-              label="Sales & Estimates"
-              active={pathname === "/sales"}
+              to="/recurring-invoices"
+              icon={<CalendarCheck className="h-4 w-4" />}
+              label="Recurring Invoices"
+              active={pathname === "/recurring-invoices"}
+            />
+            <SidebarItem
+              to="/document-center"
+              icon={<FileText className="h-4 w-4" />}
+              label="Document Center"
+              active={pathname === "/document-center"}
+            />
+            <SidebarItem
+              to="/advanced-search"
+              icon={<Target className="h-4 w-4" />}
+              label="Advanced Search"
+              active={pathname === "/advanced-search"}
+            />
+            <SidebarItem
+              to="/payment-tracking"
+              icon={<DollarSign className="h-4 w-4" />}
+              label="Payment Tracking"
+              active={pathname === "/payment-tracking"}
             />
           </div>
         </div>
@@ -232,6 +251,54 @@ const Sidebar: React.FC = () => {
             Advanced Features
           </h2>
           <div className="space-y-1">
+            <SidebarItem
+              to="/advanced-payments"
+              icon={<CreditCard className="h-4 w-4" />}
+              label="Advanced Payments"
+              active={pathname === "/advanced-payments"}
+            />
+            <SidebarItem
+              to="/sales-tax-automation"
+              icon={<ReceiptText className="h-4 w-4" />}
+              label="Sales Tax Automation"
+              active={pathname === "/sales-tax-automation"}
+            />
+            <SidebarItem
+              to="/advanced-inventory"
+              icon={<Package className="h-4 w-4" />}
+              label="Advanced Inventory"
+              active={pathname === "/advanced-inventory"}
+            />
+            <SidebarItem
+              to="/bill-management"
+              icon={<Receipt className="h-4 w-4" />}
+              label="Bill Management"
+              active={pathname === "/bill-management"}
+            />
+            <SidebarItem
+              to="/advanced-banking"
+              icon={<Wallet className="h-4 w-4" />}
+              label="Advanced Banking"
+              active={pathname === "/advanced-banking"}
+            />
+            <SidebarItem
+              to="/customer-portal"
+              icon={<Users className="h-4 w-4" />}
+              label="Customer Portal"
+              active={pathname === "/customer-portal"}
+            />
+            <SidebarItem
+              to="/advanced-reporting"
+              icon={<FileBarChart className="h-4 w-4" />}
+              label="Advanced Reporting"
+              active={pathname === "/advanced-reporting"}
+            />
+            <SidebarItem
+              to="/data-management"
+              icon={<Activity className="h-4 w-4" />}
+              label="Data Management"
+              active={pathname === "/data-management"}
+            />
             <SidebarItem
               to="/user-management"
               icon={<Shield className="h-4 w-4" />}

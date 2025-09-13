@@ -1,14 +1,45 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { CompanyContextType } from '@/types/context';
 import { Customer, Invoice, Expense, Project, Transaction, Employee, Sale, Estimate, Budget, TimeEntry, PurchaseOrder, PurchaseOrderStatus } from '@/types/company';
 import { sampleCompany } from '@/data/sampleData';
 import { safeNumberParse, safeStringReplace } from '@/utils/typeHelpers';
+import { localStorageService } from '@/services/localStorageService';
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentCompany, setCurrentCompany] = useState(sampleCompany);
-  const [companies] = useState([sampleCompany]);
+  const [companies, setCompanies] = useState([sampleCompany]);
+  const [currentCompanyId, setCurrentCompanyId] = useState(sampleCompany.id);
+
+  // Load data from localStorage on mount
+  useEffect(() => {
+    const savedData = localStorageService.loadData();
+    if (savedData && savedData.companies.length > 0) {
+      setCompanies(savedData.companies);
+      const currentComp = savedData.companies.find(c => c.id === savedData.currentCompanyId) || savedData.companies[0];
+      setCurrentCompany(currentComp);
+      setCurrentCompanyId(currentComp.id);
+    } else {
+      // Initialize with sample data and save it
+      const initialData = {
+        companies: [sampleCompany],
+        currentCompanyId: sampleCompany.id
+      };
+      localStorageService.saveData(initialData);
+    }
+  }, []);
+
+  // Auto-save whenever company data changes
+  useEffect(() => {
+    if (currentCompany && companies.length > 0) {
+      const updatedData = {
+        companies: companies.map(c => c.id === currentCompany.id ? currentCompany : c),
+        currentCompanyId: currentCompanyId
+      };
+      localStorageService.saveData(updatedData);
+    }
+  }, [currentCompany, companies, currentCompanyId]);
 
   // Enhanced customer operations with data relations
   const addCustomer = useCallback((customer: Customer) => {
