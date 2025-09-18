@@ -279,7 +279,7 @@ export const DataImportExport = () => {
                             <SelectItem value="Amount">Amount</SelectItem>
                             <SelectItem value="Account">Account</SelectItem>
                             <SelectItem value="Reference Number">Reference Number</SelectItem>
-                            <SelectItem value="">Do not import</SelectItem>
+                            <SelectItem value="skip">Do not import</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

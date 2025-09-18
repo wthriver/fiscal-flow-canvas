@@ -173,7 +173,7 @@ export const PaymentTracking: React.FC = () => {
                     <SelectValue placeholder="Select invoice" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No specific invoice</SelectItem>
+                    <SelectItem value="none">No specific invoice</SelectItem>
                     {invoices
                       .filter(inv => inv.customerId === formData.customerId || inv.customer === customers.find(c => c.id === formData.customerId)?.name)
                       .map(invoice => (
