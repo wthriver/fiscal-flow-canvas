@@ -123,7 +123,7 @@ export const AdvancedSearch: React.FC = () => {
             type: 'Expense',
             title: expense.description,
             subtitle: expense.vendor || 'No Vendor',
-            amount: expense.amount,
+            amount: typeof expense.amount === 'number' ? expense.amount : parseFloat(expense.amount) || 0,
             date: expense.date,
             relevance: Number(calculateRelevance(expense.description, filters.keyword))
           });
