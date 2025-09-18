@@ -6,6 +6,7 @@ import { InventoryStats } from "@/components/inventory/dashboard/InventoryStats"
 import { InventorySearch } from "@/components/inventory/dashboard/InventorySearch";
 import { InventoryValuation } from "@/components/inventory/InventoryValuation";
 import { AdvancedInventoryManagement } from "@/components/inventory/AdvancedInventoryManagement";
+import { AdvancedInventoryCosting } from "@/components/inventory/AdvancedInventoryCosting";
 import { PurchaseOrders } from "@/components/inventory/PurchaseOrders";
 import { TabsContent as TabContentType } from "@radix-ui/react-tabs";
 import { InventoryItemsTab } from "@/components/inventory/tabs/InventoryItemsTab";
@@ -32,7 +33,10 @@ const InventoryPage: React.FC = () => {
   return (
     <div className="container mx-auto p-4 space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-3xl font-bold">Inventory Management</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Advanced Inventory Management</h1>
+          <p className="text-muted-foreground">Complete inventory control with costing, valuation, and tracking</p>
+        </div>
         <div className="flex gap-2">
           <Button onClick={() => setIsItemDialogOpen(true)}>New Item</Button>
         </div>
@@ -71,6 +75,7 @@ const InventoryPage: React.FC = () => {
         <TabsList className="mb-4">
           <TabsTrigger value="valuation">Inventory Valuation</TabsTrigger>
           <TabsTrigger value="advanced">Advanced Management</TabsTrigger>
+          <TabsTrigger value="costing">Advanced Costing</TabsTrigger>
           <TabsTrigger value="purchase">Purchase Orders</TabsTrigger>
         </TabsList>
         
@@ -80,6 +85,10 @@ const InventoryPage: React.FC = () => {
         
         <TabsContent value="advanced">
           <AdvancedInventoryManagement />
+        </TabsContent>
+        
+        <TabsContent value="costing">
+          <AdvancedInventoryCosting />
         </TabsContent>
         
         <TabsContent value="purchase">

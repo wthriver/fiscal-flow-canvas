@@ -248,15 +248,9 @@ const Sidebar: React.FC = () => {
         </div>
         <div className="px-3 py-2">
           <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-            Advanced Features
+            Administration & Tools  
           </h2>
           <div className="space-y-1">
-            <SidebarItem
-              to="/advanced-payments"
-              icon={<CreditCard className="h-4 w-4" />}
-              label="Advanced Payments"
-              active={pathname === "/advanced-payments"}
-            />
             <SidebarItem
               to="/sales-tax-automation"
               icon={<ReceiptText className="h-4 w-4" />}
@@ -264,34 +258,10 @@ const Sidebar: React.FC = () => {
               active={pathname === "/sales-tax-automation"}
             />
             <SidebarItem
-              to="/advanced-inventory"
-              icon={<Package className="h-4 w-4" />}
-              label="Advanced Inventory"
-              active={pathname === "/advanced-inventory"}
-            />
-            <SidebarItem
-              to="/bill-management"
-              icon={<Receipt className="h-4 w-4" />}
-              label="Bill Management"
-              active={pathname === "/bill-management"}
-            />
-            <SidebarItem
-              to="/advanced-banking"
-              icon={<Wallet className="h-4 w-4" />}
-              label="Advanced Banking"
-              active={pathname === "/advanced-banking"}
-            />
-            <SidebarItem
               to="/customer-portal"
               icon={<Users className="h-4 w-4" />}
               label="Customer Portal"
               active={pathname === "/customer-portal"}
-            />
-            <SidebarItem
-              to="/advanced-reporting"
-              icon={<FileBarChart className="h-4 w-4" />}
-              label="Advanced Reporting"
-              active={pathname === "/advanced-reporting"}
             />
             <SidebarItem
               to="/data-management"

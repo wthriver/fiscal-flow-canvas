@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, Download, Upload, DollarSign, TrendingUp, AlertCircle, CheckCircle, 
-         RefreshCw, Filter, Search, Settings, CreditCard, Banknote, ArrowUpRight, ArrowDownRight } from "lucide-react";
+         RefreshCw, Filter, Search, Settings, CreditCard, Banknote, ArrowUpRight, ArrowDownRight, FileText } from "lucide-react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { BankingIntegration } from "@/components/banking/BankingIntegration";
 import { BankReconciliation } from "@/components/banking/BankReconciliation";
@@ -243,7 +243,8 @@ const Banking: React.FC = () => {
           <TabsTrigger value="reconciliation">Reconciliation</TabsTrigger>
           <TabsTrigger value="integration">Bank Feeds</TabsTrigger>
           <TabsTrigger value="forecasting">Forecasting</TabsTrigger>
-          <TabsTrigger value="rules">Rules & Automation</TabsTrigger>
+          <TabsTrigger value="reports">Banking Reports</TabsTrigger>
+          <TabsTrigger value="advanced">Advanced Features</TabsTrigger>
         </TabsList>
 
         {/* Enhanced Dashboard Tab */}
@@ -706,28 +707,164 @@ const Banking: React.FC = () => {
         </TabsContent>
 
         {/* New Rules & Automation Tab */}
-        <TabsContent value="rules" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Bank Rules & Automation</CardTitle>
-              <CardDescription>
-                Set up rules to automatically categorize transactions and streamline your workflow
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Bank Rules Coming Soon</h3>
-                <p className="text-muted-foreground mb-4">
-                  Automatic transaction categorization and processing rules will be available here
+        <TabsContent value="reports">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center">
+                  <FileText className="h-5 w-5 mr-2" />
+                  Bank Statement
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Detailed transaction history with reconciliation status
                 </p>
-                <Button onClick={handleCreateBankRule}>
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Create First Rule
+                <Button variant="outline" size="sm" onClick={handleExportTransactions}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Generate Report
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center">
+                  <TrendingUp className="h-5 w-5 mr-2" />
+                  Cash Flow Analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Historical and projected cash flow patterns
+                </p>
+                <Button variant="outline" size="sm" onClick={() => setActiveTab("forecasting")}>
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  View Analysis
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center">
+                  <DollarSign className="h-5 w-5 mr-2" />
+                  Banking Fees Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Analysis of bank fees and optimization recommendations
+                </p>
+                <Button variant="outline" size="sm" onClick={handleExportTransactions}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Generate Report
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="advanced" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {bankAccounts.map((account) => {
+              const balance = typeof account.balance === 'string' 
+                ? safeNumberParse(account.balance)
+                : account.balance;
+              return (
+                <Card key={account.id} className={`cursor-pointer transition-colors hover:shadow-md`} onClick={() => handleEditAccount(account)}>
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-sm">{account.name}</CardTitle>
+                      <Badge variant={account.isActive === false ? "secondary" : "default"}>
+                        {account.isActive === false ? "Inactive" : "Active"}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">${Math.abs(balance).toLocaleString()}</div>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      {balance >= 0 ? (
+                        <ArrowUpRight className="h-3 w-3 mr-1 text-green-500" />
+                      ) : (
+                        <ArrowDownRight className="h-3 w-3 mr-1 text-red-500" />
+                      )}
+                      {account.type}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>AI-Powered Reconciliation</CardTitle>
+                <CardDescription>Automatic transaction matching and categorization</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <div>
+                        <p className="font-medium">Auto-matched transactions</p>
+                        <p className="text-sm text-muted-foreground">Last 30 days</p>
+                      </div>
+                    </div>
+                    <Badge>127 matches</Badge>
+                  </div>
+                  <div className="flex justify-between items-center p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <AlertCircle className="h-5 w-5 text-yellow-500" />
+                      <div>
+                        <p className="font-medium">Needs review</p>
+                        <p className="text-sm text-muted-foreground">Potential matches</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline">8 pending</Badge>
+                  </div>
+                  <Button className="w-full" onClick={() => setActiveTab("reconciliation")}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Start Reconciliation
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Cash Flow Forecasting</CardTitle>
+                <CardDescription>Predictive analysis based on historical data</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-green-600">$25,000</p>
+                      <p className="text-sm text-muted-foreground">Projected inflow</p>
+                      <p className="text-xs text-muted-foreground">Next 30 days</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-red-600">$18,500</p>
+                      <p className="text-sm text-muted-foreground">Projected outflow</p>
+                      <p className="text-xs text-muted-foreground">Next 30 days</p>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="text-center">
+                    <p className="text-xl font-bold text-blue-600">$6,500</p>
+                    <p className="text-sm text-muted-foreground">Net cash flow projection</p>
+                  </div>
+                  <Button className="w-full" onClick={() => setActiveTab("forecasting")}>
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    View Detailed Forecast
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 
